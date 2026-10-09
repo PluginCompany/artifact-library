@@ -24,7 +24,7 @@
   <a href="docs/">Docs</a>
 </p>
 
-https://github.com/user-attachments/assets/97685171-8008-47a6-bef2-ecfc91eda349
+https://github.com/user-attachments/assets/d76449c8-ae6c-410e-a08d-fa6b91edfac9
 
 <p align="center"><sub>The 2½-minute intro: planning, progress, code review, reports and sharing. ▶ <a href="https://github.com/PluginCompany/artifact-library/releases/download/v0.4.0/artifact-library-intro-4k60.mp4">Watch it in 4K, 60 fps</a></sub></p>
 
