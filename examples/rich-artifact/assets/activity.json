@@ -1,0 +1,12 @@
+{
+  "description": "Illustrative dataset for the rich artifact demonstration; not measured production traffic.",
+  "days": [
+    {"label":"October 1","short":"Thu","publishes":8,"downloads":16},
+    {"label":"October 2","short":"Fri","publishes":14,"downloads":28},
+    {"label":"October 3","short":"Sat","publishes":6,"downloads":11},
+    {"label":"October 4","short":"Sun","publishes":4,"downloads":9},
+    {"label":"October 5","short":"Mon","publishes":19,"downloads":35},
+    {"label":"October 6","short":"Tue","publishes":24,"downloads":42},
+    {"label":"October 7","short":"Wed","publishes":17,"downloads":31}
+  ]
+}

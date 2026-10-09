@@ -1,0 +1,142 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-debug-notebook (bug investigation notebook)
+  ================================================================
+  Files
+    data.js    ALL content in window.NOTEBOOK: meta, symptom, environment, reproduce,
+               hypotheses, rootCause, fixes, verification, lessons. Edit this first.
+    app.js     Renders data.js into the sections below. Change only to add a new
+               kind of evidence or section.
+    style.css  Styles for this artifact only (kit tokens only).
+    kit/       Shared kit, copied in by ../publish.sh. Never edit the copy.
+
+  Common edits
+    Hypothesis      data.js → hypotheses[] { id:"h5", status, title, claim,
+                    evidence[], verdict }. status: confirmed | contributing |
+                    ruled-out | open. It gets a comment thread comments.h5.
+    Evidence        { kind:"code", file, title, before?, after }  diff when both
+                    { kind:"headers", title, body }                raw response
+                    { kind:"measure", title, headers[], rows[][] } table
+                    { kind:"note", title, body }                   prose
+    Verification    { check, result, status: pass | partial | pending | fail | skip }
+    Be honest       If automation cannot see something, say so in a note and mark
+                    the check partial or pending.
+
+  Saved data (agents: `artifact feedback ref-debug-notebook`)
+    comments.h1 … comments.hN   discussion per hypothesis
+    comments.hypotheses         new hypotheses proposed by readers
+
+  Do not
+    - hard-code colours; use kit tokens
+    - put content strings in app.js; they belong in data.js
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Debug Notebook · Flickering Review Page</title>
+<meta name="description" content="Investigation notebook: why the implementation review flickered — hypotheses, evidence, root cause, fix and verification.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Sections"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="./"><i>D</i><span>Debug notebook</span><small id="brand-id"></small></a>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts" aria-label="Collection"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Sections">
+    <h5>Investigation</h5>
+    <a href="#symptom"><b>01</b>Symptom</a>
+    <a href="#reproduce"><b>02</b>Reproduce</a>
+    <a href="#hypotheses"><b>03</b>Hypotheses</a>
+    <div class="side-hyps" id="side-hyps"></div>
+    <h5>Outcome</h5>
+    <a href="#cause"><b>04</b>Root cause</a>
+    <a href="#fix"><b>05</b>The fix</a>
+    <a href="#verify"><b>06</b>Verification</a>
+    <a href="#lessons"><b>07</b>Lessons</a>
+    <a href="#add"><b>08</b>Add a hypothesis</a>
+  </nav>
+
+  <main class="main" id="main">
+    <header class="nb-head">
+      <div class="eyebrow rise"><span id="nb-id"></span> · Investigation · <span id="nb-reported"></span></div>
+      <h1 class="display rise" style="--i:1" id="nb-title"></h1>
+      <p class="lead rise" style="--i:2" id="nb-summary"></p>
+      <div class="nb-strip rise" style="--i:3" id="nb-strip"></div>
+    </header>
+
+    <section class="nb-sec" id="symptom">
+      <div class="eyebrow thread">01 · What was reported</div>
+      <h2 class="h2 stitch">Symptom</h2>
+      <div class="grid symptom-grid">
+        <figure class="quote" id="quote"></figure>
+        <dl class="facts" id="env"></dl>
+      </div>
+      <ul class="dots observed" id="observed"></ul>
+    </section>
+
+    <section class="nb-sec" id="reproduce">
+      <div class="eyebrow thread">02 · Make it happen</div>
+      <h2 class="h2 stitch">Reproduce</h2>
+      <ol class="steps" id="repro"></ol>
+    </section>
+
+    <section class="nb-sec" id="hypotheses">
+      <div class="section-head">
+        <div><div class="eyebrow thread">03 · What could explain it</div><h2 class="h2 stitch">Hypotheses</h2><p>Each one with the evidence that decided it. Comment on a hypothesis to challenge it.</p></div>
+        <div class="chips" id="hyp-filter" role="group" aria-label="Filter hypotheses by status"></div>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="hyps" id="hyps"></div>
+    </section>
+
+    <section class="nb-sec" id="cause">
+      <div class="eyebrow thread">04 · Root cause</div>
+      <h2 class="h2 stitch" id="cause-title">Root cause</h2>
+      <div class="cause-grid">
+        <div><p class="cause-body" id="cause-body"></p><div class="cause-numbers" id="cause-numbers"></div></div>
+        <figure class="cause-fig" id="cause-fig" aria-label="Shadow paint area compared with the viewport"></figure>
+      </div>
+    </section>
+
+    <section class="nb-sec" id="fix">
+      <div class="eyebrow thread">05 · Change</div>
+      <h2 class="h2 stitch">The fix</h2>
+      <div class="fixes" id="fixes"></div>
+    </section>
+
+    <section class="nb-sec" id="verify">
+      <div class="eyebrow thread">06 · Proof</div>
+      <h2 class="h2 stitch">Verification</h2>
+      <ul class="verify" id="verification"></ul>
+    </section>
+
+    <section class="nb-sec" id="lessons">
+      <div class="eyebrow thread">07 · Keep</div>
+      <h2 class="h2 stitch">Lessons</h2>
+      <ol class="lessons" id="lesson-list"></ol>
+    </section>
+
+    <section class="nb-sec" id="add">
+      <div class="eyebrow thread">08 · Your turn</div>
+      <h2 class="h2 stitch">Add a hypothesis</h2>
+      <p class="muted" style="margin-top:6px;max-width:62ch">Seen something that does not fit? Describe what you saw and what would prove it. The investigating agent reads these with <code>artifact feedback</code>.</p>
+      <div id="add-thread" class="add-thread"></div>
+    </section>
+
+    <footer class="foot-note">Reference artifact · source <code>examples/reference/ref-debug-notebook</code> · a real investigation of <a id="subject-link" href="/artifacts/ref-implementation-review/">ref-implementation-review</a> · built with the reference kit.</footer>
+  </main>
+</div>
+</body>
+</html>

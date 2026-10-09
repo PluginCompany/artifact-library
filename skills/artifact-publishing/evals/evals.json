@@ -1,0 +1,10 @@
+{
+  "skill_name": "artifact-publishing",
+  "evals": [
+    { "id": 1, "prompt": "Create a two-page HTML migration plan with shared CSS and publish it to our internal artifact server using slug migration-plan. Give me the stable link.", "expected_output": "Self-contained files with relative links; create operation; stable and snapshot URLs recorded.", "files": [] },
+    { "id": 2, "prompt": "Download the current migration-plan artifact, add a checklist, and publish an update at its existing link. Check for newer remote revisions first.", "expected_output": "Original-byte download, revision check, same-slug update with conflict detection, new immutable version.", "files": [] },
+    { "id": 3, "prompt": "Compare versions 1 and 2 of migration-plan and explain what changed. My last upload response was lost; retry that saved upload before comparing.", "expected_output": "Reuse the saved operation key, then compare manifests and text patches without a duplicate publication.", "files": [] },
+    { "id": 4, "prompt": "Find the recently updated migration plan, fix its catalog description without changing the HTML, and keep its current content version.", "expected_output": "Search or recent discovery, inspect revision, metadata-only edit, unchanged latestVersion with a new concurrency revision.", "files": [] },
+    { "id": 5, "prompt": "Publish an HTML report with a useful title and summary, and make sure it gets a preview in the library. This agent machine has no browser installed.", "expected_output": "Publish using the standalone CLI; server generates the preview asynchronously; no client-side browser setup or screenshot generation.", "files": [] }
+  ]
+}

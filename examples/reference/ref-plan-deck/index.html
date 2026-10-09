@@ -1,0 +1,506 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-plan-deck (reference slide deck)
+  =====================================================
+  Files
+    index.html   all slide content (this file)          ← edit this
+    deck.css     slide layouts + deck chrome             ← add new layouts here
+    deck.js      navigation engine (keys, hash, modes)   ← no edits needed for content
+    kit/         shared design system, copied in by publish.sh — never edit the copy
+
+  Slides
+    - Every <section class="slide …"> inside <div id="frame"> is one slide, in order.
+      Duplicate a section to add a slide; delete one to remove it. Numbers, the
+      progress bar, footers, the overview grid and #hash links update themselves.
+    - The overview/progress label is the first <h1>/<h2>, or data-title="…" if set.
+    - Speaker notes: an <aside class="notes"> inside the slide (HTML allowed).
+      Press N to show them; they never print.
+    - Add class="no-foot" to a slide to hide its footer.
+    - Size everything inside slides in em (1em = 20px at 1280px wide) so slides scale.
+
+  Layouts (add to the section's class list)
+    l-title      cover slide: .t-grid with text + .fan of cards
+    l-statement  one giant number or phrase (.giant) + headline + optional .proof row
+    (default)    .s-head (eyebrow + h2 + p) followed by .cols / .cols.c3 / .cols.c4 / .box
+    l-figure     inline SVG .diagram on the left, numbered .fig-cap steps on the right
+    l-table      .s-table wrapper around a normal <table>
+    l-timeline   .rail of .phase blocks on a dashed thread line
+    l-ask        decision slide: .asks list of numbered .ask rows
+    l-appendix   denser text/code slide
+    Helpers: .box(.accent|.thread|.dashed) .list-check .list-cross .list-dot .num-big
+             .build (children animate in one after another) .tag(.good|.warn|.bad|.thread|.accent)
+
+  Charts
+    Put <div data-deck-chart="key"></div> in a slide and define window.DECK_CHARTS.key
+    in the <script> at the bottom (same spec as Kit.chart.line/column/bar; add aspect: 0.5).
+
+  Content note: this deck is EXAMPLE CONTENT. Facts on slides 2, 3 and 14 describe the
+  real artifact service (v0.4.0) and cite their source files; the plan itself is illustrative.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plan deck: Artifact Library v0.5</title>
+<meta name="description" content="Reference slide deck: a three-phase plan for collections, tags and full-text search in Artifact Library.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="deck.css">
+<script src="kit/kit.js" defer></script>
+<script src="deck.js" defer></script>
+</head>
+<body class="deck-body">
+
+<header class="topbar">
+  <a class="brand" href="#1"><i>P</i><span>Plan deck</span></a>
+  <span class="deck-title">Artifact Library v0.5</span>
+  <div class="tools">
+    <button class="icon-btn" type="button" id="btn-overview" aria-pressed="false" title="All slides (O)"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="lbl">Overview</span></button>
+    <button class="icon-btn" type="button" id="btn-notes" aria-pressed="false" title="Speaker notes (N)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h10v11H3z M5.5 5.5h5M5.5 8h5M5.5 10.5h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg><span class="lbl">Notes</span></button>
+    <button class="icon-btn" type="button" id="btn-mode" aria-pressed="false" title="Read mode (R)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11M2.5 6.5h11M2.5 10h11M2.5 13.5h7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="lbl">Read</span></button>
+    <button class="icon-btn hide-sm" type="button" id="btn-fs" aria-pressed="false" title="Fullscreen (F)" aria-label="Fullscreen"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M13.5 6V2.5H10M2.5 10v3.5H6M13.5 10v3.5H10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <a class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+    <button class="icon-btn" type="button" data-theme-toggle></button>
+  </div>
+</header>
+
+<div class="deck" id="deck" data-mode="present">
+  <div class="stage" id="stage">
+    <div class="deck-frame" id="frame" data-name="Artifact Library v0.5 · Plan">
+
+      <!-- 1 ─ Title ─────────────────────────────────────────────── -->
+      <section class="slide l-title no-foot" data-title="Collections, tags & full-text search">
+        <div class="t-grid">
+          <div class="build">
+            <div class="eyebrow thread">Roadmap plan · Artifact library</div>
+            <h1 style="margin-top:.35em">Collections, tags &amp; <em>full&#8209;text search</em></h1>
+            <p class="lead">A three-phase plan to make Artifact Library v0.5 easy to browse, group and search as it grows past one page.</p>
+            <div class="meta">
+              <span class="tag thread dot">Example content</span>
+              <span class="tag accent">Draft for review</span>
+              <span class="tag outline">October 2026</span>
+              <span class="by">Platform team · 14 slides · ~15 min</span>
+            </div>
+          </div>
+          <div class="fan" aria-hidden="true">
+            <div class="fc"><div class="fc-body"><strong>Workshop handbook</strong><div class="tags"><span class="tag thread">guide</span><span class="tag">workshop</span></div></div><div class="fc-shot"><i></i><i></i><i></i><b></b></div></div>
+            <div class="fc"><div class="fc-body"><strong>Q3 workshop report</strong><div class="tags"><span class="tag accent">report</span><span class="tag">workshop</span></div></div><div class="fc-shot"><i></i><i></i><i></i><b></b></div></div>
+            <div class="fc"><div class="fc-body"><strong>E-bike service tour</strong><div class="tags"><span class="tag good">tour</span><span class="tag">workshop</span></div></div><div class="fc-shot"><i></i><i></i><i></i><b></b></div></div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p>Open with the one-line ask: we want agreement on a three-phase plan and one design decision (how collections are modelled).</p>
+          <p>The fanned cards are the motivating case: three artifacts about the same workshop that today sit as unrelated cards in the library.</p>
+        </aside>
+      </section>
+
+      <!-- 2 ─ Statement ─────────────────────────────────────────── -->
+      <section class="slide l-statement" data-title="Search sees three fields">
+        <div class="st-grid build">
+          <div class="giant" aria-hidden="true">3</div>
+          <div>
+            <div class="eyebrow">The problem in one number</div>
+            <h2 style="margin-top:.3em">fields are all search can see: <em>slug, title, description.</em></h2>
+            <p class="lead">Every page, table and caption inside an artifact is invisible to the library.</p>
+          </div>
+        </div>
+        <div class="proof build">
+          <pre><span class="c"># what the API answers today</span>
+<span class="k">GET</span> /api/v1/artifacts?q=torque%20settings
+<span class="s">→ {"artifacts":[],"total":0}</span></pre>
+          <div class="box thread">
+            <div class="eyebrow thread">Meanwhile</div>
+            <p style="color:var(--ink);font-size:.9em">The <b>Workshop handbook</b> has a whole section called <b>“Torque settings for carbon parts”</b>. Nobody can find it by searching.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          <p>Any phrase that only appears inside a page returns zero results today.</p>
+          <p>Source: <code>src/catalog.ts</code> matches every search term as a substring of slug + title + description, nothing else.</p>
+        </aside>
+      </section>
+
+      <!-- 3 ─ Context ───────────────────────────────────────────── -->
+      <section class="slide" data-title="Where we are today">
+        <div class="s-head">
+          <div class="eyebrow">Context · v0.4.0</div>
+          <h2>The library works well for ten artifacts. Not for a hundred.</h2>
+        </div>
+        <div class="cols build">
+          <div class="box">
+            <div class="eyebrow" style="color:var(--good)">Works today</div>
+            <ul class="list-check">
+              <li><span><b>Stable links</b> and immutable version snapshots</span></li>
+              <li><span><b>Grid &amp; list homepage</b> with search, sort and time filter</span></li>
+              <li><span><b>Server-made previews</b> from one background Chromium worker</span></li>
+              <li><span><b>Agent-friendly CLI</b>: every command speaks <code>--json</code></span></li>
+            </ul>
+          </div>
+          <div class="box dashed">
+            <div class="eyebrow thread">Breaks as it grows</div>
+            <ul class="list-dot">
+              <li><span><b>No grouping.</b> A guide, a tour and a report about one department are three unrelated cards.</span></li>
+              <li><span><b>Metadata-only search.</b> Content inside pages can't be found.</span></li>
+              <li><span><b>No tags.</b> The only filter is “updated since”.</span></li>
+              <li><span><b>24 cards per page.</b> Past one page, browsing turns into scrolling.</span></li>
+            </ul>
+          </div>
+        </div>
+        <aside class="notes">
+          <p>Everything on the left is shipped and stays. The right column is what this plan addresses.</p>
+          <ul><li>24 cards per page: <code>src/library.ts</code> requests <code>limit=24</code>.</li><li>One preview worker: <code>src/previews.ts</code>.</li></ul>
+        </aside>
+      </section>
+
+      <!-- 4 ─ Goals & non-goals ─────────────────────────────────── -->
+      <section class="slide" data-title="Goals and non-goals">
+        <div class="s-head">
+          <div class="eyebrow">Scope</div>
+          <h2>Three goals. Four things we deliberately won't do.</h2>
+        </div>
+        <div class="cols wide-left">
+          <div class="cols c3 build" style="gap:1em">
+            <div class="box accent"><div class="kicker">01</div><h3 style="margin-top:.5em">Group</h3><p>Named, ordered <b>collections</b>. An artifact can live in several.</p></div>
+            <div class="box accent"><div class="kicker">02</div><h3 style="margin-top:.5em">Label</h3><p>Free-form, normalised <b>tags</b>, set at publish time or later.</p></div>
+            <div class="box accent"><div class="kicker">03</div><h3 style="margin-top:.5em">Find</h3><p><b>Full-text search</b> over page content, ranked, with snippets.</p></div>
+          </div>
+          <div class="box dashed">
+            <div class="eyebrow">Non-goals for v0.5</div>
+            <ul class="list-cross" style="margin-top:.6em">
+              <li><span>Accounts, permissions, private collections</span></li>
+              <li><span>Semantic / vector search</span></li>
+              <li><span>Searching historical versions</span></li>
+              <li><span>Indexing PDFs and other binaries</span></li>
+            </ul>
+          </div>
+        </div>
+        <aside class="notes">
+          <p>Non-goals keep the trusted-network, no-database design intact. Each could be a later release.</p>
+        </aside>
+      </section>
+
+      <!-- 5 ─ User stories ──────────────────────────────────────── -->
+      <section class="slide" data-title="Who this is for">
+        <div class="s-head">
+          <div class="eyebrow">User stories</div>
+          <h2>Four people, four moments that are slow today.</h2>
+        </div>
+        <div class="cols c4 build fill" style="align-items:stretch">
+          <div class="box"><div class="eyebrow thread">Agent</div><h3>Publishes into the right place</h3><p style="margin-top:.5em">“I publish a report with <code>--tag report --collection workshop</code> so people find it next to its siblings.”</p></div>
+          <div class="box"><div class="eyebrow thread">Team lead</div><h3>Opens one link for a topic</h3><p style="margin-top:.5em">“I share the <b>Workshop</b> collection and everyone sees the handbook, tour and reports in order.”</p></div>
+          <div class="box"><div class="eyebrow thread">Anyone</div><h3>Finds a phrase, not a title</h3><p style="margin-top:.5em">“I search <i>torque settings</i> and land on the right page of the handbook, with a snippet.”</p></div>
+          <div class="box"><div class="eyebrow thread">CLI user</div><h3>Scripts against search</h3><p style="margin-top:.5em">“<code>artifact search rework --tag report --json</code> returns ranked hits with page paths.”</p></div>
+        </div>
+        <aside class="notes">
+          <p>Each story maps to one phase: agent + team lead → tags and collections, anyone + CLI user → full-text search.</p>
+        </aside>
+      </section>
+
+      <!-- 6 ─ Approach (diagram) ────────────────────────────────── -->
+      <section class="slide l-figure" data-title="Proposed approach">
+        <div class="s-head" style="margin-bottom:1em">
+          <div class="eyebrow">Approach</div>
+          <h2>Additive changes on the architecture we already have.</h2>
+        </div>
+        <div class="fig-grid">
+          <div>
+            <svg class="diagram" viewBox="0 0 1000 560" role="img" aria-labelledby="dg-t dg-d">
+              <title id="dg-t">v0.5 architecture</title>
+              <desc id="dg-d">Clients call API v1. The API reads the catalog, new collection files, a new search index and version snapshots. The existing background worker gains a text extraction job that fills the search index.</desc>
+              <defs>
+                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrow" d="M0 0L10 5L0 10z"/></marker>
+                <marker id="ahn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrow new" d="M0 0L10 5L0 10z"/></marker>
+              </defs>
+              <!-- wires -->
+              <path class="wire" d="M210 112H276" marker-end="url(#ah)"/>
+              <path class="wire" d="M210 260H276" marker-end="url(#ah)"/>
+              <path class="wire" d="M210 408H276" marker-end="url(#ah)"/>
+              <path class="wire" d="M450 70H526" marker-end="url(#ah)"/>
+              <path class="wire new" d="M450 180H526" marker-end="url(#ahn)"/>
+              <path class="wire new" d="M450 290H526" marker-end="url(#ahn)"/>
+              <path class="wire" d="M450 420H526" marker-end="url(#ah)"/>
+              <path class="wire" d="M730 420H796" marker-end="url(#ah)"/>
+              <path class="wire new" d="M890 380V334" marker-end="url(#ahn)"/>
+              <path class="wire new" d="M800 290H734" marker-end="url(#ahn)"/>
+              <path class="wire" d="M890 460V486" marker-end="url(#ah)"/>
+              <!-- clients -->
+              <rect class="bx" x="20" y="70" width="190" height="84" rx="12"/>
+              <text class="t-h" x="40" y="104">CLI &amp; agents</text><text class="t-s" x="40" y="128">publish · update · search</text>
+              <rect class="bx" x="20" y="218" width="190" height="84" rx="12"/>
+              <text class="t-h" x="40" y="252">Library homepage</text><text class="t-s" x="40" y="276">grid · list · filters</text>
+              <rect class="bx" x="20" y="366" width="190" height="84" rx="12"/>
+              <text class="t-h" x="40" y="400">Version toolbar</text><text class="t-s" x="40" y="424">versions · notices</text>
+              <!-- api -->
+              <rect class="bx api" x="280" y="40" width="170" height="420" rx="14"/>
+              <text class="t-h" x="300" y="76">API v1</text><text class="t-s" x="300" y="98">additive · apiVersion 1</text>
+              <text class="t-ep" x="300" y="148">/artifacts</text>
+              <text class="t-ep" x="300" y="172">/artifacts/:slug</text>
+              <text class="t-ep" x="300" y="196">/…/versions</text>
+              <text class="t-ep new" x="300" y="246">+ ?tag= filter</text>
+              <text class="t-ep new" x="300" y="270">+ /collections</text>
+              <text class="t-ep new" x="300" y="294">+ /search</text>
+              <text class="t-s" x="300" y="430">capabilities += tags,</text><text class="t-s" x="300" y="446">collections, search</text>
+              <!-- stores -->
+              <rect class="bx" x="530" y="30" width="200" height="80" rx="12"/>
+              <text class="t-h" x="550" y="62">Catalog</text><text class="t-s" x="550" y="86">artifact.json <tspan class="t-ep new">+ tags[]</tspan></text>
+              <rect class="bx new" x="530" y="140" width="200" height="80" rx="12"/>
+              <text class="t-new" x="550" y="160">NEW</text><text class="t-h" x="550" y="182">Collections</text><text class="t-s" x="550" y="204">collections/&lt;slug&gt;.json</text>
+              <rect class="bx new" x="530" y="250" width="200" height="80" rx="12"/>
+              <text class="t-new" x="550" y="270">NEW</text><text class="t-h" x="550" y="292">Search index</text><text class="t-s" x="550" y="314">derived · rebuildable</text>
+              <rect class="bx" x="530" y="380" width="200" height="80" rx="12"/>
+              <text class="t-h" x="550" y="412">Version snapshots</text><text class="t-s" x="550" y="436">immutable files</text>
+              <!-- worker -->
+              <rect class="bx new" x="800" y="250" width="180" height="80" rx="12"/>
+              <text class="t-new" x="820" y="270">NEW JOB</text><text class="t-h" x="820" y="292">Text extraction</text><text class="t-s" x="820" y="314">from rendered DOM</text>
+              <rect class="bx" x="800" y="380" width="180" height="80" rx="12"/>
+              <text class="t-h" x="820" y="412">Background worker</text><text class="t-s" x="820" y="436">one Chromium · queued</text>
+              <rect class="bx" x="800" y="490" width="180" height="60" rx="12"/>
+              <text class="t-h" x="820" y="526">Preview PNG</text>
+            </svg>
+            <div class="fig-key"><span><i></i>Exists in v0.4</span><span><i class="new"></i>New in v0.5</span></div>
+          </div>
+          <div class="fig-cap build">
+            <div class="step"><i>1</i><p><b>Tags ride on the catalog.</b> One new field in <code>artifact.json</code>; edits bump the revision like any metadata change.</p></div>
+            <div class="step"><i>2</i><p><b>Collections are small JSON files</b> next to the catalog, with their own revision for safe concurrent edits.</p></div>
+            <div class="step"><i>3</i><p><b>The preview worker learns a second job.</b> It already renders each snapshot; now it also extracts the visible text.</p></div>
+            <div class="step"><i>4</i><p><b>The index is a cache.</b> Delete it and it rebuilds from snapshots. No new source of truth.</p></div>
+          </div>
+        </div>
+        <aside class="notes">
+          <p>Key design choice: reuse the rendered DOM from the preview browser instead of parsing HTML. Many of the best artifacts build their content in JavaScript; most of the reference collection does.</p>
+          <p>No database is introduced as a source of truth. The index is derived data.</p>
+        </aside>
+      </section>
+
+      <!-- 7 ─ Scope table ───────────────────────────────────────── -->
+      <section class="slide l-table" data-title="What changes where">
+        <div class="s-head">
+          <div class="eyebrow">Scope by surface</div>
+          <h2>What changes where</h2>
+        </div>
+        <div class="s-table">
+          <table>
+            <thead><tr><th>Capability</th><th class="c">CLI</th><th class="c">API</th><th class="c">Homepage</th><th class="c">Toolbar</th><th>Phase</th></tr></thead>
+            <tbody>
+              <tr><td><b>Tags</b><span class="sub">set at publish, edit via metadata, filter</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="no" title="Not in scope">—</span></td><td><span class="tag thread">1 · Tags</span></td></tr>
+              <tr><td><b>Collections</b><span class="sub">create, order, add/remove, collection page</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="part" title="Partly in scope">½</span></td><td><span class="tag thread">2 · Collections</span></td></tr>
+              <tr><td><b>Full-text search</b><span class="sub">ranked hits, snippets, page paths</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="no" title="Not in scope">—</span></td><td><span class="tag thread">3 · Search</span></td></tr>
+              <tr><td><b>Agent skill update</b><span class="sub">tag and file by default</span></td><td class="c"><span class="yes" title="In scope">✓</span></td><td class="c"><span class="no" title="Not in scope">—</span></td><td class="c"><span class="no" title="Not in scope">—</span></td><td class="c"><span class="no" title="Not in scope">—</span></td><td><span class="tag thread">1 → 3</span></td></tr>
+              <tr class="out"><td><b>Saved searches</b><span class="sub">later; collections cover the need</span></td><td class="c"><span class="no">—</span></td><td class="c"><span class="no">—</span></td><td class="c"><span class="no">—</span></td><td class="c"><span class="no">—</span></td><td><span class="tag">Out</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted" style="font-size:.7em;margin-top:.9em">½ — the toolbar shows “part of <i>collection</i>” with previous/next links (open question 4).</p>
+        <aside class="notes"><p>The toolbar change is small but visible: it is how readers discover that a collection exists.</p></aside>
+      </section>
+
+      <!-- 8 ─ Timeline ──────────────────────────────────────────── -->
+      <section class="slide l-timeline" data-title="Milestones">
+        <div class="s-head">
+          <div class="eyebrow">Milestones</div>
+          <h2>Seven weeks, three shippable phases.</h2>
+        </div>
+        <div class="rail build">
+          <div class="phase">
+            <div class="pin">1</div>
+            <div class="when">19 Oct → 30 Oct · 2 weeks</div>
+            <h3>Tags</h3>
+            <div class="box">
+              <ul class="list-dot"><li><span><code>--tag</code> on publish/update/metadata</span></li><li><span><code>?tag=</code> filter + homepage chips</span></li><li><span>Zero-result search counter</span></li></ul>
+              <div class="exit"><b>Exit:</b> 80% of new artifacts carry ≥ 1 tag.</div>
+            </div>
+          </div>
+          <div class="phase">
+            <div class="pin">2</div>
+            <div class="when">2 Nov → 13 Nov · 2 weeks</div>
+            <h3>Collections</h3>
+            <div class="box">
+              <ul class="list-dot"><li><span><code>artifact collection</code> create/add/order</span></li><li><span>Collection page + homepage row</span></li><li><span>Toolbar “part of” link</span></li></ul>
+              <div class="exit"><b>Exit:</b> workshop &amp; reference collections live.</div>
+            </div>
+          </div>
+          <div class="phase">
+            <div class="pin">3</div>
+            <div class="when">16 Nov → 4 Dec · 3 weeks</div>
+            <h3>Full-text search</h3>
+            <div class="box">
+              <ul class="list-dot"><li><span>Extraction job in the worker</span></li><li><span>Ranked <code>/search</code> with snippets</span></li><li><span>Backfill of latest versions</span></li></ul>
+              <div class="exit"><b>Exit:</b> “torque settings” finds the handbook.</div>
+            </div>
+          </div>
+        </div>
+        <div class="ship"><span class="flag">⚑ v0.5.0</span><span class="muted">Release Monday 7 December · each phase ships behind its own capability flag</span></div>
+        <aside class="notes"><p>Phases are independent releases: if phase 3 slips, tags and collections still ship. Dates are illustrative.</p></aside>
+      </section>
+
+      <!-- 9 ─ Metrics ───────────────────────────────────────────── -->
+      <section class="slide" data-title="How we'll know it worked">
+        <div class="s-head" style="margin-bottom:1.1em">
+          <div class="eyebrow">Success metrics</div>
+          <h2>How we'll know it worked</h2>
+        </div>
+        <div class="cols metrics">
+          <div class="chart-slot">
+            <h3>Library size, projected</h3>
+            <p>Artifacts in the catalogue · example projection · dashed line = one homepage page</p>
+            <div data-deck-chart="growth"></div>
+          </div>
+          <div class="metric-tiles build">
+            <div class="mt"><span class="label">Zero-result searches</span><span class="value">&lt; 10<small>%</small></span><span class="base">Baseline: unmeasured → counter in phase 1</span></div>
+            <div class="mt"><span class="label">P95 search latency</span><span class="value">&lt; 150<small>ms</small></span><span class="base">at 1,000 artifacts</span></div>
+            <div class="mt"><span class="label">New artifacts tagged</span><span class="value">≥ 80<small>%</small></span><span class="base">via the agent skill default</span></div>
+            <div class="mt"><span class="label">Full index rebuild</span><span class="value">&lt; 60<small>s</small></span><span class="base">per 1,000 latest versions</span></div>
+          </div>
+        </div>
+        <aside class="notes"><p>The chart is the “why now”: the projection crosses one page of 24 cards around December.</p><p>Hover the chart for exact values.</p></aside>
+      </section>
+
+      <!-- 10 ─ Risks ────────────────────────────────────────────── -->
+      <section class="slide l-table" data-title="Risks and mitigations">
+        <div class="s-head">
+          <div class="eyebrow">Risks</div>
+          <h2>Risks and mitigations</h2>
+        </div>
+        <div class="s-table">
+          <table>
+            <thead><tr><th style="width:34%">Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+            <tbody>
+              <tr><td><b>JS-built pages hide their text</b><span class="sub">static HTML parsing finds almost nothing</span></td><td><span class="tag bad dot">High</span></td><td><span class="tag bad dot">High</span></td><td>Extract from the rendered DOM in the preview browser; fall back to static text.</td></tr>
+              <tr><td><b>Tag sprawl</b><span class="sub">report / reports / Report</span></td><td><span class="tag warn dot">Medium</span></td><td><span class="tag warn dot">Medium</span></td><td>Normalise to lowercase-kebab; suggest existing tags; <code>artifact tags</code> lists usage.</td></tr>
+              <tr><td><b>Backfill slows previews</b><span class="sub">one shared worker</span></td><td><span class="tag warn dot">Medium</span></td><td><span class="tag good dot">Low</span></td><td>Previews keep priority; extraction runs in a bounded low-priority queue.</td></tr>
+              <tr><td><b>Older CLIs break</b></td><td><span class="tag good dot">Low</span></td><td><span class="tag warn dot">Medium</span></td><td>Additive fields only; <code>apiVersion</code> stays 1; new capability flags.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="notes"><p>The first risk is the important one and is why the plan reuses the preview browser.</p></aside>
+      </section>
+
+      <!-- 11 ─ Open questions ───────────────────────────────────── -->
+      <section class="slide" data-title="Open questions">
+        <div class="s-head">
+          <div class="eyebrow">Open questions</div>
+          <h2>Four questions we need answered before phase 2.</h2>
+        </div>
+        <div class="qs build">
+          <div class="q"><div class="num-big">1</div><h3>Are collections catalogue objects or artifacts?</h3><p>A JSON record the server renders, or a hand-built hub page like today's reference collection.</p><div class="meta"><span class="tag accent">Decision record</span><span class="tag outline">by 16 Oct</span></div></div>
+          <div class="q"><div class="num-big">2</div><h3>Manual order or “recently updated”?</h3><p>Guides want a reading order; report series want newest first.</p><div class="meta"><span class="tag outline">Product</span><span class="tag outline">by 30 Oct</span></div></div>
+          <div class="q"><div class="num-big">3</div><h3>Latest version only?</h3><p>Indexing history multiplies index size for rare queries.</p><div class="meta"><span class="tag outline">Platform</span><span class="tag outline">by 13 Nov</span></div></div>
+          <div class="q"><div class="num-big">4</div><h3>Toolbar previous / next?</h3><p>Useful inside a collection; adds UI to every served page.</p><div class="meta"><span class="tag outline">Design</span><span class="tag outline">by 30 Oct</span></div></div>
+        </div>
+        <aside class="notes"><p>Question 1 has a written decision record with weighted options. Link on the next slide.</p></aside>
+      </section>
+
+      <!-- 12 ─ The ask ──────────────────────────────────────────── -->
+      <section class="slide l-ask" data-title="Decision needed">
+        <div class="s-head">
+          <div class="eyebrow thread">Decision needed by 16 October</div>
+          <h2>Three things we're asking for today</h2>
+        </div>
+        <div class="asks build">
+          <div class="ask"><div><h3>Approve the three phases and their scope</h3><p>Tags → collections → full-text search, shipping independently.</p></div><span class="tag accent">Approve</span></div>
+          <div class="ask"><div><h3>Choose how collections are modelled</h3><p>Options, weights and trade-offs are in the decision record.</p></div><a class="btn" href="/artifacts/ref-decision-record/">Open record →</a></div>
+          <div class="ask"><div><h3>Agree that agents tag and file by default</h3><p>A small change to the agent skill; it drives the tagging metric.</p></div><span class="tag accent">Agree</span></div>
+        </div>
+        <aside class="notes"><p>Close here. Appendix slides are for questions about the API shape and for the sources behind the facts.</p></aside>
+      </section>
+
+      <!-- 13 ─ Appendix A ───────────────────────────────────────── -->
+      <section class="slide l-appendix" data-title="Appendix A · API & CLI sketch">
+        <div class="s-head" style="margin-bottom:1em">
+          <div class="eyebrow">Appendix A</div>
+          <h2>API &amp; CLI sketch</h2>
+        </div>
+        <div class="cols" style="gap:1.2em">
+          <pre><span class="c"># tag and file at publish time</span>
+artifact publish ./report --slug q3-ops \
+  <span class="s">--tag</span> report <span class="s">--tag</span> workshop \
+  <span class="s">--collection</span> workshop
+artifact metadata set q3-ops \
+  <span class="s">--add-tag</span> q3 --expected-revision 4
+
+<span class="c"># collections</span>
+artifact collection create workshop \
+  --title "Workshop"
+artifact collection add workshop \
+  e-bike-tour <span class="s">--after</span> workshop-handbook
+
+<span class="c"># search page content</span>
+artifact search "torque settings" <span class="s">--tag</span> guide --json</pre>
+          <pre><span class="k">GET</span>  /api/v1/artifacts?<span class="s">tag</span>=report&amp;<span class="s">collection</span>=workshop
+<span class="k">GET</span>  /api/v1/<span class="s">search</span>?q=torque+settings&amp;limit=20
+     → { hits: [{ slug, version, path,
+                  title, snippet, score }] }
+<span class="k">GET</span>  /api/v1/<span class="s">collections</span>
+<span class="k">PUT</span>  /api/v1/<span class="s">collections</span>/:slug
+     { title, items: [slug…], expectedRevision }
+<span class="k">GET</span>  /api/v1/server
+     → capabilities += <span class="s">tags, collections, search</span>
+
+<span class="c"># unchanged: apiVersion 1, cursors, sorts,
+# updatedSince, limit 1–100</span></pre>
+        </div>
+        <aside class="notes"><p>Shapes are a sketch for discussion, not a contract.</p></aside>
+      </section>
+
+      <!-- 14 ─ Appendix B ───────────────────────────────────────── -->
+      <section class="slide l-appendix l-table" data-title="Appendix B · Sources">
+        <div class="s-head" style="margin-bottom:1em">
+          <div class="eyebrow">Appendix B</div>
+          <h2>What exists today, and where it lives</h2>
+        </div>
+        <div class="s-table">
+          <table>
+            <thead><tr><th>Fact used in this deck</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td>Search matches every term as a substring of slug, title and description</td><td><span class="src">src/catalog.ts</span></td></tr>
+              <tr><td>Sorts: updated, created, title · filter: updatedSince · limit 1–100 with cursors</td><td><span class="src">src/catalog.ts</span></td></tr>
+              <tr><td>Homepage loads 24 cards per page with “Load more”</td><td><span class="src">src/library.ts</span></td></tr>
+              <tr><td>Catalogue is one <code>artifact.json</code> per slug, held in memory; no database</td><td><span class="src">src/storage.ts</span></td></tr>
+              <tr><td>One background worker renders a 960×600 preview per snapshot</td><td><span class="src">src/previews.ts</span></td></tr>
+              <tr><td>API v1 capabilities include catalog, metadata, version-toolbar, previews and data</td><td><span class="src">src/app.ts</span></td></tr>
+              <tr><td>A phrase that only appears inside a page returns 0 results</td><td><span class="src">src/catalog.ts</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="notes"><p>Everything else in the deck (dates, targets, projection) is example content.</p></aside>
+      </section>
+
+    </div>
+  </div>
+
+  <aside class="notes-panel" id="notes-panel" aria-label="Speaker notes" aria-live="polite">
+    <div class="eyebrow"><span class="np-num"></span><span>Notes · N</span></div>
+    <h3 class="np-title"></h3>
+    <div class="body"></div>
+    <div class="next">Up next<b></b></div>
+  </aside>
+</div>
+
+<nav class="deck-bar" aria-label="Slide navigation">
+  <button class="icon-btn" type="button" id="btn-prev" aria-label="Previous slide"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M11 4L6 9l5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="count" id="count" aria-live="polite"></span>
+  <span class="now" id="now"></span>
+  <div class="track" id="track"></div>
+  <span class="keys">← → · O overview · N notes · F full</span>
+  <button class="icon-btn" type="button" id="btn-next" aria-label="Next slide"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M7 4l5 5-5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</nav>
+
+<div class="overview" id="overview" hidden role="dialog" aria-label="All slides">
+  <header><h2>All slides</h2><button class="btn" type="button" id="ov-close">Close <kbd>Esc</kbd></button></header>
+  <div class="ov-grid" id="ov-grid"></div>
+</div>
+
+<script>
+  /* Chart data for slides with data-deck-chart="…". Example projection. */
+  window.DECK_CHARTS = {
+    growth: {
+      type: "line",
+      aspect: 0.46,
+      title: "Projected library size",
+      labels: ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
+      series: [{ name: "Artifacts", values: [11, 19, 31, 46, 63, 84] }],
+      refs: [{ value: 24, label: "1 page" }],
+      format: "int"
+    }
+  };
+</script>
+</body>
+</html>

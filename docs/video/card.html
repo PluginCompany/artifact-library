@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Card</title>
+<!-- Video title and end cards. card.html#title or card.html#end -->
+<link rel="stylesheet" href="../../examples/reference/kit/kit.css">
+<style>
+  html,body{height:100%;overflow:hidden}
+  body{margin:0;display:grid;place-items:center;background:var(--ground)}
+  body::before{content:"";position:fixed;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;opacity:.6;-webkit-mask-image:radial-gradient(ellipse at 50% 45%,#000 10%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 45%,#000 10%,transparent 70%)}
+  .vcard{position:relative;display:grid;justify-items:center;text-align:center;gap:34px}
+  .vcard img{height:120px;animation:rise .9s var(--ease) both}
+  .vcard h1{font:800 64px/1.05 var(--display);letter-spacing:-.025em;max-width:22ch;animation:rise .9s var(--ease) .15s both}
+  .vcard h1 em{font-style:normal;color:var(--accent)}
+  .vcard p{font-size:28px;color:var(--muted);max-width:52ch;animation:rise .9s var(--ease) .3s both}
+  .stitch-line{width:420px;border-top:3px dashed var(--thread);animation:grow 1s var(--ease) .45s both;transform-origin:center}
+  @keyframes grow{from{transform:scaleX(0)}}
+  .cmds{display:grid;gap:14px;text-align:left;animation:rise .9s var(--ease) .35s both}
+  .cmds pre{font-size:24px;padding:18px 26px;border-radius:14px;background:var(--panel);box-shadow:var(--shadow-sm)}
+  .cmds pre b{color:var(--accent);font-weight:600}
+  .repo{font:600 30px var(--mono);color:var(--ink);animation:rise .9s var(--ease) .55s both}
+  .repo span{color:var(--thread)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="vcard" id="title" hidden>
+  <img src="../../src/media/logo.svg" alt="Artifact Library">
+  <div class="stitch-line"></div>
+  <h1>Your agents publish pages.<br><em>People answer on them.</em></h1>
+  <p>Stable links, every version kept, and feedback that flows straight back to the agent.</p>
+</div>
+<div class="vcard" id="end" hidden>
+  <img src="../../src/media/logo.svg" alt="Artifact Library">
+  <div class="cmds">
+    <pre><b>docker run</b> -p 3000:3000 -v artifacts:/data ghcr.io/plugincompany/artifact-library</pre>
+    <pre><b>curl</b> -fsSL https://raw.githubusercontent.com/plugincompany/artifact-library/main/install.sh | sh</pre>
+    <pre><b>artifact</b> skill install --agent claude</pre>
+  </div>
+  <div class="repo">github.com/<span>plugincompany/artifact-library</span></div>
+</div>
+<script>
+  const show = () => { const id = location.hash.slice(1) || "title"; document.querySelectorAll(".vcard").forEach((c) => (c.hidden = c.id !== id)); };
+  show(); addEventListener("hashchange", show);
+</script>
+</body>
+</html>

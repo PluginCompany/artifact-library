@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Terminal</title>
+<!-- Video scene: a terminal that types commands and prints real CLI output.
+     Driven by record.py through window.term (type, print, clear, title). -->
+<link rel="stylesheet" href="../../examples/reference/kit/fonts/fonts.css">
+<style>
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{display:grid;place-items:center;background:radial-gradient(1200px 700px at 20% 10%,#2a3350 0%,transparent 60%),radial-gradient(900px 700px at 90% 100%,#4a2a1a 0%,transparent 55%),#0c0f14;font-family:"JetBrains Mono",ui-monospace,monospace}
+  .win{width:1480px;height:820px;border-radius:18px;background:#12161d;border:1px solid #2b323b;box-shadow:0 60px 140px -40px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03) inset;display:grid;grid-template-rows:52px 1fr;overflow:hidden;animation:in .7s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes in{from{opacity:0;transform:translateY(30px) scale(.98)}}
+  .bar{display:flex;align-items:center;gap:9px;padding:0 20px;background:#171c24;border-bottom:1px solid #232a33;color:#8a929c;font-size:15px}
+  .bar i{width:13px;height:13px;border-radius:50%;background:#3a424d}
+  .bar i:nth-child(1){background:#ef6a5e}.bar i:nth-child(2){background:#f4bf4f}.bar i:nth-child(3){background:#61c454}
+  .bar span{margin-left:14px}
+  #out{padding:30px 38px;font-size:27px;line-height:1.55;color:#cfd5dc;white-space:pre-wrap;overflow:hidden}
+  .p{color:#8F9CFF}.c{color:#fff}.dim{color:#7d8794}.ok{color:#7BC99A}.url{color:#8DB6DD}.key{color:#F0894B}.warn{color:#E9B949}
+  .caret{display:inline-block;width:12px;height:26px;background:#cfd5dc;vertical-align:-4px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="win"><div class="bar"><i></i><i></i><i></i><span id="t">agent — ~/projects/login-flow</span></div><div id="out"></div></div>
+<script>
+const out = document.getElementById("out");
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+// Light syntax colouring for printed output: URLs, keys, ok/warn words.
+const paint = (s) => esc(s)
+  .replace(/(https?:\/\/[^\s"]+)/g, '<span class="url">$1</span>')
+  .replace(/^(## .*)$/gm, '<span class="key">$1</span>')
+  .replace(/^(Published|Updated|Saved|Appended|Installed)(\b.*)$/gm, '<span class="ok">$1</span>$2')
+  .replace(/(\[(?:human|agent)[^\]]*\])/g, '<span class="dim">$1</span>');
+let line = null;
+window.term = {
+  title(t) { document.getElementById("t").textContent = t; },
+  clear() { out.innerHTML = ""; },
+  async type(cmd, cps = 26) {
+    line = document.createElement("div");
+    line.innerHTML = '<span class="p">❯ </span><span class="c"></span><span class="caret"></span>';
+    out.appendChild(line);
+    const c = line.querySelector(".c");
+    for (const ch of cmd) { c.textContent += ch; await new Promise((r) => setTimeout(r, 1000 / cps * (ch === " " ? 1.6 : 0.6 + Math.random() * 0.8))); }
+    await new Promise((r) => setTimeout(r, 350));
+    line.querySelector(".caret").remove();
+  },
+  async print(text, perLine = 40) {
+    for (const l of text.split("\n")) {
+      const d = document.createElement("div"); d.innerHTML = paint(l) || "&nbsp;"; out.appendChild(d);
+      await new Promise((r) => setTimeout(r, perLine));
+    }
+  },
+  prompt() { const d = document.createElement("div"); d.innerHTML = '<span class="p">❯ </span><span class="caret"></span>'; out.appendChild(d); },
+};
+</script>
+</body>
+</html>

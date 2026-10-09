@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quality · Q3 2026 Operations Report</title>
+<meta name="description" content="First-time-fix rate, comeback reasons, comebacks by repair type and incidents for a fictional bike workshop, Q3 2026 (sample data).">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body data-page="quality">
+<header class="topbar" id="topbar"></header>
+<main id="main">
+  <header class="hero page-head">
+    <div class="wrap hero-inner">
+      <div class="eyebrow rise"><span data-page-no></span> · Quality</div>
+      <h1 class="h1 rise" style="--i:1">First-time fix reached <em>96%</em> despite two incidents</h1>
+      <p class="lead rise" style="--i:2">How many repairs stayed fixed, why the others came back, and what went wrong this quarter.</p>
+      <div class="tags rise" style="--i:3"><span class="tag warn dot">Sample data</span><span class="tag outline" data-meta="period"></span></div>
+    </div>
+  </header>
+
+  <div class="wrap section">
+    <section class="block" aria-label="Quality figures">
+      <div class="stats" data-kpis="quality"></div>
+    </section>
+
+    <section class="block">
+      <div class="chart-card">
+        <header><div><h3>First-time-fix rate by bench</h3><p>Every bench ended the quarter above 96%. The two dips are the W31 incident on Bench B and the W37 incident on Bench C. The axis starts at 90%.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="fpyByLine"></div>
+      </div>
+    </section>
+
+    <section class="block grid cols-2">
+      <div class="chart-card">
+        <header><div><h3>Comebacks by reason</h3><p>Brake rub and gears out of adjustment cause 49% of all comebacks.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="reworkReasons"></div>
+      </div>
+      <div class="chart-card">
+        <header><div><h3>Comeback rate by category</h3><p>E-bike repairs come back more than twice as often as tune-ups.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="reworkByCategory"></div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="qc-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="qc-h">Comebacks by repair type</h2><p>A comeback is any bike returned within 30 days with a problem from its repair.</p></div></div>
+      <div data-table-id="qcByCategory"></div>
+    </section>
+
+    <section class="block" aria-labelledby="inc-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="inc-h">Incidents and near misses</h2><p>Anything that stopped a bench or put pick-up times at risk, with its fix.</p></div></div>
+      <div class="incidents" data-incidents></div>
+    </section>
+  <nav class="wrap pager" data-pager aria-label="Previous and next page"></nav>
+</main>
+<footer class="wrap foot-note" data-footer></footer>
+</body>
+</html>

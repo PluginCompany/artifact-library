@@ -1,0 +1,14 @@
+.git
+.github
+node_modules
+dist
+data
+seed
+coverage
+*.tgz
+.env
+**/__pycache__
+# Executables are linked from the GitHub release, not baked into the image.
+release/artifact-linux-*
+release/artifact-darwin-*
+release/artifact-windows-*

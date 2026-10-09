@@ -1,0 +1,53 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile, mkdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { buildApp } from '../src/app.js';
+import { archive } from './helpers.js';
+
+test('metadata inference, edits, publication revisions, and deterministic catalog pagination',async t=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'artifact-catalog-'));
+  const app=await buildApp({dataDir:root,publicUrl:'http://artifacts.test'});
+  t.after(async()=>{await app.close();await rm(root,{recursive:true,force:true});});
+  const payload=await archive([{name:'index.html',content:'<!doctype html><title>Migration &amp; rollout</title><meta name="description" content="Checklist for operators."><h1>Plan</h1>'}]);
+  const created=await app.inject({method:'POST',url:'/api/v1/artifacts',headers:{'Content-Type':'application/gzip','X-Artifact-Slug':'plan'},payload});
+  assert.equal(created.statusCode,201);
+  const info=(await app.inject('/api/v1/artifacts/plan')).json();assert.equal(info.title,'Migration & rollout');assert.equal(info.description,'Checklist for operators.');
+  const version=(await app.inject('/api/v1/artifacts/plan/versions/1')).json();assert.equal(version.publicationRevision,1);assert.equal(version.title,info.title);
+  const edit={method:'PATCH' as const,url:'/api/v1/artifacts/plan',headers:{'Idempotency-Key':'metadata-one'},payload:{title:'Migration plan',description:'Updated catalog summary',expectedRevision:1}};
+  const result=await app.inject(edit);assert.equal(result.statusCode,200);assert.equal(result.json().revision,2);assert.equal(result.json().latestVersion,1);
+  assert.equal((await app.inject(edit)).json().revision,2);
+  assert.equal((await app.inject({...edit,headers:{'Idempotency-Key':'different'}})).statusCode,409);
+  assert.equal((await app.inject('/api/v1/artifacts/plan/versions/1')).json().title,'Migration & rollout');
+  const unchanged=await app.inject({method:'POST',url:'/api/v1/artifacts/plan/versions',headers:{'Content-Type':'application/gzip','X-Expected-Revision':'2','X-Artifact-Description':'New%20summary'},payload});
+  assert.equal(unchanged.json().unchanged,true);assert.equal(unchanged.json().version,1);assert.equal(unchanged.json().revision,3);
+  const changed=await app.inject({method:'POST',url:'/api/v1/artifacts/plan/versions',headers:{'Content-Type':'application/gzip','X-Expected-Revision':'3'},payload:await archive([{name:'index.html',content:'<title>Different HTML title</title><h1>Changed</h1>'}])});
+  assert.equal(changed.json().version,2);assert.equal(changed.json().revision,4);
+  const next=(await app.inject('/api/v1/artifacts/plan/versions/2')).json();assert.equal(next.publicationRevision,4);assert.equal(next.description,'New summary');
+  assert.equal((await app.inject('/api/v1/artifacts?q=migration%20summary')).json().artifacts.length,1);
+  assert.equal((await app.inject('/api/v1/artifacts?limit=0')).statusCode,400);
+  assert.equal((await app.inject('/api/v1/artifacts?cursor=garbage')).statusCode,400);
+  assert.equal((await app.inject('/api/v1/artifacts?q=x&q=y')).statusCode,400);
+  assert.equal((await app.inject({method:'PATCH',url:'/api/v1/artifacts/plan',payload:{title:'',expectedRevision:4}})).statusCode,400);
+  for(const slug of ['b','a'])await app.inject({method:'POST',url:'/api/v1/artifacts',headers:{'Content-Type':'application/gzip','X-Artifact-Slug':slug,'X-Artifact-Title':'Same title'},payload});
+  const page=(await app.inject('/api/v1/artifacts?sort=title&limit=1&q=same')).json();assert.equal(page.artifacts[0].slug,'a');
+  const last=(await app.inject('/api/v1/artifacts?sort=title&limit=1&q=same&cursor='+page.nextCursor)).json();assert.equal(last.artifacts[0].slug,'b');assert.equal(last.nextCursor,null);
+  assert.match((await app.inject('/')).body,/grid-button/);
+  const capture=await app.inject({url:'/artifacts/plan/_versions/2/',headers:{'X-Artifact-Render-Mode':'preview'}});assert.doesNotMatch(capture.body,/notice.js/);assert.equal(capture.headers.vary,'X-Artifact-Render-Mode');
+  const normal=await app.inject('/artifacts/plan/_versions/2/');assert.match(normal.body,/notice.js/);assert.notEqual(capture.headers.etag,normal.headers.etag);
+});
+
+test('legacy metadata upgrade preserves snapshot bytes, revisions, and publication receipts',async t=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'artifact-legacy-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  const directory=path.join(root,'artifacts','legacy','versions','1');await mkdir(path.join(directory,'files'),{recursive:true});
+  const html='<title>Legacy title</title><meta name="description" content="Legacy description"><h1>Old content</h1>';
+  await writeFile(path.join(directory,'files','index.html'),html);
+  const version={version:1,entry:'index.html',notice:true,createdAt:'2026-01-01T00:00:00.000Z',files:[],digest:'legacy'};
+  await writeFile(path.join(directory,'version.json'),JSON.stringify(version));
+  await writeFile(path.join(root,'artifacts','legacy','artifact.json'),JSON.stringify({slug:'legacy',title:'Existing title',createdAt:version.createdAt,latestVersion:1,revision:1}));
+  const before=await readFile(path.join(directory,'version.json'),'utf8');
+  const app=await buildApp({dataDir:root,publicUrl:'http://artifacts.test'});t.after(()=>app.close());
+  const info=(await app.inject('/api/v1/artifacts/legacy')).json();assert.equal(info.title,'Existing title');assert.equal(info.description,'Legacy description');assert.equal(info.revision,1);assert.equal(info.updatedAt,version.createdAt);
+  assert.equal(await readFile(path.join(directory,'version.json'),'utf8'),before);assert.equal(await readFile(path.join(directory,'files','index.html'),'utf8'),html);
+});

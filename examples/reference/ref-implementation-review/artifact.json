@@ -1,0 +1,5 @@
+{
+  "slug": "ref-implementation-review",
+  "title": "Implementation Review — Library homepage & version toolbar",
+  "description": "Reference implementation review: acceptance criteria, annotated real screenshots, light/dark and grid/list comparisons, viewport matrix, severity-ranked findings, checks and a reusable capture script."
+}

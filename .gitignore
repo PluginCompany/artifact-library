@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+*.tgz
+coverage/
+.env
+src/bundled-skill.ts
+src/media-assets.ts
+seed/
+# Built by `npm run build:binary` / `build:binaries`; published as GitHub release assets.
+release/

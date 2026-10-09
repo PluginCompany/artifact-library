@@ -1,0 +1,185 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-decision-record (ADR template)
+  ===================================================
+  Files
+    data.js    ALL content: ids, status, context, drivers, options, criteria and
+               scores, consequences, rollout, questions, log. Edit this first.
+    app.js     Renders data.js into the containers below and runs the scoring
+               matrix. Change only to add a new kind of section.
+    style.css  Styles for this artifact only (sketches, matrix, option cards).
+    kit/       Shared kit, copied in by ../publish.sh. Never edit the copy.
+
+  Common edits
+    Status pill        data.js → status ("Draft" | "Proposed" | "Accepted" |
+                       "Rejected" | "Superseded"). The colour follows the status.
+    Add an option      data.js → options[] { id:"E", name, summary, sketch,
+                       changes[], pros[], cons[], effort 1–3, risk 1–3 }, then
+                       add E: <1–5> to every criteria[].scores. Sketches are
+                       "tags" | "folders" | "search" | "hybrid" | "none".
+                       Add a new one to SKETCHES in app.js.
+    Add a criterion    data.js → criteria[] { id, name, hint, weight 0–5,
+                       scores:{A..} }.
+    Recommendation     data.js → recommended. If the default weights rank a
+                       different option first, the matrix says so. Keep them
+                       consistent.
+    Sections           Each <section> below has an id that the side nav links
+                       to. Remove a section by deleting both, and app.js skips
+                       containers that are missing.
+
+  Do not
+    - hard-code colours; use kit tokens (var(--accent), var(--good) …)
+    - remove data-theme-toggle / data-side-toggle; kit.js wires them
+    - put content strings in app.js; they belong in data.js
+
+  Shareable state: changed weights and scores go into the URL (?w=…&s=…), so
+  "Copy link" shares exactly what the reader sees.
+
+  Saved data (kit-data.js) — read with  artifact feedback ref-decision-record
+    answer.weights.<person>  a reader's recorded position: { author, weights[{id,name,
+                             weight,default}], changedScores[], ranking[{option,name,score}],
+                             leader, leaderName, matchesRecommendation, usesDefaultWeights,
+                             note, link }   one per reader; "Load" applies it to the matrix
+    comments.adr             the discussion thread (section 10)
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ADR-007 · Modelling collections</title>
+<meta name="description" content="Decision record comparing tags, collections, saved searches and a hybrid for grouping artifacts, with an adjustable weighted scoring matrix.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Sections"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="./"><i>7</i><span>ADR-007</span><small>Decision record</small></a>
+  <span class="spacer"></span>
+  <span class="hide-md" data-save-status></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Sections">
+    <h5>On this page</h5>
+    <a href="#tldr"><b>01</b>Recommendation</a>
+    <a href="#context"><b>02</b>Context</a>
+    <a href="#drivers"><b>03</b>Decision drivers</a>
+    <a href="#options"><b>04</b>Options</a>
+    <a href="#scoring"><b>05</b>Scoring matrix</a>
+    <a href="#consequences"><b>06</b>Consequences</a>
+    <a href="#rollout"><b>07</b>Rollout</a>
+    <a href="#questions"><b>08</b>Open questions</a>
+    <a href="#discussion"><b>09</b>Discussion</a>
+    <a href="#log"><b>10</b>Decision log</a>
+    <a href="#supersede"><b>11</b>Superseding</a>
+    <div class="side-status" id="side-status"></div>
+  </nav>
+
+  <main class="main" id="main">
+    <header class="doc-head">
+      <div class="eyebrow rise"><span id="adr-id"></span> · Decision record · <span class="tag warn example">Example content</span></div>
+      <h1 class="display rise" style="--i:1" id="adr-title"></h1>
+      <p class="lead rise" style="--i:2">Four ways to group artifacts, scored against what readers and agents need. Change the weights to see whether the recommendation still holds.</p>
+      <dl class="adr-meta rise" style="--i:3" id="adr-meta"></dl>
+    </header>
+
+    <section class="block" id="tldr" aria-labelledby="tldr-h">
+      <h2 class="visually-hidden" id="tldr-h">Recommendation</h2>
+      <div class="tldr" id="tldr-card"></div>
+    </section>
+
+    <section class="block" id="context" aria-labelledby="context-h">
+      <h2 class="h2 stitch" id="context-h">Context and problem</h2>
+      <p class="sub">What the library stores today, and why that is not enough.</p>
+      <div class="context-grid">
+        <div class="prose" id="context-problem"></div>
+        <div class="panel model-panel">
+          <div class="panel-head"><h3>Artifact today</h3><code class="file">shared.ts</code></div>
+          <dl class="facts" id="context-fields"></dl>
+        </div>
+      </div>
+      <div class="callout note search-note" id="context-search"></div>
+    </section>
+
+    <section class="block" id="drivers" aria-labelledby="drivers-h">
+      <h2 class="h2 stitch" id="drivers-h">Decision drivers</h2>
+      <p class="sub">The outcomes any option must deliver. They become the criteria in the matrix.</p>
+      <div class="auto-grid drivers" id="drivers-list" style="--min:230px"></div>
+    </section>
+
+    <section class="block" id="options" aria-labelledby="options-h">
+      <h2 class="h2 stitch" id="options-h">Options considered</h2>
+      <p class="sub">Each option with the code it touches, its trade-offs, and a rough effort and risk.</p>
+      <div class="grid cols-2 options" id="options-list"></div>
+    </section>
+
+    <section class="block" id="scoring" aria-labelledby="scoring-h">
+      <div class="section-head">
+        <div>
+          <h2 class="h2 stitch" id="scoring-h">Weighted scoring</h2>
+          <p class="sub">Drag a weight to change how much a criterion counts. Click a score, or use the arrow keys, to change it from 1 to 5.</p>
+        </div>
+        <div class="row no-print">
+          <button class="btn" type="button" id="copy-link"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1.3-1.3a2.5 2.5 0 0 1 3.5 3.5L10.5 8M9 11.5l-1.3 1.3a2.5 2.5 0 0 1-3.5-3.5L5.5 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>Copy link</span></button>
+          <button class="btn" type="button" id="reset" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Reset</button>
+        </div>
+      </div>
+      <div class="verdict" id="verdict" role="status" aria-live="polite"></div>
+      <div class="matrix-wrap"><div class="matrix" id="matrix"></div></div>
+      <div class="chart-card ranking">
+        <header>
+          <div><h3>Ranking</h3><p>Weighted score out of 100: the sum of weight × score, divided by the highest possible total.</p></div>
+          <button class="as-table" type="button">Table</button>
+        </header>
+        <div id="ranking-chart"></div>
+      </div>
+      <div class="positions" id="positions"></div>
+    </section>
+
+    <section class="block" id="consequences" aria-labelledby="cons-h">
+      <h2 class="h2 stitch" id="cons-h">Consequences if accepted</h2>
+      <p class="sub">What gets easier, what gets harder, and what changes without being better or worse.</p>
+      <div class="grid cols-3 consequences" id="consequences-list"></div>
+    </section>
+
+    <section class="block" id="rollout" aria-labelledby="rollout-h">
+      <h2 class="h2 stitch" id="rollout-h">Rollout</h2>
+      <p class="sub">Each step ships on its own and leaves the library working.</p>
+      <ol class="steps" id="rollout-list"></ol>
+    </section>
+
+    <section class="block" id="questions" aria-labelledby="questions-h">
+      <h2 class="h2 stitch" id="questions-h">Open questions</h2>
+      <p class="sub">To answer before the status moves to Accepted.</p>
+      <ol class="questions" id="questions-list"></ol>
+    </section>
+
+    <section class="block" id="discussion" aria-labelledby="discussion-h">
+      <h2 class="h2 stitch" id="discussion-h">Discussion</h2>
+      <p class="sub">Questions and objections before the status moves on. Agents answer in the same thread.</p>
+      <div class="discussion" id="discussion-thread"></div>
+    </section>
+
+    <section class="block" id="log" aria-labelledby="log-h">
+      <h2 class="h2 stitch" id="log-h">Decision log</h2>
+      <p class="sub">Status changes in order. New entries go at the bottom.</p>
+      <ol class="timeline" id="log-list"></ol>
+    </section>
+
+    <section class="block" id="supersede" aria-labelledby="supersede-h">
+      <h2 class="h2 stitch" id="supersede-h">Superseding this record</h2>
+      <div class="callout stitched"><b>When the decision changes</b><ol id="supersede-list"></ol></div>
+    </section>
+
+    <footer class="foot-note">Reference artifact · source <code>examples/reference/ref-decision-record</code> · content in <code>data.js</code> · built with the reference kit. The ADR is example content grounded in the artifact service's real code.</footer>
+  </main>
+</div>
+</body>
+</html>

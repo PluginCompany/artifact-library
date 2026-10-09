@@ -1,0 +1,85 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — Visual regression gallery (reference artifact)
+  ==============================================================
+  What lives where
+    capture.py  The screen list (route, viewport, scheme, optional clip, intent note)
+                and the two origins (BEFORE / AFTER env vars). Run `python3 capture.py`
+                to regenerate shots/*.webp, shots.json and shots.js (all GENERATED).
+    data.js     Page text: title, task, what changed on purpose, what to ignore.
+    app.js      Renders SHOTS + GALLERY, wires the viewers and saving.
+    style.css   Viewer, card and verdict styles. Kit tokens only.
+    kit/        Shared design system + kit-data.js (copied in by publish.sh).
+
+  What reviewers save (read it with `artifact feedback ref-visual-regression`)
+    review.<screenId>    { screen, route, viewport, verdict: approved|changes|question, note }
+    comments.<screenId>  discussion of one screen
+
+  To compare your own change
+    1. Edit SCREENS in capture.py; point BEFORE at the old build, AFTER at the new one.
+    2. Run it, then update data.js and artifact.json, then ./publish.sh <dir>.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Visual Regression</title>
+<meta name="description" content="Before/after screenshots of the artifact service with slider, side-by-side and pixel-diff views, and verdicts saved for the agent.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="shots.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#summary"><i>V</i><span>Visual regression</span><small>Reference</small></a>
+  <nav class="topnav" aria-label="Sections">
+    <a href="#summary">Summary</a>
+    <a href="#screens">Screens</a>
+    <a href="#agent">For the agent</a>
+  </nav>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero" id="summary">
+  <div class="wrap hero-inner vr-hero">
+    <div>
+      <div class="row" style="--gap:8px"><span class="tag thread">Example content</span><span class="eyebrow" id="h-eyebrow"></span></div>
+      <h1 class="display rise" id="h-title" style="--i:1"></h1>
+      <p class="lead rise" id="h-lead" style="--i:2"></p>
+      <dl class="facts rise" id="h-facts" style="--i:3"></dl>
+    </div>
+    <aside class="vr-summary rise" id="h-summary" style="--i:2" aria-label="Review status"></aside>
+  </div>
+</section>
+
+<main>
+  <section class="wrap section" id="screens" aria-labelledby="screens-title">
+    <div class="section-head">
+      <div><h2 class="h2 stitch" id="screens-title">Screens</h2><p>Drag the slider, or switch to side by side or the pixel diff. Magenta marks pixels that changed by more than the threshold.</p></div>
+      <div class="vr-tools">
+        <div class="chips" id="filter" role="group" aria-label="Filter by verdict"></div>
+      </div>
+    </div>
+    <div class="vr-list" id="list" aria-live="polite"></div>
+    <p class="vr-empty" id="empty" hidden>No screens match this filter.</p>
+  </section>
+
+  <section class="wrap section" id="agent" aria-labelledby="agent-title">
+    <div class="section-head"><div><h2 class="h2 stitch" id="agent-title">For the agent</h2><p>Every screen that needs work, collected live from the verdicts above.</p></div></div>
+    <div class="vr-asks" id="asks"></div>
+    <div class="callout stitched vr-cmd"><b>Agent: read this review</b>Run this when the reviewer says the gallery is reviewed. Then fix, re-run <code>capture.py</code> and republish; earlier verdicts stay attached to the same screen ids.
+      <pre data-copy>artifact feedback ref-visual-regression</pre>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot-note" id="foot"></footer>
+</body>
+</html>

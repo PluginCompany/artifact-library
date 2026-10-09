@@ -1,0 +1,16 @@
+Artifact Library
+Copyright 2026 Plugin Company
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Trademarks
+The name "Artifact Library" and the Artifact Library logo and icon (src/media/)
+are trademarks of Plugin Company. The Apache License does not grant permission
+to use them (section 6). Forks and redistributions are welcome; please give
+them a different name and replace the files in src/media/.
+
+Third-party components
+- Bricolage Grotesque, Noto Sans and JetBrains Mono fonts, bundled in
+  examples/reference/kit/fonts/, are licensed under the SIL Open Font License 1.1
+  (see examples/reference/kit/fonts/OFL.txt).
+- Runtime dependencies are listed in package.json and keep their own licences.

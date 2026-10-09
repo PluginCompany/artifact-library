@@ -1,0 +1,5 @@
+{
+  "slug": "ref-codebase-map",
+  "title": "Codebase map",
+  "description": "Map of the artifact-publishing repository generated from git: a treemap sized by lines and coloured by edits after creation, the src module import graph, a reading path and the most-edited files."
+}

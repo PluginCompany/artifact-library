@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Throughput · Q3 2026 Operations Report</title>
+<meta name="description" content="Weekly repairs by bench, plan vs actual, repair mix and mechanic ranking for a fictional bike workshop, Q3 2026 (sample data).">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body data-page="throughput">
+<header class="topbar" id="topbar"></header>
+<main id="main">
+  <header class="hero page-head">
+    <div class="wrap hero-inner">
+      <div class="eyebrow rise"><span data-page-no></span> · Throughput</div>
+      <h1 class="h1 rise" style="--i:1">Repairs met plan once the <em>e-bike bench</em> got up to speed</h1>
+      <p class="lead rise" style="--i:2">Repairs completed per week, against plan, by bench, repair type and mechanic. Use the filter to focus on one bench. The bench comparison chart always shows all three.</p>
+      <div class="tags rise" style="--i:3"><span class="tag warn dot">Sample data</span><span class="tag outline" data-meta="period"></span></div>
+    </div>
+  </header>
+
+  <div class="wrap section">
+    <div class="toolbar block no-print">
+      <div class="seg" data-line-filter></div>
+      <span class="note">Filter applies to the tiles, monthly charts and mechanic table.</span>
+    </div>
+
+    <section class="block" aria-label="Throughput figures">
+      <div class="stats" data-kpis="throughput" data-filtered></div>
+    </section>
+
+    <section class="block">
+      <div class="chart-card">
+        <header><div><h3>Weekly repairs by bench</h3><p>All benches, for comparison. Bench C rose from 64 to 89 repairs a week after its second stand opened; the W34 dip on every bench is the 4-day holiday week.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="weeklyByLine"></div>
+      </div>
+    </section>
+
+    <section class="block grid cols-2">
+      <div class="chart-card">
+        <header><div><span class="filtered-by" data-filter-label></span><h3>Plan vs actual by month</h3><p>July ran below plan on every bench. From August, every bench was at or above 99.8% of plan.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="monthlyPlan" data-filtered></div>
+      </div>
+      <div class="chart-card">
+        <header><div><span class="filtered-by" data-filter-label></span><h3>Repairs by category</h3><p>Tune-ups are the largest category. Four in five e-bike repairs happen on Bench C.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="categoryMix" data-filtered></div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="st-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="st-h">Mechanics against plan</h2><p>Ranked by repairs against plan for the quarter. Leo (Bench B) and Felix (Bench C) lost the most time to the W31 and W37 incidents. Click a column to sort.</p></div></div>
+      <div data-table-id="mechanics" data-filtered></div>
+    </section>
+  <nav class="wrap pager" data-pager aria-label="Previous and next page"></nav>
+</main>
+<footer class="wrap foot-note" data-footer></footer>
+</body>
+</html>

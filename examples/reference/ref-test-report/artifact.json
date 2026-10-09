@@ -1,0 +1,5 @@
+{
+  "slug": "ref-test-report",
+  "title": "Test & Performance Report \u2014 Artifact Library 0.4.0",
+  "description": "Reference test and performance report: real test results, slowest tests, cold start, publish and data-API timings, CLI binary and full/slim image sizes against budgets, with a comment thread for the reviewer."
+}

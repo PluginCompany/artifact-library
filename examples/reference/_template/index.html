@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Example artifact</title>
+<meta name="description" content="One sentence that says what the reader will find inside.">
+<!-- Shared kit: copied into ./kit by publish.sh. Never edit the copy. -->
+<link rel="stylesheet" href="kit/kit.css">
+<script src="kit/kit.js" defer></script>
+<style>
+  /* Artifact-specific styles go here. Use kit tokens (var(--accent) etc.), never raw hex. */
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./"><i>E</i><span>Example artifact</span><small>Reference</small></a>
+  <nav class="topnav" aria-label="Sections">
+    <a href="#overview" aria-current="page">Overview</a>
+    <a href="#details">Details</a>
+  </nav>
+  <span class="spacer"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div class="eyebrow rise">Category · Status · Date</div>
+    <h1 class="display rise" style="--i:1">A title with <em>one accent</em></h1>
+    <p class="lead rise" style="--i:2">Lead paragraph: the single sentence a busy reader should leave with.</p>
+  </div>
+</section>
+
+<main class="wrap section" id="overview">
+  <h2 class="h2 stitch">Section heading</h2>
+  <p class="muted" style="margin-top:6px">Every section opens with a stitched heading and a one-line summary.</p>
+</main>
+
+<footer class="wrap foot-note">Source: examples/reference/&lt;slug&gt; · Built with the reference kit.</footer>
+</body>
+</html>

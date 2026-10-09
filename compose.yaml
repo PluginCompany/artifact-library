@@ -1,0 +1,31 @@
+# Artifact Library — docker compose up -d
+# Settings come from the environment or a .env file next to this file (see .env.example).
+services:
+  artifacts:
+    image: "${ARTIFACT_IMAGE:-ghcr.io/plugincompany/artifact-library:0.4.0}"
+    # Uncomment to build from this checkout instead (run `npm run build:binary` first for the CLI page).
+    # build: { context: ., target: full }
+    restart: unless-stopped
+    init: true
+    ports:
+      # Loopback by default. Set BIND_ADDRESS=0.0.0.0 to listen on every interface (e.g. Tailscale),
+      # and set ARTIFACT_TOKEN before you do.
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-3000}:3000"
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      DATA_DIR: /data
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL:-http://localhost:3000}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    # Optional settings are read from .env when present: ARTIFACT_TOKEN (required to publish,
+    # update, archive and purge), MAX_UPLOAD_BYTES, MAX_FILES, PREVIEWS. Unset = server defaults.
+    env_file:
+      - path: .env
+        required: false
+    shm_size: 256mb
+    volumes:
+      - artifact-data:/data
+    stop_grace_period: 30s
+
+volumes:
+  artifact-data:

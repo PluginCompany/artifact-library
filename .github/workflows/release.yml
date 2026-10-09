@@ -1,0 +1,217 @@
+name: Release
+
+# Push a tag such as v0.4.0 (matching package.json) to publish:
+#   - CLI executables for 8 platforms, SHA256SUMS, the skill archive and installers → GitHub Release
+#   - ghcr.io/plugincompany/artifact-library:<version> (+ :<major.minor>, :latest) and -slim variants, amd64 + arm64
+#   - @plugincompany/artifact-library on npm, only when the NPM_TOKEN secret exists
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)release, e.g. v0.4.0
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  IMAGE: ghcr.io/${{ github.repository_owner }}/artifact-library
+
+jobs:
+  verify:
+    name: Verify and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - id: version
+        name: Tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          [ "v$version" = "$TAG" ] || { echo "::error::Tag $TAG does not match package.json version $version"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run check:public
+
+  binaries:
+    name: CLI binaries
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: oven-sh/setup-bun@v2
+      - run: npm ci
+      - name: Build every platform
+        run: npm run build:binaries
+      - name: Test the Linux binary
+        run: node_modules/.bin/tsx --test tests/cli.test.ts
+        env:
+          ARTIFACT_TEST_BINARY: ${{ github.workspace }}/release/artifact-linux-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release/
+          if-no-files-found: error
+          retention-days: 7
+
+  images:
+    name: Container images
+    needs: [verify, binaries]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: release/
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # :0.4.0  :0.4  :latest   (prereleases get only their exact version)
+      - id: full
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
+            type=raw,value=latest,enable=${{ !contains(env.TAG, '-') }}
+      # :0.4.0-slim  :0.4-slim  :slim
+      - id: slim
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: |
+            latest=false
+            suffix=-slim
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
+            type=raw,value=slim,suffix=,enable=${{ !contains(env.TAG, '-') }}
+      - name: Push full image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: full
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.full.outputs.tags }}
+          labels: ${{ steps.full.outputs.labels }}
+          build-args: VERSION=${{ needs.verify.outputs.version }}
+          cache-from: type=gha,scope=release-full
+          cache-to: type=gha,mode=max,scope=release-full
+      - name: Push slim image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: slim
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.slim.outputs.tags }}
+          labels: ${{ steps.slim.outputs.labels }}
+          build-args: VERSION=${{ needs.verify.outputs.version }}
+          cache-from: type=gha,scope=release-slim
+          cache-to: type=gha,mode=max,scope=release-slim
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Smoke test the published images (amd64)
+        run: |
+          node scripts/smoke-image.mjs "$IMAGE:${{ needs.verify.outputs.version }}"
+          node scripts/smoke-image.mjs "$IMAGE:${{ needs.verify.outputs.version }}-slim" --slim
+
+  github-release:
+    name: GitHub release
+    needs: [verify, binaries, images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: release/
+      - name: Release notes from CHANGELOG.md
+        run: node scripts/release-notes.mjs "$TAG" > release-notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Artifact Library ${{ needs.verify.outputs.version }}
+          body_path: release-notes.md
+          generate_release_notes: true
+          prerelease: ${{ contains(env.TAG, '-') }}
+          files: |
+            release/artifact-linux-*
+            release/artifact-darwin-*
+            release/artifact-windows-*
+            release/artifact-skill.tar.gz
+            release/SHA256SUMS
+            release/install.sh
+            release/install.ps1
+
+  npm:
+    name: npm package
+    needs: [verify, github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - name: Skip without NPM_TOKEN
+        if: env.NODE_AUTH_TOKEN == ''
+        run: echo "::notice::NPM_TOKEN is not set; skipping npm publish."
+      - uses: actions/checkout@v4
+        if: env.NODE_AUTH_TOKEN != ''
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        if: env.NODE_AUTH_TOKEN != ''
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - if: env.NODE_AUTH_TOKEN != ''
+        run: npm ci
+      - name: Publish with provenance
+        if: env.NODE_AUTH_TOKEN != ''
+        run: npm publish --provenance --access public

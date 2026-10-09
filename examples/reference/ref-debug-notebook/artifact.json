@@ -1,0 +1,5 @@
+{
+  "slug": "ref-debug-notebook",
+  "title": "Debug Notebook: Flickering Review Page",
+  "description": "A real bug investigation written up as a notebook: symptom, reproduction, four hypotheses with evidence and verdicts, root cause, before/after fix and verification, with a comment thread per hypothesis."
+}

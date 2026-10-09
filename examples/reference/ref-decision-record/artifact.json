@@ -1,0 +1,5 @@
+{
+  "slug": "ref-decision-record",
+  "title": "ADR-007 · Modelling collections",
+  "description": "Reference decision record: four options for grouping artifacts, scored on a weighted matrix you can adjust, with consequences, rollout and decision log."
+}

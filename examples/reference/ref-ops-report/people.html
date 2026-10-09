@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>People · Q3 2026 Operations Report</title>
+<meta name="description" content="Scheduled and worked hours, utilisation by shift, absence and skills coverage for a fictional bike workshop, Q3 2026 (sample data).">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body data-page="people">
+<header class="topbar" id="topbar"></header>
+<main id="main">
+  <header class="hero page-head">
+    <div class="wrap hero-inner">
+      <div class="eyebrow rise"><span data-page-no></span> · People and capacity</div>
+      <h1 class="h1 rise" style="--i:1"><em>Saturdays</em> are the constraint</h1>
+      <p class="lead rise" style="--i:2">Hours scheduled, worked and spent with a bike on the stand, utilisation by shift, and whether every shift has enough qualified mechanics.</p>
+      <div class="tags rise" style="--i:3"><span class="tag warn dot">Sample data</span><span class="tag outline" data-meta="period"></span></div>
+    </div>
+  </header>
+
+  <div class="wrap section">
+    <section class="block" aria-label="People figures">
+      <div class="stats" data-kpis="people"></div>
+    </section>
+
+    <section class="block">
+      <div class="chart-card">
+        <header><div><h3>Hours per week</h3><p>Absence peaked in early August. Hours on the stand climbed in September as utilisation improved. The axis starts at 200 h.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="hours"></div>
+      </div>
+    </section>
+
+    <section class="block grid cols-2">
+      <div class="chart-card">
+        <header><div><h3>Utilisation by shift</h3><p>Every shift improved each month, but Saturday is still 10 to 12 points behind the opening shift.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="utilByShift"></div>
+      </div>
+      <div class="chart-card">
+        <header><div><h3>Absence by reason</h3><p>Summer holiday accounts for half of all absence.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="absence"></div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="cov-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="cov-h">Skills coverage</h2><p>Qualified mechanics rostered per shift. On Saturdays a single mechanic covers suspension, wheel builds and e-bike motors.</p></div></div>
+      <div data-coverage></div>
+      <div class="callout" style="margin-top:16px"><b>Recommendation</b>Cross-train two Saturday mechanics on suspension service and e-bike motors in Q4, so that one absence no longer turns those bikes away.</div>
+    </section>
+  <nav class="wrap pager" data-pager aria-label="Previous and next page"></nav>
+</main>
+<footer class="wrap foot-note" data-footer></footer>
+</body>
+</html>

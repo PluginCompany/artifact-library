@@ -1,0 +1,103 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-runbook (operational runbook with shared progress)
+  =======================================================================
+  Files
+    data.js    ALL steps in window.RUNBOOK: phases[] → steps[] { id, title, why,
+               commands[], expect, fail[] }, plus seeding, rollback and facts.
+    app.js     Renders data.js and syncs progress. Change only to add a new
+               kind of block.
+    style.css  Styles for this artifact only (kit tokens only).
+    kit/       Shared kit, copied in by ../publish.sh. Never edit the copy.
+
+  Common edits
+    Add a step       Add { id, title, why, commands, expect, fail } to a phase.
+                     Ids must be unique and stable: progress is saved per id.
+    Add a phase      Add { id, title, summary, steps[] } to phases.
+    New version      Update RUNBOOK.version / image and the commands that name it.
+
+  Saved data (shared by everyone who opens the page)
+    state.checklist          the current run
+      { runId, title, startedAt, startedBy,
+        steps: { <stepId>: { done, by, at, note } } }
+    state.checklist.<runId>  finished runs, archived by "Start a new run"
+  Agents:  artifact data get ref-runbook state.checklist --json
+           artifact feedback ref-runbook --prefix state.
+    An agent that performs a step can tick it by writing the whole document back
+    with `artifact data set … --expected-revision <rev>` (merge, don't overwrite).
+
+  Do not
+    - rename step ids casually (orphans saved ticks)
+    - hard-code colours; use kit tokens
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Runbook · Release and Deploy</title>
+<meta name="description" content="Release and deploy the artifact service: copyable commands, expected output, failure handling, rollback and shared live progress.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Steps"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="./"><i>R</i><span>Runbook</span><small>Release &amp; deploy</small></a>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts" aria-label="Collection"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Steps" id="side"></nav>
+
+  <main class="main" id="main">
+    <header class="rb-head">
+      <div class="eyebrow rise">Runbook · <span id="rb-version"></span> · <span id="rb-duration"></span></div>
+      <h1 class="display rise" style="--i:1" id="rb-title"></h1>
+      <p class="lead rise" style="--i:2" id="rb-intro"></p>
+      <dl class="facts rise" style="--i:3" id="rb-facts"></dl>
+    </header>
+
+    <section class="run-bar" id="run-bar" aria-live="polite">
+      <div class="run-top">
+        <div class="run-id"><span class="eyebrow">Current run</span><b id="run-title">—</b><span id="run-meta" class="muted"></span></div>
+        <div class="run-count"><b id="run-done">0</b><span>/ <span id="run-total">0</span> done</span></div>
+        <div class="row run-actions" style="--gap:8px">
+          <button class="btn" type="button" id="next-btn">Jump to next step</button>
+          <button class="btn ghost" type="button" id="new-run">Start a new run</button>
+        </div>
+      </div>
+      <div class="run-progress" id="run-progress" role="img"></div>
+      <p class="run-last mono" id="run-last"></p>
+    </section>
+
+    <div id="phases"></div>
+
+    <section class="rb-sec" id="seeding">
+      <div class="callout note"><b>Default artifacts are seeded on start</b><span id="seeding-text"></span></div>
+    </section>
+
+    <section class="rb-sec" id="rollback">
+      <div class="eyebrow thread">If it goes wrong</div>
+      <h2 class="h2 stitch">Rollback</h2>
+      <div class="rollback" id="rollback-list"></div>
+    </section>
+
+    <section class="rb-sec" id="history">
+      <div class="eyebrow thread">History</div>
+      <h2 class="h2 stitch">Previous runs</h2>
+      <p class="muted" style="margin-top:6px">“Start a new run” archives the current checklist here.</p>
+      <ol class="runs" id="runs"></ol>
+    </section>
+
+    <footer class="foot-note">Reference artifact · source <code>examples/reference/ref-runbook</code> · commands from <code>package.json</code>, <code>scripts/release.mjs</code>, <code>Dockerfile</code> and <code>compose.yaml</code> · built with the reference kit.</footer>
+  </main>
+</div>
+</body>
+</html>

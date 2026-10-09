@@ -1,0 +1,758 @@
+{
+ "shots": {
+  "home-grid": {
+   "file": "shots/home-grid.webp",
+   "w": 1440,
+   "h": 3500,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": true,
+   "pins": {
+    "brand": [
+     7.5,
+     0.8,
+     14.16,
+     1.14
+    ],
+    "search": [
+     8.4,
+     4.07,
+     54.23,
+     1.12
+    ],
+    "sort": [
+     63.47,
+     4.12,
+     9.72,
+     1.03
+    ],
+    "since": [
+     74.02,
+     4.12,
+     8.26,
+     1.03
+    ],
+    "views": [
+     83.12,
+     4.06,
+     8.48,
+     1.15
+    ],
+    "card": [
+     7.5,
+     6.95,
+     27.22,
+     11.72
+    ],
+    "badge": [
+     8.26,
+     13.04,
+     1.71,
+     0.61
+    ],
+    "pill": [
+     28.5,
+     16.69,
+     1.78,
+     0.6
+    ],
+    "menu": [
+     30.97,
+     16.62,
+     2.29,
+     0.74
+    ],
+    "bottom1": [
+     8.96,
+     16.62,
+     24.31,
+     0.74
+    ],
+    "bottom2": [
+     37.85,
+     16.62,
+     24.31,
+     0.74
+    ],
+    "bottom3": [
+     66.74,
+     17.33,
+     24.31,
+     0.74
+    ],
+    "bottom4": [
+     8.96,
+     29.74,
+     24.31,
+     0.74
+    ],
+    "bottom5": [
+     37.85,
+     29.03,
+     24.31,
+     0.74
+    ],
+    "bottom6": [
+     66.74,
+     29.03,
+     24.31,
+     0.74
+    ],
+    "help": [
+     7.5,
+     92.85,
+     85.0,
+     5.05
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 277004
+  },
+  "home-list": {
+   "file": "shots/home-list.webp",
+   "w": 1440,
+   "h": 5080,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=list",
+   "full": true,
+   "pins": {
+    "views": [
+     83.12,
+     2.8,
+     8.48,
+     0.79
+    ],
+    "card": [
+     7.5,
+     4.79,
+     85.0,
+     4.2
+    ],
+    "preview": [
+     8.68,
+     5.41,
+     16.67,
+     2.95
+    ],
+    "desc": [
+     27.01,
+     6.55,
+     43.26,
+     0.88
+    ],
+    "bottom": [
+     27.01,
+     7.79,
+     64.31,
+     0.71
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 332640
+  },
+  "home-grid-fold": {
+   "file": "shots/home-grid-fold.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {},
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 85296
+  },
+  "home-list-fold": {
+   "file": "shots/home-list-fold.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=list",
+   "full": false,
+   "pins": {},
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 59206
+  },
+  "home-search": {
+   "file": "shots/home-search.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=list",
+   "full": false,
+   "pins": {
+    "query": [
+     8.4,
+     14.24,
+     54.23,
+     3.92
+    ],
+    "results": [
+     7.5,
+     24.31,
+     85.0,
+     71.7
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 57110
+  },
+  "home-empty": {
+   "file": "shots/home-empty.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {
+    "query": [
+     8.4,
+     14.24,
+     54.23,
+     3.92
+    ],
+    "empty": [
+     7.5,
+     24.31,
+     85.0,
+     35.3
+    ],
+    "clear": [
+     46.4,
+     49.3,
+     7.2,
+     4.21
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 29268
+  },
+  "home-filter": {
+   "file": "shots/home-filter.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {
+    "sort": [
+     63.47,
+     14.41,
+     9.72,
+     3.6
+    ],
+    "since": [
+     74.02,
+     14.41,
+     8.26,
+     3.6
+    ],
+    "first": [
+     7.5,
+     24.31,
+     27.22,
+     38.57
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 83302
+  },
+  "home-card-menu": {
+   "file": "shots/home-card-menu.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {
+    "menu": [
+     22.85,
+     49.66,
+     10.42,
+     8.32
+    ],
+    "trigger": [
+     30.97,
+     58.18,
+     2.29,
+     2.6
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 86672
+  },
+  "home-dark": {
+   "file": "shots/home-dark.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "dark",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {},
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 85296
+  },
+  "matrix-desktop": {
+   "file": "shots/matrix-desktop.webp",
+   "w": 1440,
+   "h": 1000,
+   "scale": 1,
+   "viewport": [
+    1440,
+    1000
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {},
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 85296
+  },
+  "matrix-tablet": {
+   "file": "shots/matrix-tablet.webp",
+   "w": 1251,
+   "h": 1668,
+   "scale": 1.5,
+   "viewport": [
+    834,
+    1112
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {
+    "views": [
+     4.92,
+     17.38,
+     14.63,
+     3.61
+    ],
+    "filters": [
+     3.36,
+     11.6,
+     93.29,
+     10.56
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 122722
+  },
+  "matrix-mobile": {
+   "file": "shots/matrix-mobile.webp",
+   "w": 780,
+   "h": 1688,
+   "scale": 2,
+   "viewport": [
+    390,
+    844
+   ],
+   "scheme": "light",
+   "url": "/?view=grid",
+   "full": false,
+   "pins": {},
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 60746
+  },
+  "home-mobile-list": {
+   "file": "shots/home-mobile-list.webp",
+   "w": 780,
+   "h": 9890,
+   "scale": 2,
+   "viewport": [
+    390,
+    844
+   ],
+   "scheme": "light",
+   "url": "/?view=list",
+   "full": true,
+   "pins": {
+    "views": [
+     7.95,
+     4.68,
+     84.1,
+     0.81
+    ],
+    "card": [
+     4.62,
+     6.72,
+     90.77,
+     3.8
+    ],
+    "help": [
+     4.62,
+     92.62,
+     90.77,
+     5.91
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 419978
+  },
+  "toolbar-desktop": {
+   "file": "shots/toolbar-desktop.webp",
+   "w": 1440,
+   "h": 900,
+   "scale": 1,
+   "viewport": [
+    1440,
+    900
+   ],
+   "scheme": "light",
+   "url": "/artifacts/ref-ops-report/",
+   "full": false,
+   "pins": {
+    "toolbar": [
+     54.27,
+     92.31,
+     44.62,
+     5.91
+    ],
+    "library": [
+     55.17,
+     94.26,
+     5.56,
+     2.02
+    ],
+    "title": [
+     61.43,
+     94.26,
+     11.81,
+     2.02
+    ],
+    "version": [
+     73.93,
+     93.55,
+     15.97,
+     3.44
+    ],
+    "copy": [
+     90.59,
+     93.59,
+     4.82,
+     3.35
+    ],
+    "more": [
+     96.11,
+     93.53,
+     1.88,
+     3.47
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 62590
+  },
+  "toolbar-menu": {
+   "file": "shots/toolbar-menu.webp",
+   "w": 1440,
+   "h": 900,
+   "scale": 1,
+   "viewport": [
+    1440,
+    900
+   ],
+   "scheme": "light",
+   "url": "/artifacts/ref-ops-report/",
+   "full": false,
+   "pins": {
+    "menu": [
+     84.79,
+     77.53,
+     13.19,
+     16.13
+    ],
+    "latest": [
+     85.28,
+     78.31,
+     12.22,
+     3.64
+    ],
+    "download": [
+     85.28,
+     85.6,
+     12.22,
+     3.64
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 65814
+  },
+  "toolbar-dark": {
+   "file": "shots/toolbar-dark.webp",
+   "w": 1440,
+   "h": 900,
+   "scale": 1,
+   "viewport": [
+    1440,
+    900
+   ],
+   "scheme": "dark",
+   "url": "/artifacts/ref-ops-report/",
+   "full": false,
+   "pins": {
+    "toolbar": [
+     54.27,
+     92.31,
+     44.62,
+     5.91
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 60358
+  },
+  "toolbar-collapsed": {
+   "file": "shots/toolbar-collapsed.webp",
+   "w": 1440,
+   "h": 900,
+   "scale": 1,
+   "viewport": [
+    1440,
+    900
+   ],
+   "scheme": "light",
+   "url": "/artifacts/ref-ops-report/",
+   "full": false,
+   "pins": {
+    "expand": [
+     92.19,
+     94.09,
+     6.63,
+     4.02
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 59990
+  },
+  "toolbar-update": {
+   "file": "shots/toolbar-update.webp",
+   "w": 1440,
+   "h": 900,
+   "scale": 1,
+   "viewport": [
+    1440,
+    900
+   ],
+   "scheme": "light",
+   "url": "/artifacts/ref-ops-report/_versions/1/",
+   "full": false,
+   "pins": {
+    "notice": [
+     54.34,
+     88.45,
+     44.48,
+     3.98
+    ],
+    "open": [
+     63.09,
+     89.56,
+     4.54,
+     1.56
+    ],
+    "version": [
+     73.93,
+     93.55,
+     15.97,
+     3.44
+    ],
+    "toolbar": [
+     54.27,
+     88.34,
+     44.62,
+     9.89
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 64064
+  },
+  "toolbar-mobile": {
+   "file": "shots/toolbar-mobile.webp",
+   "w": 780,
+   "h": 1688,
+   "scale": 2,
+   "viewport": [
+    390,
+    844
+   ],
+   "scheme": "light",
+   "url": "/artifacts/ref-ops-report/",
+   "full": false,
+   "pins": {
+    "toolbar": [
+     4.1,
+     88.82,
+     91.79,
+     9.29
+    ],
+    "version": [
+     7.44,
+     93.12,
+     48.72,
+     3.67
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [],
+   "horizontalOverflow": false,
+   "bytes": 86552
+  },
+  "missing-page": {
+   "file": "shots/missing-page.webp",
+   "w": 1440,
+   "h": 900,
+   "scale": 1,
+   "viewport": [
+    1440,
+    900
+   ],
+   "scheme": "light",
+   "url": "/artifacts/ref-ops-report/no-such-page.html",
+   "full": false,
+   "pins": {
+    "logo": [
+     42.21,
+     16.56,
+     15.58,
+     4.89
+    ],
+    "title": [
+     30.76,
+     24.33,
+     38.47,
+     4.89
+    ],
+    "copy": [
+     30.76,
+     35.92,
+     38.47,
+     2.58
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "horizontalOverflow": false,
+   "bytes": 13434
+  },
+  "archived-page": {
+   "file": "shots/archived-page.webp",
+   "w": 1440,
+   "h": 900,
+   "scale": 1,
+   "viewport": [
+    1440,
+    900
+   ],
+   "scheme": "light",
+   "url": "/artifacts/q2-report-draft/",
+   "full": false,
+   "pins": {
+    "title": [
+     30.76,
+     24.33,
+     38.47,
+     4.89
+    ],
+    "restore": [
+     42.64,
+     31.22,
+     25.47,
+     4.69
+    ],
+    "back": [
+     30.76,
+     38.72,
+     38.47,
+     2.58
+    ]
+   },
+   "missingPins": [],
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 410 (Gone)"
+   ],
+   "horizontalOverflow": false,
+   "bytes": 14974
+  }
+ },
+ "origin": "http://127.0.0.1:3080",
+ "capturedAt": "2026-10-09T18:39:07+0200"
+}

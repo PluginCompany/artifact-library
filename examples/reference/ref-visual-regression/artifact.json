@@ -1,0 +1,5 @@
+{
+  "slug": "ref-visual-regression",
+  "title": "Visual Regression — Artifact Library 0.3.3 → 0.4.0",
+  "description": "Reference before/after gallery: real screenshots of the old and new server with slider, side-by-side and pixel-diff views, change percentages, and approve/request-changes verdicts saved for the agent."
+}

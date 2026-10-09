@@ -1,0 +1,119 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-codebase-map
+  ================================
+  What lives where
+    build-data.py  Regenerates data.js from git (files, lines, churn, commits,
+                   import graph). Run it after new commits:
+                     python3 examples/reference/ref-codebase-map/build-data.py
+    data.js        GENERATED. Never edit by hand.
+    notes.js       Hand-written: purpose of key files, area descriptions and the
+                   "start reading here" path. Safe to edit; the script never touches it.
+    app.js         Renders treemap, module graph, reading path and hotspots.
+    style.css      Page-specific styles (treemap, graph, ramps).
+    kit/           Shared design system copied in by ../publish.sh. Never edit here.
+
+  Common changes
+    • Point it at another repo   → copy this folder there and run build-data.py;
+      adjust EXCLUDE / TYPES at the top of the script.
+    • Explain a file             → add "path": "sentence" to NOTES.purposes.
+    • Change the reading path    → edit NOTES.reading (path + why).
+    • More hotspots              → HOTSPOTS constant at the top of app.js.
+
+  Don't
+    • Colour tiles with raw hex: the churn ramp is --ramp-0…--ramp-5 in style.css
+      (separate light and dark steps); file types use kit series slots --s1…--s5.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Codebase map</title>
+<meta name="description" content="Map of the Artifact Library repository generated from git: treemap sized by lines and coloured by edits after creation, module import graph, reading path and hotspots.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="data.js" defer></script>
+<script src="notes.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#top"><i>M</i><span>Codebase map</span><small>artifact-library</small></a>
+  <nav class="topnav" aria-label="Sections">
+    <a href="#treemap">Treemap</a>
+    <a href="#modules">Modules</a>
+    <a href="#reading">Read first</a>
+    <a href="#hotspots">Hotspots</a>
+  </nav>
+  <span class="spacer"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero" id="top">
+  <div class="wrap hero-inner">
+    <div class="eyebrow rise">Codebase map · branch <span id="m-branch"></span> · generated <span id="m-when"></span></div>
+    <h1 class="display rise" style="--i:1">Where the <em>code</em> lives</h1>
+    <p class="lead rise" style="--i:2">Every source file in the repository as a tile, sized by lines and coloured by how much it was edited after it was first written. Uncommitted work counts, so today's changes stand out. Click any tile to see what the file is for.</p>
+    <div class="hero-meta rise" style="--i:3" id="m-stats"></div>
+  </div>
+</section>
+
+<main>
+  <section class="wrap section" id="treemap">
+    <div class="section-head">
+      <div><h2 class="h2 stitch">Treemap</h2><p>Area = lines of code. Grouped by top-level folder; the reference artifacts are grouped one folder each.</p></div>
+      <div class="tm-controls">
+        <div class="seg" role="group" aria-label="Colour tiles by">
+          <button type="button" data-color="edits" aria-pressed="true">Edits</button>
+          <button type="button" data-color="type" aria-pressed="false">File type</button>
+          <button type="button" data-color="status" aria-pressed="false">Status</button>
+        </div>
+        <label class="tm-search"><span class="sr-only">Find a file</span><input type="search" id="tm-q" placeholder="Find a file…" autocomplete="off"></label>
+      </div>
+    </div>
+    <ul class="legend tm-legend" id="tm-legend"></ul>
+    <div class="tm-layout">
+      <div class="tm-frame"><div class="tm" id="tm" role="list" aria-label="Files sized by lines"></div></div>
+      <aside class="tm-detail panel" id="tm-detail" aria-live="polite"></aside>
+    </div>
+    <p class="muted tm-note" id="tm-note"></p>
+  </section>
+
+  <section class="wrap section" id="lines">
+    <div class="grid cols-2" style="--gap:18px">
+      <div class="chart-card"><header><div><h3>Lines by area</h3><p id="c-area-sub">Where the weight is.</p></div><button class="as-table" type="button">Table</button></header><div id="c-area"></div></div>
+      <div class="chart-card"><header><div><h3>Lines by file type</h3><p id="c-type-sub">What the code is made of.</p></div><button class="as-table" type="button">Table</button></header><div id="c-type"></div></div>
+    </div>
+  </section>
+
+  <section class="wrap section" id="modules">
+    <div class="section-head">
+      <div><h2 class="h2 stitch">Modules</h2><p>Imports between <code>src/*.ts</code>. Entry points sit at the top, shared foundations at the bottom. Click a module to trace what it uses and what uses it.</p></div>
+      <div class="g-legend"><span><i class="g-key"></i>import</span><span><i class="g-key dashed"></i>type-only import</span><span><i class="g-key entry"></i>entry point</span><span><i class="g-key gen"></i>generated</span></div>
+    </div>
+    <div class="g-layout">
+      <div class="g-frame" id="g-frame"><svg id="graph" role="img" aria-label="Module import graph"></svg></div>
+      <aside class="panel g-detail" id="g-detail" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <section class="wrap section" id="reading">
+    <div class="section-head"><div><h2 class="h2 stitch">Start reading here</h2><p>The shortest path to understanding the service, in order. Each step opens the file on the map.</p></div></div>
+    <ol class="steps reading" id="reading-list"></ol>
+  </section>
+
+  <section class="wrap section" id="hotspots">
+    <div class="section-head"><div><h2 class="h2 stitch">Hotspots</h2><p>Files edited most after they were written — the likeliest place for the next bug and the first place to review.</p></div></div>
+    <div class="table-wrap"><table class="table" id="hot" data-sortable>
+      <thead><tr><th data-sort>File</th><th data-sort>Area</th><th data-sort="num" class="num">Lines</th><th data-sort="num" class="num">Commits</th><th data-sort="num" class="num">Edits</th><th data-sort>Status</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="muted hot-note">Edits = lines added or removed after the file was first committed, including the uncommitted diff. Brand-new files have no edits yet.</p>
+  </section>
+</main>
+
+<footer class="wrap foot-note" id="foot"></footer>
+</body>
+</html>

@@ -1,0 +1,69 @@
+/* Generated from run.example.json — regenerate after editing it:
+   node -e "const f=require('fs');f.writeFileSync('run.example.js','window.RUN_EXAMPLE = '+f.readFileSync('run.example.json','utf8').trim()+';\n')"  */
+window.RUN_EXAMPLE = {
+  "title": "Release 0.4.0 of Artifact Library",
+  "goal": "Ship write tokens, archive and purge, upload limits and the MCP server: tests, CI builds of the CLI and images, deploy to our own server, then publish the GitHub release.",
+  "agent": "Claude Code",
+  "startedAt": "2026-10-12T09:12:00Z",
+  "updatedAt": "2026-10-12T10:03:40Z",
+  "status": "blocked",
+  "currentStep": "release",
+  "steps": [
+    { "id": "check", "title": "Type-check and test", "status": "done", "startedAt": "2026-10-12T09:12:05Z", "finishedAt": "2026-10-12T09:13:02Z",
+      "summary": "npm run check clean; 24 of 24 tests pass.",
+      "log": [
+        { "at": "2026-10-12T09:12:05Z", "level": "info", "text": "npm run check" },
+        { "at": "2026-10-12T09:12:31Z", "level": "ok", "text": "tsc --noEmit: no errors" },
+        { "at": "2026-10-12T09:13:02Z", "level": "ok", "text": "node --test: 24 passed, 0 failed (9.1 s)" }
+      ] },
+    { "id": "tag", "title": "Tag v0.4.0 and push", "status": "done", "startedAt": "2026-10-12T09:13:10Z", "finishedAt": "2026-10-12T09:13:40Z",
+      "summary": "Tag pushed to GitHub; the release workflow started.",
+      "log": [
+        { "at": "2026-10-12T09:13:10Z", "level": "info", "text": "git tag v0.4.0 && git push origin v0.4.0" },
+        { "at": "2026-10-12T09:13:40Z", "level": "ok", "text": "Actions: release workflow queued" }
+      ] },
+    { "id": "binaries", "title": "Build the CLI for every platform", "status": "done", "startedAt": "2026-10-12T09:14:00Z", "finishedAt": "2026-10-12T09:21:30Z",
+      "summary": "Linux, macOS and Windows binaries with SHA256SUMS.",
+      "log": [
+        { "at": "2026-10-12T09:14:00Z", "level": "info", "text": "bun build --compile for 5 targets" },
+        { "at": "2026-10-12T09:20:50Z", "level": "warn", "text": "Windows smoke test retried once after a flaky download" },
+        { "at": "2026-10-12T09:21:30Z", "level": "ok", "text": "artifact --version → 0.4.0 on every runner" }
+      ] },
+    { "id": "images", "title": "Build and push the images", "status": "done", "startedAt": "2026-10-12T09:14:00Z", "finishedAt": "2026-10-12T09:41:12Z",
+      "summary": "ghcr.io/plugincompany/artifact-library:0.4.0 and :0.4.0-slim for amd64 and arm64, smoke-tested.",
+      "log": [
+        { "at": "2026-10-12T09:14:00Z", "level": "info", "text": "docker buildx build --platform linux/amd64,linux/arm64" },
+        { "at": "2026-10-12T09:39:02Z", "level": "info", "text": "Chromium layer cached; app layer rebuilt" },
+        { "at": "2026-10-12T09:41:12Z", "level": "ok", "text": "smoke: healthz, seeding, publish, preview, data API OK" }
+      ],
+      "links": [{ "label": "Reference collection", "url": "/artifacts/reference-collection/" }] },
+    { "id": "deploy", "title": "Deploy to our server", "status": "done", "startedAt": "2026-10-12T09:45:00Z", "finishedAt": "2026-10-12T09:58:10Z",
+      "summary": "Backed up the data volume, pulled 0.4.0, restarted; 2 artifacts updated by seeding, 17 unchanged.",
+      "log": [
+        { "at": "2026-10-12T09:45:00Z", "level": "info", "text": "docker compose pull && docker compose up -d --wait" },
+        { "at": "2026-10-12T09:45:41Z", "level": "warn", "text": "Seed skipped ref-ops-report: changed after seeding" },
+        { "at": "2026-10-12T09:58:10Z", "level": "ok", "text": "artifact doctor: compatible, writes need a token" }
+      ] },
+    { "id": "release", "title": "Publish the GitHub release", "status": "blocked", "startedAt": "2026-10-12T10:02:00Z",
+      "summary": "Draft release with notes and assets is ready; waiting for a go-ahead before making it public.",
+      "log": [
+        { "at": "2026-10-12T10:02:00Z", "level": "info", "text": "Draft release v0.4.0 created with 11 assets" },
+        { "at": "2026-10-12T10:03:40Z", "level": "warn", "text": "Blocked: publishing is outward-facing, asking first" }
+      ] },
+    { "id": "announce", "title": "Share the links", "status": "pending" }
+  ],
+  "blocker": {
+    "question": "Publish the v0.4.0 GitHub release now?",
+    "options": ["Publish now", "Wait, I want to check the server first", "Publish, but don't announce yet"],
+    "since": "2026-10-12T10:03:40Z"
+  },
+  "artifacts": [
+    { "label": "CLI install page", "url": "/artifacts/artifact-cli/" },
+    { "label": "Agent guide", "url": "/artifacts/agent-guide/" }
+  ],
+  "metrics": [
+    { "label": "Tests", "value": "24 / 24" },
+    { "label": "CLI targets", "value": "5" },
+    { "label": "Images", "value": "full + slim" }
+  ]
+};

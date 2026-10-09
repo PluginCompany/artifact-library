@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Check and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: oven-sh/setup-bun@v2
+      - run: npm ci
+      - name: Type check
+        run: npm run check
+      - name: Tests
+        run: npm test
+      - name: No internal names in published files
+        run: npm run check:public
+      - name: Build the CLI for this runner
+        run: npm run build:binary
+      - name: CLI tests against the compiled binary
+        run: node_modules/.bin/tsx --test tests/cli.test.ts
+        env:
+          ARTIFACT_TEST_BINARY: ${{ github.workspace }}/release/artifact-linux-x64
+      - name: Cross-compile every platform
+        run: bun scripts/build-binary.ts --all
+
+  image:
+    name: Container images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: oven-sh/setup-bun@v2
+      - run: npm ci
+      # The image seeds the CLI download page from release/.
+      - run: npm run build:binary
+      - uses: docker/setup-buildx-action@v3
+      - name: Build full image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: full
+          load: true
+          tags: artifact-library:ci
+          build-args: VERSION=ci
+          cache-from: type=gha,scope=full
+          cache-to: type=gha,mode=max,scope=full
+      - name: Build slim image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: slim
+          load: true
+          tags: artifact-library:ci-slim
+          build-args: VERSION=ci
+          cache-from: type=gha,scope=slim
+          cache-to: type=gha,mode=max,scope=slim
+      - name: Smoke test (full)
+        run: node scripts/smoke-image.mjs artifact-library:ci
+      - name: Smoke test (slim)
+        run: node scripts/smoke-image.mjs artifact-library:ci-slim --slim
+      - name: Image sizes
+        run: docker image ls artifact-library --format '{{.Tag}}  {{.Size}}' >> "$GITHUB_STEP_SUMMARY"

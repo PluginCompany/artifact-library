@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Appendix · Q3 2026 Operations Report</title>
+<meta name="description" content="Methodology, definitions, data notes, full weekly tables and CSV downloads for a fictional bike workshop's Q3 2026 report (sample data).">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body data-page="appendix">
+<header class="topbar" id="topbar"></header>
+<main id="main">
+  <header class="hero page-head">
+    <div class="wrap hero-inner">
+      <div class="eyebrow rise"><span data-page-no></span> · Appendix</div>
+      <h1 class="h1 rise" style="--i:1">Method, definitions and <em>raw data</em></h1>
+      <p class="lead rise" style="--i:2">How each figure is calculated, where the data comes from, and every weekly number behind the charts.</p>
+      <div class="tags rise" style="--i:3"><span class="tag warn dot">Sample data</span><span class="tag outline" data-meta="period"></span></div>
+    </div>
+  </header>
+
+  <div class="wrap section">
+    <section class="block method" aria-labelledby="m-h">
+      <div class="prose">
+        <h2 class="h2 stitch" id="m-h">Methodology</h2>
+        <p>Weekly figures run Monday to Sunday (ISO weeks W27–W39). A week counts towards the month its Monday falls in, so July has five weeks and August and September four each.</p>
+        <p>Repairs and bikes come from repair tickets: a repair counts when the mechanic closes it on the workshop board, and a bike counts when it is checked out to its owner. Plans are the weekly targets on the board, set from the booking calendar. Comebacks are bikes returned within 30 days and logged against the original ticket.</p>
+        <p>Hours come from the staff rota (scheduled), absence records (absence) and repair tickets (time on the stand). Changes are against Q2 2026, which used the same method.</p>
+        <div class="callout note"><b>Data note</b>W34 includes a public holiday. Plans and scheduled hours for that week cover four days, so the dip in W34 is expected.</div>
+        <div class="callout warn"><b>Sample data</b>This report is a reference example. The numbers are invented but add up: the console warns if an edit breaks a total.</div>
+      </div>
+      <div>
+        <h2 class="h2 stitch" style="margin-bottom:14px">Definitions</h2>
+        <dl class="facts">
+          <div><dt>Plan attainment</dt><dd>Repairs completed ÷ repairs planned.</dd></div>
+          <div><dt>First-time fix</dt><dd>Share of repairs that did not come back within 30 days.</dd></div>
+          <div><dt>Comeback</dt><dd>A bike returned within 30 days with a problem from its repair. Weekly comebacks = repairs × (1 − first-time-fix rate).</dd></div>
+          <div><dt>Ready on time</dt><dd>Bikes ready by the promised pick-up time ÷ bikes checked out.</dd></div>
+          <div><dt>Bike at risk</dt><dd>A bike in the workshop whose forecast finish is after its promised pick-up time, as flagged on the board.</dd></div>
+          <div><dt>Utilisation</dt><dd>Hours with a bike on the stand ÷ hours worked.</dd></div>
+          <div><dt>Skill gap</dt><dd>A shift and skill with fewer qualified mechanics than the target of 2.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="dl-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="dl-h">Download the data</h2><p>CSV files are generated in your browser from the same data as the charts.</p></div></div>
+      <div class="downloads">
+        <button class="btn" type="button" data-export="weekly"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Weekly by bench</button>
+        <button class="btn" type="button" data-export="mechanics"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Mechanics</button>
+        <button class="btn" type="button" data-export="categories"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Categories by month</button>
+        <button class="btn" type="button" data-export="hours"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Hours</button>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="wk-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="wk-h">Weekly repairs and quality by bench</h2><p>39 rows: 13 weeks × 3 benches. Click a column to sort.</p></div></div>
+      <div class="table-scroll" data-table-id="weeklyFull"></div>
+    </section>
+
+    <section class="block" aria-labelledby="hr-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="hr-h">Weekly hours, all benches</h2></div></div>
+      <div data-table-id="hoursFull"></div>
+    </section>
+  <nav class="wrap pager" data-pager aria-label="Previous and next page"></nav>
+</main>
+<footer class="wrap foot-note" data-footer></footer>
+</body>
+</html>

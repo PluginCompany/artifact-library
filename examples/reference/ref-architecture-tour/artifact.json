@@ -1,0 +1,5 @@
+{
+  "slug": "ref-architecture-tour",
+  "title": "How Artifact Library works",
+  "description": "Architecture tour of Artifact Library 0.4.0: interactive system map, step-through publish, feedback, first-start and conflict flows, data model, HTTP API, CLI, deployment and failure modes."
+}

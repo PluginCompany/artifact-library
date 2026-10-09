@@ -1,0 +1,101 @@
+<!--
+  EDITING GUIDE — Spokewise Workshop · Q3 2026 Workshop Report (reference artifact)
+  =================================================================================
+  Files
+    data.js      every number and all narrative text (window.REPORT). Start here.
+    app.js       turns data into KPI tiles, charts and tables. Builders are keyed by id.
+    style.css    report-only styles (tokens from kit/kit.css; no raw colours).
+    *.html       one file per page: page header text plus placeholders.
+    kit/         shared design system, copied in by publish.sh. Never edit the copy.
+
+  Change the numbers
+    Edit the arrays in data.js. Totals, KPIs, deltas and comebacks all derive from them.
+    Open the browser console: app.js warns if totals stop adding up
+    (for example, categoryByMonth no longer matches actual repairs).
+    The sample is a fictional bike repair workshop; data.js explains how the
+    generic keys (lines = benches, jobs = bikes, fpy = first-time fix) map to it.
+    Chart subtitles are written takeaways in the HTML: re-read them after a data change.
+
+  Add a chart
+    1. In app.js → CHARTS, add  myChart: (filter) => ["line", { labels, series:[{name, values}] }]
+       (kinds: line, column, bar, donut, spark; see kit/kit.js for options).
+    2. In a page, add a card:
+         <div class="chart-card">
+           <header><div><h3>Title</h3><p>One-line takeaway</p></div>
+             <button class="as-table" type="button">Table</button></header>
+           <div data-chart-id="myChart"></div>
+         </div>
+    Add data-filtered to the placeholder if the bench filter should re-render it.
+
+  Add a table:   TABLES in app.js + <div data-table-id="name"></div> (click headers to sort).
+  Add KPI tiles: KPIS in app.js + <div class="stats" data-kpis="name"></div>.
+  Add a page:    copy throughput.html, set <body data-page="id">, add the page to PAGES
+                 at the top of app.js (the nav, mobile tabs and pager update themselves).
+  Bench filter:  <div class="seg" data-line-filter></div>; the state is kept in #line=B.
+
+  Don't
+    - hard-code numbers in HTML (they drift from data.js),
+    - change the series order of a chart when filtering (colours follow slot order),
+    - edit kit/ here; change examples/reference/kit and republish instead.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Q3 2026 Workshop Report · Spokewise Workshop</title>
+<meta name="description" content="Sample-data report for a fictional bike repair workshop, Q3 2026: repairs, comebacks, people and capacity.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body data-page="summary">
+<header class="topbar" id="topbar"></header>
+<main id="main">
+  <header class="hero page-head summary-head">
+    <div class="wrap hero-inner">
+      <div class="eyebrow rise"><span data-page-no></span> · Executive summary · <span data-meta="period"></span></div>
+      <h1 class="display rise" style="--i:1" data-headline></h1>
+      <p class="lead rise" style="--i:2" data-lead></p>
+      <div class="tags rise" style="--i:3">
+        <span class="tag warn dot">Sample data</span>
+        <span class="tag outline">Published <span data-meta="published"></span></span>
+        <span class="tag outline">Owner: <span data-meta="owner"></span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap section">
+    <section class="block" aria-labelledby="kpi-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="kpi-h">The quarter in six numbers</h2><p>Changes are against Q2 2026. Sparklines show the 13 weeks of Q3.</p></div></div>
+      <div class="stats six" data-kpis="summary"></div>
+    </section>
+
+    <section class="block" aria-labelledby="take-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="take-h">Three things to know</h2><p>Each takeaway links to the page with the evidence.</p></div></div>
+      <div class="takeaways" data-takeaways></div>
+    </section>
+
+    <section class="block" aria-labelledby="hero-chart-h">
+      <div class="chart-card">
+        <header><div><h3 id="hero-chart-h">Weekly repairs vs plan</h3><p>Below plan until the e-bike bench got up to speed, then ahead of plan for the last seven weeks. W34 was a 4-day week.</p></div><button class="as-table" type="button">Table</button></header>
+        <div data-chart-id="weeklyTotal"></div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="inside-h">
+      <div class="block-head"><div><h2 class="h2 stitch" id="inside-h">Inside this report</h2></div></div>
+      <div class="sections">
+        <a class="card" href="throughput.html"><div class="body"><span class="n">02 · Throughput</span><h3>Repairs and plan</h3><p>Weekly repairs by bench, plan against actual, repair mix and mechanic ranking. Filter by bench.</p></div></a>
+        <a class="card" href="quality.html"><div class="body"><span class="n">03 · Quality</span><h3>First-time fix and comebacks</h3><p>First-time-fix trend, comeback reasons, comebacks by repair type and the quarter's incidents.</p></div></a>
+        <a class="card" href="people.html"><div class="body"><span class="n">04 · People</span><h3>Staffing and capacity</h3><p>Scheduled and worked hours, utilisation by shift, absence and skills coverage.</p></div></a>
+        <a class="card" href="appendix.html"><div class="body"><span class="n">05 · Appendix</span><h3>Method and data</h3><p>Definitions, data notes, full weekly tables and CSV downloads.</p></div></a>
+      </div>
+    </section>
+  <nav class="wrap pager" data-pager aria-label="Previous and next page"></nav>
+</main>
+<footer class="wrap foot-note" data-footer></footer>
+</body>
+</html>

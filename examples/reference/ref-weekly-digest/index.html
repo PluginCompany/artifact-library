@@ -1,0 +1,117 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-weekly-digest
+  =================================
+  What lives where
+    build-data.py  Regenerates data.js: commits of the week, uncommitted work, and the
+                   artifacts/versions published on the server that week (read-only API).
+                     python3 examples/reference/ref-weekly-digest/build-data.py --week 2026-10-05
+                     (add --anonymise --server-label "your server" for a digest shared outside the team)
+    data.js        GENERATED. Never edit by hand.
+    notes.js       Hand-written: headline, summary and the four lists
+                   (shipped / progress / blocked / next). Rewrite it every week.
+    app.js         Renders everything; you rarely need to touch it.
+    style.css      Page-specific styles.
+    kit/           Shared design system, copied in by ../publish.sh. Never edit here.
+
+  Making next week's digest
+    1. Run build-data.py with --week set to that Monday.
+    2. Rewrite notes.js — keep each item to one line plus one sentence of detail.
+    3. Update title/description in artifact.json and publish under a new slug
+       (e.g. weekly-digest-2026-w42) so old weeks keep their link.
+  Saving
+    Questions go to the comment thread "comments.questions" (kit-data.js).
+    Agents read them with:  artifact feedback <slug>
+  Don't
+    • Hard-code numbers in notes.js that data.js already has.
+    • Colour status with colour alone — every list has a word heading.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Weekly digest · Week 41</title>
+<meta name="description" content="Example weekly digest for Artifact Library (week 41, 5–11 Oct 2026): shipped, in progress, blocked and next, with releases, publishes per day and every artifact published.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="data.js" defer></script>
+<script src="notes.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#top"><i>W</i><span>Weekly digest</span><small id="b-week">Week</small></a>
+  <nav class="topnav" aria-label="Sections">
+    <a href="#minute">In one minute</a>
+    <a href="#numbers">Numbers</a>
+    <a href="#commits">Commits</a>
+    <a href="#artifacts">Artifacts</a>
+    <a href="#questions">Questions</a>
+  </nav>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero" id="top">
+  <div class="wrap hero-inner">
+    <div class="eyebrow rise" id="h-eyebrow"></div>
+    <h1 class="display rise" style="--i:1" id="h-title"></h1>
+    <p class="lead rise" style="--i:2" id="h-summary"></p>
+    <div class="hero-meta rise" style="--i:3" id="h-meta"></div>
+  </div>
+</section>
+
+<main>
+  <section class="wrap section" id="minute">
+    <div class="section-head"><div><h2 class="h2 stitch">The week in one minute</h2><p>Four lists, one line each. Open an item for the detail.</p></div></div>
+    <div class="minute">
+      <article class="col shipped"><header><span class="tag good dot">Shipped</span><b class="n"></b></header><ul data-list="shipped"></ul></article>
+      <article class="col progress"><header><span class="tag accent dot">In progress</span><b class="n"></b></header><ul data-list="progress"></ul></article>
+      <article class="col blocked"><header><span class="tag warn dot">Blocked &amp; risks</span><b class="n"></b></header><ul data-list="blocked"></ul></article>
+      <article class="col next"><header><span class="tag thread dot">Next</span><b class="n"></b></header><ul data-list="next"></ul></article>
+    </div>
+  </section>
+
+  <section class="wrap section" id="numbers">
+    <div class="section-head"><div><h2 class="h2 stitch">Numbers</h2><p id="n-sub">From git and the artifact server.</p></div></div>
+    <div class="stats" id="stats"></div>
+    <div class="grid cols-2" style="--gap:18px;margin-top:18px">
+      <div class="chart-card"><header><div><h3>Publishes per day</h3><p id="c-days-sub"></p></div><button class="as-table" type="button">Table</button></header><div id="c-days"></div></div>
+      <div class="chart-card"><header><div><h3>Lines changed by area</h3><p id="c-areas-sub"></p></div><button class="as-table" type="button">Table</button></header><div id="c-areas"></div></div>
+    </div>
+  </section>
+
+  <section class="wrap section" id="commits">
+    <div class="section-head"><div><h2 class="h2 stitch">Commits</h2><p>Everything that landed on <code id="c-branch"></code> this week, plus the work that has not been committed yet.</p></div></div>
+    <div class="grid cols-2 commits-grid" style="--gap:24px">
+      <ul class="timeline" id="commit-list"></ul>
+      <div class="panel wip" id="wip"></div>
+    </div>
+  </section>
+
+  <section class="wrap section" id="artifacts">
+    <div class="section-head">
+      <div><h2 class="h2 stitch">Artifacts published</h2><p>Every artifact with a new version this week. Click a column to sort.</p></div>
+      <div class="seg" role="group" aria-label="Show"><button type="button" data-show="week" aria-pressed="true">This week</button><button type="button" data-show="all" aria-pressed="false">All on server</button></div>
+    </div>
+    <div class="table-wrap"><table class="table" id="art-table" data-sortable>
+      <thead><tr><th data-sort>Artifact</th><th data-sort="num" class="num">Versions this week</th><th data-sort="num" class="num">Latest</th><th data-sort>Last update</th><th data-sort="num" class="num">Files</th><th data-sort="num" class="num">Size</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="muted art-note" id="art-note"></p>
+    <details class="fold log-fold"><summary>Publication log · every version this week</summary><div class="in"><ol class="pub-log" id="pub-log"></ol></div></details>
+  </section>
+
+  <section class="wrap section" id="questions">
+    <div class="section-head"><div><h2 class="h2 stitch">Questions about this week</h2><p>Ask here instead of in chat — the agent that wrote this digest reads the thread with <code>artifact feedback ref-weekly-digest</code> and answers in place.</p></div></div>
+    <div class="q-wrap"><div id="q-thread"></div></div>
+  </section>
+</main>
+
+<footer class="wrap foot-note" id="foot"></footer>
+</body>
+</html>

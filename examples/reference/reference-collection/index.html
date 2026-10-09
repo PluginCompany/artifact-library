@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Artifact Reference Collection</title>
+<meta name="description" content="Finished example artifacts to copy from — plan deck, implementation review, multi-page report, decision record, architecture tour and illustrated guides.">
+<!--
+  EDITING GUIDE
+  - The list of artifacts lives in collection.js (one object per artifact). Add, remove or
+    reorder entries there; cards, filter chips, the job picker and hero counts all follow.
+  - Live title, version, update time and preview image come from the server API
+    (/api/v1/artifacts) at view time, so cards stay current without republishing.
+    collection.js titles/descriptions are the fallback when the API is unreachable.
+  - The style guide is kit.html. Shared styles/scripts are in kit/ (copied in by publish.sh;
+    edit examples/reference/kit, never the copy here).
+  - Publish: cd examples/reference && ./publish.sh reference-collection "message"
+-->
+<link rel="stylesheet" href="kit/kit.css">
+<script src="kit/kit.js" defer></script>
+<script src="collection.js" defer></script>
+<style>
+  .hero-grid2{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px 56px;align-items:center}
+  @media (max-width:960px){.hero-grid2{grid-template-columns:minmax(0,1fr)}.fan{display:none}}
+  .fan{position:relative;height:clamp(300px,30vw,400px)}
+  .fan a{position:absolute;width:68%;aspect-ratio:16/10;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow);background:var(--stage);transform:rotate(var(--r));transition:transform .5s var(--ease),z-index 0s;animation:fanin .9s var(--ease) both;animation-delay:calc(.15s + var(--i) * .14s)}
+  .fan a:hover{transform:rotate(0) translateY(-8px) scale(1.03);z-index:5}
+  .fan a:nth-child(1){right:0;top:0;--r:4deg;--i:0}
+  .fan a:nth-child(2){left:0;top:22%;--r:-5deg;--i:1}
+  .fan a:nth-child(3){right:7%;bottom:0;--r:1.5deg;--i:2}
+  .fan img{width:100%;height:100%;object-fit:cover;object-position:top left;display:block}
+  .fan .ph{position:absolute;inset:0;display:grid;place-items:center;font:800 72px var(--display);color:var(--line-strong);background:repeating-linear-gradient(135deg,var(--soft) 0 12px,var(--stage) 12px 24px)}
+  .fan span{position:absolute;left:8px;bottom:8px;font:500 11px var(--mono);background:rgba(12,15,20,.86);color:#fff;border-radius:6px;padding:3px 8px}
+  @keyframes fanin{from{opacity:0;transform:translateY(60px) scale(.88) rotate(0)}}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:22px}
+  .search{flex:1;min-width:min(280px,100%);max-width:380px;height:40px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 14px;color:var(--ink)}
+  .cards{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr))}
+  .card .thumb .ph{position:absolute;inset:0;display:grid;place-items:center;font:800 64px var(--display);color:var(--line-strong);background:repeating-linear-gradient(135deg,var(--soft) 0 12px,var(--stage) 12px 24px)}
+  .card .thumb img{opacity:0;transition:opacity .4s ease,transform .6s var(--ease)}
+  .card .thumb img.ok{opacity:1}
+  .card .open{position:absolute;right:12px;bottom:12px;z-index:2;width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;opacity:0;transform:scale(.6);transition:.3s cubic-bezier(.2,.7,.2,1.6);box-shadow:0 10px 24px -8px rgba(0,0,0,.5)}
+  .card .open svg{width:16px;height:16px}
+  a.card:hover .open,a.card:focus-visible .open{opacity:1;transform:none}
+  .card .dots{font-size:13.5px;color:var(--ink);margin-top:4px}
+  .card .meta{font:500 11.5px var(--mono);color:var(--muted)}
+  .card .kind.mirror{background:var(--ink);color:var(--ground)}
+  .empty{color:var(--muted);padding:24px 4px}
+
+  .jobs{display:grid;gap:0}
+  .jobs .job-phase{font:500 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--thread);margin:22px 0 4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .jobs .job-phase:first-child{margin-top:0}
+  .jobs a{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink);transition:background .2s,padding .25s var(--ease)}
+  .jobs a:hover{background:var(--panel);padding-inline:14px}
+  .jobs .q{font-size:16.5px}
+  .jobs .q span{color:var(--muted)}
+  .jobs .a{display:flex;align-items:center;gap:10px;font:700 16px var(--display);color:var(--accent);white-space:nowrap}
+  .jobs .a svg{width:16px;height:16px;transition:transform .25s var(--ease)}
+  .jobs a:hover .a svg{transform:translateX(4px)}
+  @media (max-width:620px){.jobs a{grid-template-columns:1fr}.jobs .a{white-space:normal}}
+
+  .kit-band{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:clamp(20px,3vw,36px);overflow:hidden;position:relative}
+  @media (max-width:860px){.kit-band{grid-template-columns:1fr}}
+  .swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .swatches div{border-radius:12px;aspect-ratio:1.3;background:var(--c);border:1px solid var(--line);display:flex;align-items:flex-end;padding:8px 10px;font:500 11px var(--mono);color:var(--fg,var(--ink))}
+  .type-sample{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:2px dashed var(--line)}
+  .type-sample b{font:800 44px/1 var(--display)}
+  .type-sample span{font-family:var(--body);font-size:20px}
+  .type-sample code{background:none;border:0;font-size:16px;padding:0}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./"><i>R</i><span>Reference collection</span><small>Artifacts</small></a>
+  <nav class="topnav" aria-label="Pages">
+    <a href="./" aria-current="page">Collection</a>
+    <a href="#start">Start here</a>
+    <a href="kit.html">Style guide</a>
+  </nav>
+  <span class="spacer"></span>
+  <a class="icon-btn" href="/" title="All artifacts on this server">Library</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-inner hero-grid2">
+    <div>
+      <div class="eyebrow rise">Artifact Library · Reference collection</div>
+      <h1 class="display rise" style="--i:1">Finished examples to <em>copy from</em></h1>
+      <p class="lead rise" style="--i:2">Each artifact here does one job well — asking for decisions, showing live progress, proving finished work, reviewing a change, reporting numbers or explaining a system. Many let readers answer, comment and approve right on the page, and the agent reads it back. Open one, download it, swap the content, publish.</p>
+      <div class="row rise" style="--i:3;margin-top:26px;--gap:12px">
+        <a class="btn primary lg" href="#collection">Browse the collection</a>
+        <a class="btn lg" href="/artifacts/agent-guide/">Read the agent guide</a>
+        <a class="btn ghost lg" href="kit.html">Style guide</a>
+      </div>
+      <div class="hero-meta rise" style="--i:4">
+        <div><b id="m-count">7</b><span>artifacts</span></div>
+        <div><b id="m-saves">0</b><span>save feedback</span></div>
+        <div><b id="m-kinds">5</b><span>phases of work</span></div>
+      </div>
+    </div>
+    <div class="fan" id="fan" aria-hidden="true"></div>
+  </div>
+</section>
+
+<main>
+  <section class="wrap section" id="collection">
+    <div class="section-head">
+      <div><h2 class="h2 stitch">The collection</h2><p>Grouped by the phase of work. Previews, versions and update times come live from this server.</p></div>
+    </div>
+    <div class="toolbar">
+      <input class="search" id="q" type="search" placeholder="Search by name, job or feature" aria-label="Search the collection" autocomplete="off">
+      <div class="chips" id="chips" role="group" aria-label="Filter by phase"></div>
+    </div>
+    <div class="cards" id="cards" aria-live="polite"></div>
+  </section>
+
+  <section class="wrap section" id="jobs">
+    <div class="section-head"><div><h2 class="h2 stitch">Which one do I copy?</h2><p>Start from the job, not the format. Agents: the <a href="/artifacts/agent-guide/">agent guide</a> has the same table plus the workflow.</p></div></div>
+    <div class="jobs" id="job-list"></div>
+  </section>
+
+  <section class="wrap section" id="start">
+    <div class="section-head"><div><h2 class="h2 stitch">Start a new artifact</h2><p>Three steps from a reference to your own published page.</p></div></div>
+    <div class="grid cols-2" style="--gap:28px;align-items:start">
+      <ol class="steps">
+        <li><div><h4>Download the closest reference</h4><p>Every artifact downloads with its kit, fonts and data files — it works offline.</p><pre data-copy style="margin-top:10px">artifact download ref-ops-report --out ./my-report</pre></div></li>
+        <li><div><h4>Change the content, not the plumbing</h4><p>Each <code>index.html</code> opens with an <b>Editing guide</b> comment. Numbers and lists live in <code>data.js</code>; styles come from <code>kit/</code>.</p></div></li>
+        <li><div><h4>Publish under a new slug</h4><p>Pick a title and a one-sentence description; share the latest URL.</p><pre data-copy style="margin-top:10px">artifact publish ./my-report --slug q4-report \
+  --title "Q4 operations report" \
+  --description "Throughput, quality and staffing for Q4." --json</pre></div></li>
+      </ol>
+      <div class="stack" style="--gap:14px">
+        <div class="callout"><b>Working in the repo?</b>The sources live in <code>examples/reference/</code>. <code>./publish.sh &lt;dir&gt;</code> bundles the shared kit and publishes or updates in one step. New servers seed this whole collection on first start.</div>
+        <div class="callout note"><b>Reading feedback</b>Pages that save write answers, comments and verdicts beside the artifact. Read them with <code>artifact feedback &lt;slug&gt;</code>; reply with <code>artifact data append</code>.</div>
+        <div class="callout stitched"><b>House rules</b>
+          <ul class="dots" style="margin-top:6px">
+            <li>Colours come from kit tokens, so dark mode and print work automatically.</li>
+            <li>Status always carries a word, never colour alone.</li>
+            <li>Every chart has a table view and a one-line takeaway.</li>
+            <li>Label example content as example content.</li>
+            <li>Check it at 375 px wide before you share it.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="kit-band">
+      <div>
+        <div class="eyebrow thread">Shared kit</div>
+        <h2 class="h2" style="margin-top:8px">One look, shared by every page</h2>
+        <p class="muted" style="margin-top:10px;max-width:52ch">Tokens, typography, components and charts in two files plus self-hosted fonts. The style guide shows every piece with a snippet to copy.</p>
+        <a class="btn primary" style="margin-top:18px" href="kit.html">Open the style guide</a>
+      </div>
+      <div>
+        <div class="swatches">
+          <div style="--c:var(--accent);--fg:var(--on-accent)">accent</div>
+          <div style="--c:var(--thread);--fg:var(--on-thread)">thread</div>
+          <div style="--c:var(--ink);--fg:var(--ground)">ink</div>
+          <div style="--c:var(--ground)">ground</div>
+        </div>
+        <div class="type-sample"><b>Bricolage</b><span>Noto Sans body</span><code>JetBrains Mono</code></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot-note">Reference artifact · source <code>examples/reference/reference-collection</code> · built with the shared kit.</footer>
+
+<script>
+document.addEventListener("kit:ready", async () => {
+  const { $, esc } = Kit;
+  const all = window.COLLECTION;
+  const arrow = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  // Live metadata from the server catalogue (same origin). Falls back silently.
+  let live = {}, online = false;
+  try {
+    const res = await fetch("/api/v1/artifacts?limit=100", { headers: { accept: "application/json" } });
+    if (res.ok) { (await res.json()).artifacts.forEach((a) => (live[a.slug] = a)); online = true; }
+  } catch (e) { /* offline or opened from disk */ }
+  // On a server, show only what exists there (e.g. mirrors are not on fresh installs).
+  const items = all.filter((c) => !online || live[c.slug]).map((c, i) => ({ ...c, n: String(i + 1).padStart(2, "0") }));
+
+  const ago = (iso) => {
+    if (!iso) return "";
+    const d = (Date.now() - new Date(iso)) / 864e5;
+    return d < 1 ? "updated today" : d < 2 ? "updated yesterday" : d < 30 ? `updated ${Math.floor(d)} days ago` : "updated " + new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
+  const href = (it) => (live[it.slug] ? new URL(live[it.slug].url).pathname : `/artifacts/${it.slug}/`);
+  const preview = (it) => (live[it.slug] && live[it.slug].preview && live[it.slug].preview.state === "ready" ? live[it.slug].previewUrl : null);
+
+  const cats = ["All", ...new Set(items.map((i) => i.phase))];
+  $("#m-count").textContent = items.length;
+  $("#m-kinds").textContent = cats.length - 1;
+  $("#m-saves").textContent = items.filter((i) => i.saves).length;
+
+  // Hero fan: three previews
+  const fanPick = ["ref-implementation-review", "ref-live-run-log", "ref-ops-report", "ref-decision-questionnaire", "ref-code-walkthrough"];
+  const withPreview = items.filter(preview).sort((a, b) => (fanPick.indexOf(a.slug) + 1 || 99) - (fanPick.indexOf(b.slug) + 1 || 99));
+  const fanItems = withPreview.length >= 3 ? withPreview : items;
+  $("#fan").innerHTML = fanItems.slice(0, 3).map((it) => `<a href="${href(it)}" tabindex="-1">${preview(it) ? `<img src="${preview(it)}" alt="" loading="eager">` : `<div class="ph">${esc(it.category[0])}</div>`}<span>${esc(it.category)}</span></a>`).join("");
+
+  let cat = "All", q = "";
+  const chips = $("#chips");
+  chips.innerHTML = cats.map((c) => `<button class="chip" type="button" aria-pressed="${c === cat}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+  chips.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    cat = b.dataset.c;
+    chips.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    render();
+  });
+  $("#q").addEventListener("input", (e) => { q = e.target.value.trim().toLowerCase(); render(); });
+
+  function card(it) {
+    const l = live[it.slug], p = preview(it);
+    const title = l ? l.title : it.title, desc = it.description;
+    const meta = l ? `v${l.latestVersion} · ${ago(l.updatedAt)}` : "not published yet";
+    return `<a class="card" href="${href(it)}">
+      <div class="thumb"><div class="ph">${esc(it.category[0])}</div>${p ? `<img src="${p}" alt="Preview of ${esc(title)}" loading="lazy" onload="this.classList.add('ok')">` : ""}
+        <span class="kind ${it.source === "mirror" ? "mirror" : ""}">${esc(it.category)}</span><span class="open">${arrow}</span></div>
+      <div class="body">
+        <span class="n">${it.n}</span>
+        <h3>${esc(title)}</h3>
+        <p>${esc(desc)}</p>
+        <ul class="dots">${it.shows.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>
+        <div class="foot"><span class="meta">${esc(meta)}</span><span class="spacer"></span>${it.saves ? '<span class="tag thread">Saves feedback</span>' : ""}<span class="tag ${it.source === "mirror" ? "outline" : "accent"}">${it.source === "mirror" ? "Original" : it.phase}</span></div>
+      </div></a>`;
+  }
+  function render() {
+    const list = items.filter((it) => (cat === "All" || it.phase === cat) && (!q || [it.title, it.description, it.job, it.category, it.phase, ...it.shows, live[it.slug]?.title || ""].join(" ").toLowerCase().includes(q)));
+    $("#cards").innerHTML = list.length ? list.map(card).join("") : `<p class="empty">Nothing matches “${esc(q)}”. Try a job such as “report” or “screenshots”.</p>`;
+  }
+  render();
+
+  $("#job-list").innerHTML = cats.slice(1).map((ph) => `<h3 class="job-phase">${esc(ph)}</h3>` + items.filter((it) => it.phase === ph).map((it) => `<a href="${href(it)}"><span class="q"><span>I need to</span> ${esc(it.job)}</span><span class="a">${esc(live[it.slug]?.title || it.title)} ${arrow}</span></a>`).join("")).join("");
+});
+</script>
+</body>
+</html>

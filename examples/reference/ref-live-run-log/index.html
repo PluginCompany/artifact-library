@@ -1,0 +1,143 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-live-run-log (live progress of a long agent task)
+  ======================================================================
+  How it works
+    The page has no hard-coded content. It renders ONE data document, `state.run`,
+    which the agent writes while it works — no republish needed:
+
+      artifact data set <slug> state.run --file run.json --author "Claude Code"
+
+    The page polls every 4 s, animates what changed, and shows "updated N s ago".
+    With no `state.run` saved (or opened from disk) it renders run.example.json and
+    says so clearly.
+
+  state.run schema (every field optional except steps; unknown fields are ignored)
+    title        "Release 0.4.0"                 shown as the page heading
+    goal         one sentence: what "done" means
+    agent        "Claude Code"
+    startedAt    ISO time — drives the ticking elapsed clock
+    updatedAt    ISO time — drives "updated N s ago" and the stale warning (> 5 min)
+    status       running | done | failed | blocked
+    currentStep  id of the step in the spotlight (default: first running/blocked)
+    steps[]      { id, title, status: pending|running|done|failed|skipped|blocked,
+                   startedAt, finishedAt, summary, links:[{label,url}],
+                   log:[{at, level: info|ok|warn|error, text}] }
+    blocker      { question, options:["…"], since }   → shows the answer panel
+    artifacts[]  { label, url }                       → "Produced so far"
+    metrics      [{label, value}] or { "Tests": "19 / 19" }
+
+  What humans save (the agent reads these)
+    answer.blocker   { question, choice, note, answeredAt }
+                     artifact data get <slug> answer.blocker
+    comments.run     discussion thread; reply with
+                     artifact data append <slug> comments.run --item '{"text":"…"}'
+
+  Files
+    app.js           renderer + polling. Change only to add a new kind of panel.
+    style.css        page styles (kit tokens only).
+    run.example.json example + template for agents. After editing it, regenerate
+                     run.example.js (the copy used when opened from disk):
+      node -e "const f=require('fs');f.writeFileSync('run.example.js','window.RUN_EXAMPLE = '+f.readFileSync('run.example.json','utf8').trim()+';\n')"
+    kit/             shared kit, copied in by ../publish.sh. Never edit the copy.
+
+  Do not
+    - put run content in index.html; it comes from state.run
+    - hard-code colours; use kit tokens
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Live Run Log</title>
+<meta name="description" content="Live progress of a long agent task: steps, logs, elapsed time, blockers to answer and a discussion thread.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="run.example.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./"><i>L</i><span>Live run log</span><small>Agent run</small></a>
+  <nav class="topnav" aria-label="Sections">
+    <a href="#overview" aria-current="page">Overview</a>
+    <a href="#steps">Steps</a>
+    <a href="#discussion">Discussion</a>
+    <a href="#agents">For agents</a>
+  </nav>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts" aria-label="Collection"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero run-hero" id="overview">
+  <div class="wrap hero-inner">
+    <div class="live-line rise">
+      <span class="live" id="live"><i aria-hidden="true"></i><span id="live-text">Connecting…</span></span>
+      <span class="eyebrow" id="run-meta"></span>
+    </div>
+    <div class="example-note callout warn rise" id="example-note" hidden>
+      <b>Example run</b>Nothing has been saved to <code>state.run</code> yet, so this is <span class="tag warn">Example content</span> from <code>run.example.json</code>. It switches to the real run as soon as an agent publishes one (see <a href="#agents">For agents</a>).
+    </div>
+    <div class="title-row">
+      <h1 class="h1 rise" style="--i:1" id="run-title">Loading the run…</h1>
+      <span class="run-status rise" style="--i:1" id="run-status" data-status="pending">—</span>
+    </div>
+    <p class="lead rise" style="--i:2" id="run-goal"></p>
+    <div class="progress rise" style="--i:3" id="progress" role="img" aria-label="Progress"></div>
+    <div class="run-stats rise" style="--i:4" id="run-stats"></div>
+  </div>
+</section>
+
+<main>
+  <section class="wrap section" id="blocker-section" hidden>
+    <div class="blocker" id="blocker" aria-live="polite"></div>
+  </section>
+
+  <section class="wrap section" id="now-section">
+    <div class="section-head"><div><div class="eyebrow thread">Spotlight</div><h2 class="h2 stitch">Happening now</h2></div></div>
+    <div class="now" id="now"></div>
+  </section>
+
+  <section class="wrap section" id="steps">
+    <div class="section-head">
+      <div><div class="eyebrow thread">Timeline</div><h2 class="h2 stitch">Steps</h2><p>Open a step to see its log. Steps that change while you watch light up briefly.</p></div>
+      <div class="row" style="--gap:8px"><button class="btn" type="button" id="expand-all">Expand all</button></div>
+    </div>
+    <ol class="run-steps" id="step-list"></ol>
+  </section>
+
+  <section class="wrap section" id="produced-section" hidden>
+    <div class="section-head"><div><div class="eyebrow thread">Output</div><h2 class="h2 stitch">Produced so far</h2></div></div>
+    <div class="produced" id="produced"></div>
+  </section>
+
+  <section class="wrap section" id="discussion">
+    <div class="grid cols-2" style="--gap:clamp(20px,3vw,40px);align-items:start">
+      <div>
+        <div class="eyebrow thread">Talk to the agent</div>
+        <h2 class="h2 stitch" style="margin-top:6px">Discussion</h2>
+        <p class="muted" style="margin-top:6px;max-width:52ch">Comments are saved beside this page. The agent reads them with <code>artifact feedback</code> and can reply here.</p>
+        <div id="thread" style="margin-top:18px"></div>
+      </div>
+      <div id="agents" class="agents">
+        <div class="eyebrow thread">For agents</div>
+        <h2 class="h2 stitch" style="margin-top:6px">Drive this page</h2>
+        <p class="muted" style="margin-top:6px">Write the whole run as one JSON document after every meaningful change. Partial data is fine.</p>
+        <ol class="steps agent-steps">
+          <li><div><h4>Publish progress</h4><pre data-copy id="cmd-set"></pre></div></li>
+          <li><div><h4>Check for answers and comments</h4><pre data-copy id="cmd-read"></pre></div></li>
+          <li><div><h4>Reply in the thread</h4><pre data-copy id="cmd-reply"></pre></div></li>
+        </ol>
+        <details class="fold" style="margin-top:14px"><summary>state.run schema</summary><div class="in"><div class="table-wrap"><table class="table compact schema"><tbody id="schema"></tbody></table></div><p class="muted" style="font-size:13.5px">Template: <a href="run.example.json" download>run.example.json</a></p></div></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot-note">Reference artifact · source <code>examples/reference/ref-live-run-log</code> · renders the <code>state.run</code> data document · built with the reference kit.</footer>
+</body>
+</html>

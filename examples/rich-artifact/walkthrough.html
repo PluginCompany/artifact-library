@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>How it works — Fieldnotes</title><link rel="stylesheet" href="./assets/style.css"></head><body>
+<header class="site-header"><a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true">f/</span> Fieldnotes</a><nav aria-label="Main navigation"><a href="./index.html">Report</a><a aria-current="page" href="./walkthrough.html">How it works</a><a href="./notes/field-guide.html">Field guide</a></nav><span class="connection"><span></span> Linked page</span></header>
+<main class="article"><a class="back-link" href="./index.html">Back to the report</a><h1>From folder<br>to shared artifact.</h1><p class="article-lead">This is a second HTML file in the same directory. Its styles, diagram, and navigation all use relative paths.</p><div class="article-grid"><div><section class="step"><span class="step-number">1</span><div><h2>Create the directory.</h2><p>Put your entry point and supporting files together. Keep links relative so the directory can move as a unit.</p><pre><code>report/
+  index.html
+  walkthrough.html
+  notes/field-guide.html
+  assets/style.css
+  assets/app.js
+  assets/activity.json
+  assets/motion.mp4</code></pre></div></section><section class="step"><span class="step-number">2</span><div><h2>Publish a complete snapshot.</h2><p>The CLI streams an archive to the server. The server validates it, hashes the files, and commits an immutable version.</p><div class="code-block"><pre><code>artifact publish ./report \
+  --slug fieldnotes \
+  --title "Fieldnotes" --json</code></pre><button class="copy-button" data-copy>Copy command</button></div></div></section><section class="step"><span class="step-number">3</span><div><h2>Share the stable link.</h2><p>The stable URL redirects to the latest snapshot. Browser-relative links then stay inside that snapshot, even after another version is published.</p><pre><code>/artifacts/fieldnotes/
+  → /artifacts/fieldnotes/_versions/1/</code></pre></div></section><section class="step"><span class="step-number">4</span><div><h2>Update with context.</h2><p>Check the revision, change the local files, and publish the whole directory again. An old open tab offers to open the latest version.</p><div class="code-block"><pre><code>artifact check ./report --json
+artifact update fieldnotes ./report \
+  --message "Added a field guide" --json</code></pre><button class="copy-button" data-copy>Copy commands</button></div></div></section></div><aside class="article-aside"><img src="./assets/flow.svg" alt="Directory, upload, immutable snapshot, stable link" width="650" height="420"><h3>One useful constraint</h3><p>Each update replaces the entire file tree. A file you leave out is removed from the latest version, but preserved in its older snapshots.</p><a href="./notes/field-guide.html">Explore the nested field guide</a></aside></div><p id="copy-status" role="status" class="muted"></p></main><footer><span>Fieldnotes / workflow</span><a href="./index.html">Return to report</a></footer><script src="./assets/app.js" defer></script></body></html>

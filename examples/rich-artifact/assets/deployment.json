@@ -1,0 +1,11 @@
+{
+  "description": "Live local deployment configuration for this demonstration, published as an ordinary JSON asset.",
+  "server": "http://localhost:3000",
+  "localServer": "http://localhost:3010",
+  "bindAddress": "0.0.0.0",
+  "hostPort": 3010,
+  "artifactSlug": "rich-demo",
+  "stableUrl": "http://localhost:3000/artifacts/rich-demo/",
+  "runtime": "Docker Compose / Node.js 22",
+  "history": "All snapshots retained"
+}

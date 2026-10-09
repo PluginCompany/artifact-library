@@ -1,0 +1,221 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-architecture-tour
+  =====================================
+  What lives where
+    data.js    ALL structured content: facts, diagram components and wires,
+               flows (steps), data models, on-disk layout, API routes, headers,
+               CLI commands, env vars, exit codes, errors, limits, glossary.
+    app.js     Renders everything from window.TOUR. You rarely need to touch it.
+    style.css  Styles specific to this page (diagram, flow player, tables).
+    index.html Page skeleton and the hand-written prose (overview, callouts).
+    kit/       Shared design system, copied in by ../publish.sh. Never edit here.
+
+  Common changes
+    • Change a component's text   → edit its entry in TOUR.components (summary,
+      does[], files[], fns[], config[]).
+    • Add a component             → add an entry with a unique id and
+      at.wide [x,y,w,h] (1000-wide viewBox) + at.narrow (360-wide viewBox),
+      then connect it with TOUR.wires { from:"id:side[:fraction]", to: … }.
+      Sides: t r b l. Same-side ports (l→l) draw an outward bulge. Use
+      narrowFrom/narrowTo for the phone layout, or narrow:false to hide.
+    • Add a flow step             → push { t, b, on:[component ids],
+      wires:[wire ids], files:[paths] } into a flow's steps[]. The static
+      list in “Flows” and the player on the map both pick it up.
+    • Add a whole flow            → add an object to TOUR.flows; a tab
+      appears on the map and a section card under “Flows”.
+    • Add an API route / command  → TOUR.routes / TOUR.commands.
+  Keep it true
+    Every fact here is taken from the repository at the version in TOUR.meta.
+    When the code changes, update data.js and the version together.
+  Don't
+    • Hard-code colours: use kit tokens (var(--accent), var(--thread)…).
+    • Rename the section ids without updating the side nav links.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>How the artifact service works</title>
+<meta name="description" content="Architecture tour of Artifact Library: an interactive system map, step-through publish and update flows, data model, HTTP API, CLI, deployment and failure modes.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Sections"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="#top"><i>A</i><span>Artifact service</span><small>Architecture tour</small></a>
+  <span class="spacer"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Sections">
+    <h5>Start</h5>
+    <a href="#overview"><b>01</b>Overview</a>
+    <a href="#map"><b>02</b>System map</a>
+    <a href="#flows"><b>03</b>Flows</a>
+    <h5>Reference</h5>
+    <a href="#model"><b>04</b>Data model</a>
+    <a href="#disk"><b>05</b>On disk</a>
+    <a href="#api"><b>06</b>HTTP API</a>
+    <a href="#cli"><b>07</b>CLI</a>
+    <h5>Operate</h5>
+    <a href="#deploy"><b>08</b>Deployment</a>
+    <a href="#failures"><b>09</b>Limits &amp; failures</a>
+    <a href="#glossary"><b>10</b>Glossary</a>
+  </nav>
+
+  <main class="main" id="top">
+    <!-- 01 Overview -->
+    <section class="intro" id="overview">
+      <div class="eyebrow rise">Technical explainer · Artifact Library <span data-meta="version"></span> · API v<span data-meta="api"></span></div>
+      <h1 class="display rise" style="--i:1">How the <em>artifact service</em> works</h1>
+      <p class="lead rise" style="--i:2">A CLI packs a folder of HTML into a tarball. One Node.js process stores it as an immutable, numbered snapshot on a plain-file volume and serves it back at a stable link. A toolbar is added on the way out, a headless Chromium takes the preview picture, and readers' answers and comments are saved beside the artifact for the agent to read.</p>
+      <div class="intro-grid rise" style="--i:3">
+        <dl class="facts" id="facts"></dl>
+        <div class="principles">
+          <div class="eyebrow thread">Design choices</div>
+          <ul class="dots">
+            <li><span><b>Files, not a database.</b> Every write is an atomic JSON rename with fsync; a journal replays interrupted commits.</span></li>
+            <li><span><b>Snapshots never change.</b> The toolbar is injected while streaming, so stored bytes stay byte-identical.</span></li>
+            <li><span><b>Safe to retry.</b> Uploads are saved before sending and keyed for idempotency.</span></li>
+            <li><span><b>Open by default, lockable.</b> Reading is open; an optional write token protects publishing, archive and purge.</span></li>
+            <li><span><b>Feedback outside versions.</b> What readers save never changes a snapshot.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 System map -->
+    <section class="block" id="map">
+      <div class="section-head">
+        <div>
+          <h2 class="h2 stitch">System map</h2>
+          <p>Click a box to see what it does and which files implement it. Pick a flow to watch a request travel through the system.</p>
+        </div>
+        <div class="seg map-modes" role="tablist" aria-label="Map mode" id="modes"></div>
+      </div>
+      <div class="map" id="mapwrap">
+        <figure class="diagram" id="diagram" aria-label="System diagram"></figure>
+        <aside class="map-panel" id="panel" aria-live="polite"></aside>
+      </div>
+      <p class="map-legend" id="legend"></p>
+    </section>
+
+    <!-- 03 Flows -->
+    <section class="block" id="flows">
+      <h2 class="h2 stitch">Flows</h2>
+      <p class="sub">The same flows as the map player, as a readable list. Each step names the files involved.</p>
+      <div id="flowlist"></div>
+    </section>
+
+    <!-- 04 Data model -->
+    <section class="block" id="model">
+      <h2 class="h2 stitch">Data model</h2>
+      <p class="sub">Five records do all the work. Types come from <code>src/shared.ts</code>, <code>src/data.ts</code> and <code>src/client.ts</code>.</p>
+      <div class="grid cols-2 models" id="models"></div>
+      <div class="panel vr">
+        <div class="panel-head"><h3>Version vs revision</h3><span class="tag thread">Easy to mix up</span></div>
+        <p class="muted">A version is a content snapshot. A revision is a concurrency token that also moves when only metadata changes. Send the revision when you update, and keep the version for links.</p>
+        <ol class="history" id="history"></ol>
+      </div>
+    </section>
+
+    <!-- 05 On disk -->
+    <section class="block" id="disk">
+      <h2 class="h2 stitch">On disk</h2>
+      <p class="sub">Back up the server by stopping it and copying the whole volume: metadata, snapshots, saved data, operation records, previews and seed-state.json belong together.</p>
+      <div class="grid cols-2">
+        <div class="panel"><div class="panel-head"><h3>Server volume</h3><span class="tag accent">/data</span></div><ul class="tree" id="disk-server"></ul></div>
+        <div class="panel"><div class="panel-head"><h3>CLI machine</h3><span class="tag thread">XDG · %APPDATA%</span></div><ul class="tree" id="disk-client"></ul></div>
+      </div>
+    </section>
+
+    <!-- 06 HTTP API -->
+    <section class="block" id="api">
+      <div class="section-head">
+        <div>
+          <h2 class="h2 stitch">HTTP API</h2>
+          <p>Every route registered in <code>src/app.ts</code>. Errors always come back as <code>{"error":{"code","message"}}</code>.</p>
+        </div>
+        <div class="row api-tools">
+          <input class="search" id="route-q" type="search" placeholder="Filter routes…" aria-label="Filter routes" autocomplete="off">
+          <div class="seg" id="route-m" role="group" aria-label="Method"></div>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="table routes" id="routes"><thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead><tbody></tbody></table></div>
+      <p class="muted small-note" id="route-count"></p>
+      <h3 class="h3 sub-h">Request headers for uploads</h3>
+      <div class="table-wrap"><table class="table compact" id="headers"><thead><tr><th>Header</th><th>Meaning</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- 07 CLI -->
+    <section class="block" id="cli">
+      <h2 class="h2 stitch">CLI</h2>
+      <p class="sub">Every command accepts <code>--server &lt;url&gt;</code> or <code>--profile &lt;name&gt;</code>, <code>--token</code> and <code>--json</code>. With <code>--json</code>, results go to stdout and errors to stderr.</p>
+      <div class="grid cols-2" id="commands"></div>
+    </section>
+
+    <!-- 08 Deployment -->
+    <section class="block" id="deploy">
+      <h2 class="h2 stitch">Deployment</h2>
+      <p class="sub">One container, one named volume. Run exactly one server process per data volume, on a filesystem with atomic rename and fsync.</p>
+      <div class="grid cols-2 deploy">
+        <ol class="steps">
+          <li><div><h4>Generate the config</h4><p><code>artifact server init --port 3010</code> checks Docker, finds a free port, detects the Tailscale IP, and writes <code>compose.yaml</code> and <code>.env</code>. It never overwrites an existing deployment.</p></div></li>
+          <li><div><h4>Start it</h4><p><code>docker compose up -d</code>. Health is checked via <code>/healthz</code> every 30 s, with <code>shm_size: 256mb</code> for Chromium.</p></div></li>
+          <li><div><h4>Point the CLI at it</h4><p><code>artifact config set server &lt;PUBLIC_BASE_URL&gt;</code>, <code>artifact config set token &lt;token&gt;</code> if the server has one, then <code>artifact doctor</code>.</p></div></li>
+          <li><div><h4>Upgrade</h4><p>Set <code>ARTIFACT_IMAGE</code> in <code>.env</code>, then <code>docker compose pull &amp;&amp; docker compose up -d</code>. The volume is kept.</p></div></li>
+        </ol>
+        <div class="stack">
+          <pre data-copy><span class="c"># compose.yaml (excerpt)</span>
+services:
+  artifacts:
+    image: <span class="s">${ARTIFACT_IMAGE:-ghcr.io/plugincompany/artifact-library:0.4.0}</span>
+    ports: [<span class="s">"${BIND_ADDRESS:-127.0.0.1}:${PORT:-3000}:3000"</span>]
+    environment:
+      DATA_DIR: /data
+      PUBLIC_BASE_URL: <span class="s">${PUBLIC_BASE_URL:-http://localhost:3000}</span>
+    env_file: [{ path: .env, required: false }]  <span class="c"># ARTIFACT_TOKEN, MAX_*, PREVIEWS</span>
+    shm_size: 256mb
+    volumes: [artifact-data:/data]</pre>
+          <div class="callout note"><b>Two images</b>Multi-stage builds on <code>node:22-bookworm-slim</code>. The <code>full</code> target installs Playwright Chromium into <code>/opt/playwright</code> for previews; <code>slim</code> has no browser and previews off. Both build the seed and run as the <code>node</code> user. See <code>Dockerfile</code>.</div>
+        </div>
+      </div>
+      <h3 class="h3 sub-h">Environment variables</h3>
+      <div class="chips env-chips" id="env-scope" role="group" aria-label="Scope"></div>
+      <div class="table-wrap"><table class="table compact" id="env"><thead><tr><th>Variable</th><th>Scope</th><th>Default</th><th>Meaning</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- 09 Limits & failures -->
+    <section class="block" id="failures">
+      <h2 class="h2 stitch">Limits &amp; failure modes</h2>
+      <p class="sub">What the CLI's exit code tells you, and what to do about each error.</p>
+      <div class="exits" id="exits"></div>
+      <div class="grid cols-2 fail-callouts">
+        <div class="callout warn"><b>REVISION_CONFLICT</b>Someone published or edited metadata after you last looked. Inspect with <code>info</code>, <code>diff --local</code> or a fresh <code>download</code>, merge, then update with the new <code>--expected-revision</code>. Don't just bump the number to overwrite work you haven't seen.</div>
+        <div class="callout"><b>Lost response</b>The tarball is already saved under the operation key. <code>artifact retry &lt;key&gt;</code> resends the identical request, and the server returns the original result instead of creating a second version.</div>
+      </div>
+      <div class="table-wrap"><table class="table compact" id="errors" data-sortable><thead><tr><th data-sort>Code</th><th data-sort class="num">Status</th><th>When</th></tr></thead><tbody></tbody></table></div>
+      <h3 class="h3 sub-h">Limits</h3>
+      <dl class="facts" id="limits"></dl>
+    </section>
+
+    <!-- 10 Glossary -->
+    <section class="block" id="glossary">
+      <h2 class="h2 stitch">Glossary</h2>
+      <dl class="facts" id="gloss"></dl>
+    </section>
+
+    <footer class="foot-note">
+      Reference artifact · source <code>examples/reference/ref-architecture-tour</code> · facts taken from Artifact Library <span data-meta="version"></span> (<code>src/</code> at the time of writing). Built with the reference kit.
+    </footer>
+  </main>
+</div>
+</body>
+</html>

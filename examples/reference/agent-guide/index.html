@@ -1,0 +1,365 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — agent-guide
+  ===========================
+  What lives where
+    index.html  All prose, section by section (ids match the side nav).
+    data.js     Lists and tables: the reference picker (GUIDE.references), quality
+                checklist, anti-patterns, CLI cheat sheet and exit codes.
+    app.js      Renders data.js, the picker filter, the checklist and the feedback thread.
+    style.css   Page-specific styles.
+    kit/        Shared design system, copied in by ../publish.sh. Never edit here.
+
+  Common changes
+    • New reference artifact   → add a row to GUIDE.references (slug, kind, job, why, saves).
+    • New CLI command          → add a row to the right GUIDE.cli group.
+    • New quality rule         → GUIDE.checklist (keep ids stable: ticks are remembered by id).
+    • New section              → add <section id="…"> in <main> and a link in the side nav.
+  Keep it true
+    Commands, flags, limits and exit codes are taken from src/cli.ts and src/data.ts.
+    When those change, change this page in the same commit.
+  Saving
+    Feedback on the guide goes to comments.guide (Kit.comments). Read it with
+      artifact feedback agent-guide
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Artifact guide for agents</title>
+<meta name="description" content="How an AI agent makes great artifacts on this server: when to make one, the workflow, which reference to copy, the kit, saving answers and comments, the quality checklist and a CLI cheat sheet.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Sections"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="#top"><i>G</i><span>Artifact guide</span><small>For agents</small></a>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Sections">
+    <h5>Start</h5>
+    <a href="#sixty"><b>01</b>The 60-second version</a>
+    <a href="#when"><b>02</b>When to make one</a>
+    <a href="#workflow"><b>03</b>The workflow</a>
+    <h5>Build</h5>
+    <a href="#pick"><b>04</b>Pick a reference</a>
+    <a href="#kit"><b>05</b>Build with the kit</a>
+    <a href="#saving"><b>06</b>Saving &amp; feedback</a>
+    <h5>Ship</h5>
+    <a href="#verify"><b>07</b>Verify before sharing</a>
+    <a href="#publish"><b>08</b>Publish &amp; update</a>
+    <a href="#anti"><b>09</b>Anti-patterns</a>
+    <a href="#cli"><b>10</b>CLI cheat sheet</a>
+    <h5>Talk back</h5>
+    <a href="#feedback"><b>11</b>Feedback on this guide</a>
+  </nav>
+
+  <main class="main" id="top">
+    <section class="intro">
+      <div class="eyebrow rise">Agent guide · Artifact Library · CLI 0.4.0</div>
+      <h1 class="display rise" style="--i:1">Make artifacts people <em>actually read</em></h1>
+      <p class="lead rise" style="--i:2">An artifact is a web page you publish so a person can read, review or answer your work later — at a stable link, with every version kept. This guide is how to make one that is worth opening: when to make it, which reference to copy, how to build it with the kit, how readers answer you on the page, and how to check it before you share it.</p>
+      <dl class="facts intro-facts rise" style="--i:3">
+        <div><dt>Server</dt><dd>Static HTML, CSS, JS and assets per artifact; immutable versions; a toolbar is injected for version switching.</dd></div>
+        <div><dt>Saving</dt><dd>Pages save comments, answers and verdicts beside the artifact; you read them with <code>artifact feedback</code>.</dd></div>
+        <div><dt>Look</dt><dd>One shared kit for every page: tokens, components, charts, self-hosted fonts.</dd></div>
+        <div><dt>Access</dt><dd>Anyone who can reach the server can read every artifact and save answers and comments on it. If the server sets <code>ARTIFACT_TOKEN</code>, publishing, updating, archiving and purging need that token. No accounts.</dd></div>
+      </dl>
+    </section>
+
+    <!-- 01 -->
+    <section class="sec" id="sixty">
+      <h2 class="h2 stitch">The 60-second version</h2>
+      <ol class="sixty">
+        <li><span><b>Search first.</b> Something may already exist: <code>artifact search "&lt;topic&gt;" --json</code>. Update it instead of starting over.</span></li>
+        <li><span><b>Pick a reference by job</b> from the table in <a href="#pick">section 04</a> and download it: <code>artifact download &lt;ref-slug&gt; --out ./my-artifact</code>.</span></li>
+        <li><span><b>Change the content, not the plumbing.</b> Read the EDITING GUIDE comment at the top of <code>index.html</code>; most content lives in <code>data.js</code>.</span></li>
+        <li><span><b>Look at it.</b> Screenshot 1440 px light and dark and 390 px; read the images; fix overlaps, overflow and weak hierarchy.</span></li>
+        <li><span><b>Publish</b> with a name-like title and a one-sentence description, then send the link with a two-line summary.</span></li>
+        <li><span><b>Read what they saved</b> — <code>artifact feedback &lt;slug&gt;</code> — reply in the threads, and <code>artifact update</code> at the same link.</span></li>
+      </ol>
+      <pre data-copy>artifact search "release plan" --json
+artifact download ref-plan-deck --out ./release-plan
+# edit ./release-plan/index.html and data.js, check screenshots, then:
+artifact publish ./release-plan --slug release-plan-0-4 \
+  --title "Release plan 0.4" \
+  --description "Scope, milestones and risks for the 0.4 release of the artifact service." --json
+artifact feedback release-plan-0-4</pre>
+    </section>
+
+    <!-- 02 -->
+    <section class="sec" id="when">
+      <h2 class="h2 stitch">When to make an artifact — and when not</h2>
+      <div class="grid cols-2 when">
+        <div class="panel"><div class="eyebrow good-ink">Make one when</div>
+          <ul class="checks">
+            <li>The user will read it more than once, or show it to someone else.</li>
+            <li>Your work needs evidence to be trusted: screenshots, test output, a diff walked through.</li>
+            <li>There are numbers that deserve a chart and a table.</li>
+            <li>You need answers to several decisions — ask on a page instead of in a wall of chat.</li>
+            <li>A task runs long and someone wants to follow it without asking “how far are you?”.</li>
+            <li>The explanation needs layout: a diagram, a timeline, side-by-side options.</li>
+          </ul>
+        </div>
+        <div class="panel"><div class="eyebrow bad-ink">Don't make one when</div>
+          <ul class="crosses">
+            <li>The answer fits in a few lines of chat.</li>
+            <li>It belongs in the repository (a README, an ADR the team keeps in git) — put it there and link it.</li>
+            <li>It contains secrets, credentials, customer or personal data.</li>
+            <li>You won't take the time to verify it — an unchecked page costs the reader more than no page.</li>
+            <li>An artifact on the topic already exists — update that one.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section class="sec" id="workflow">
+      <h2 class="h2 stitch">The workflow</h2>
+      <p class="sub">Nine steps. Skipping 1, 5 or 8 is how artifacts go wrong.</p>
+      <ol class="steps flow">
+        <li><div><h4>Search for existing work</h4><p>Every word must match the slug, title or description. If you find it, <code>download</code> it and continue at step 4 with an update.</p><pre data-copy>artifact search "toolbar redesign" --json
+artifact recent --limit 10 --json</pre></div></li>
+        <li><div><h4>Pick a reference by the job, not the format</h4><p>“Show a reviewer what I built” → implementation review, not “a page with screenshots”. Use the <a href="#pick">picker</a>.</p></div></li>
+        <li><div><h4>Download it into a fresh folder</h4><p>Downloads contain the original files including <code>kit/</code> and fonts, so the copy works offline straight away.</p><pre data-copy>artifact download ref-implementation-review --out ./review-search-feature</pre></div></li>
+        <li><div><h4>Edit content, not plumbing</h4><p>Follow the EDITING GUIDE comment. Replace data, text and screenshots; keep the layout, kit and scripts. Label anything invented as Example content or Sample data. Never edit files inside <code>kit/</code> — if you need something new, add it to the artifact's own <code>style.css</code> or <code>app.js</code>.</p></div></li>
+        <li><div><h4>Look at it — really</h4><p>Open it over HTTP or file:// and screenshot 1440 × 900 light, 1440 × 900 dark and 390 × 844. Read the images. Then run the <a href="#verify">checklist</a>.</p></div></li>
+        <li><div><h4>Publish with good metadata</h4><p>A title is a name (“Search feature review”), the description one sentence of what is inside. Keep the slug: it is the permanent link.</p><pre data-copy>artifact publish ./review-search-feature --slug review-search-feature \
+  --title "Search feature review" \
+  --description "Acceptance criteria, annotated screenshots and findings for full-text search." --json</pre></div></li>
+        <li><div><h4>Share the link with a short summary</h4><p>Send <code>url</code> (always the latest) — not <code>versionUrl</code> — plus two lines: what it is and what you need from the reader. If it collects answers, say: “Answer on the page, then tell me to check the artifact.”</p></div></li>
+        <li><div><h4>Read what they saved</h4><p>When the user says “check the artifact”, read everything — don't guess from the chat.</p><pre data-copy>artifact feedback review-search-feature
+artifact feedback review-search-feature --since 2h --json</pre></div></li>
+        <li><div><h4>Answer and update at the same link</h4><p>Reply in the threads they used, resolve what you fixed, then publish a new version. The page shows readers a calm “new version available” notice.</p><pre data-copy>artifact data append review-search-feature comments.finding-F2 \
+  --item '{"text":"Fixed in v3: the dock collapses below 600 px."}' --author "Claude Code"
+artifact update review-search-feature ./review-search-feature --message "Fixed F2 and F3" --json</pre></div></li>
+      </ol>
+    </section>
+
+    <!-- 04 -->
+    <section class="sec" id="pick">
+      <h2 class="h2 stitch">Pick a reference</h2>
+      <p class="sub">Every reference is real, polished and built on the kit. Filter by what you need to do.</p>
+      <div class="pick-tools">
+        <input type="search" id="pick-q" placeholder="I need to… (e.g. review, decide, explain)" aria-label="Filter references by job" autocomplete="off">
+        <div class="chips" id="pick-kinds" role="group" aria-label="Filter by kind"></div>
+      </div>
+      <div class="table-wrap"><table class="table pick-table" id="pick-table">
+        <thead><tr><th>I need to…</th><th>Copy</th><th>What you get</th><th>Saves</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="muted small" id="pick-empty" hidden>No reference matches. Start from the closest one, or from <code>examples/reference/_template</code> in the repository.</p>
+    </section>
+
+    <!-- 05 -->
+    <section class="sec" id="kit">
+      <h2 class="h2 stitch">Build with the kit</h2>
+      <p class="sub">One look for every artifact. The <a href="/artifacts/reference-collection/kit.html">style guide</a> shows each component live with HTML to copy.</p>
+      <div class="grid cols-3 kit-files">
+        <div class="panel"><code>kit/kit.css</code><p>Tokens for light and dark, typography, layout (top bar, hero, side nav), cards, stat tiles, callouts, tables, steps, timeline, charts, print.</p></div>
+        <div class="panel"><code>kit/kit.js</code><p>Theme toggle, side-nav scroll-spy, copy buttons, sortable tables, reveal-on-scroll and <code>Kit.chart</code>.</p></div>
+        <div class="panel"><code>kit/kit-data.js</code><p>Saving: <code>Kit.data</code>, <code>Kit.comments</code>, the save-status line and the reader's name.</p></div>
+      </div>
+      <h3 class="h3 sub-h">The page skeleton</h3>
+      <pre data-copy>&lt;link rel="stylesheet" href="kit/kit.css"&gt;
+&lt;script src="kit/kit.js" defer&gt;&lt;/script&gt;
+&lt;script src="kit/kit-data.js" defer&gt;&lt;/script&gt;   &lt;!-- only if the page saves --&gt;
+&lt;script src="data.js" defer&gt;&lt;/script&gt;
+&lt;script src="app.js" defer&gt;&lt;/script&gt;
+
+&lt;header class="topbar"&gt; brand · section links · [data-save-status] · Collection · [data-theme-toggle] &lt;/header&gt;
+&lt;section class="hero"&gt; .eyebrow · h1.display with one &lt;em&gt; · p.lead · .hero-meta &lt;/section&gt;
+&lt;main class="wrap section"&gt; h2.h2.stitch sections … &lt;/main&gt;      (long documents: .shell + .side + .main)</pre>
+      <div class="grid cols-2 rules">
+        <div><h3 class="h3">Rules that keep pages consistent</h3>
+          <ul class="dots">
+            <li>Colours only from tokens: <code>--ink</code>, <code>--muted</code>, <code>--accent</code>, <code>--thread</code>, <code>--good</code>/<code>--warn</code>/<code>--bad</code>, series <code>--s1…--s5</code>. Dark mode then works for free.</li>
+            <li>Bricolage Grotesque for headings, Noto Sans for text, JetBrains Mono for labels — all bundled in <code>kit/fonts</code>.</li>
+            <li>Signature details: mono uppercase eyebrows, dashed “stitch” lead-ins on section headings, cards that lift on hover.</li>
+            <li>Changeable content in <code>data.js</code>; an EDITING GUIDE comment at the top of <code>index.html</code>.</li>
+            <li>Page-specific CSS in the artifact's <code>style.css</code>. Never edit the copy of <code>kit/</code>.</li>
+          </ul>
+        </div>
+        <div><h3 class="h3">Charts</h3>
+          <ul class="dots">
+            <li><code>Kit.chart.line | column | bar | donut | spark</code> — SVG, hover tooltips, theme-aware.</li>
+            <li>Wrap each in <code>.chart-card</code> with a title, a one-line takeaway and <code>button.as-table</code> for the table view.</li>
+            <li>Series colours follow fixed slots; pin one with <code>{ slot: 2 }</code> so filtering never repaints the others.</li>
+            <li>A legend for two or more series. One y-axis — two measures means two charts.</li>
+            <li>Text in ink colours, never in the series colour. Status colours only for status, always with a word.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section class="sec" id="saving">
+      <h2 class="h2 stitch">Saving &amp; feedback</h2>
+      <p class="sub">Readers answer on the page; you read and reply from the CLI. No copying back and forth.</p>
+      <div class="loop" aria-label="The feedback loop">
+        <div><b>1</b><span>You publish a page that asks something</span></div>
+        <div><b>2</b><span>The reader answers, comments or approves on the page</span></div>
+        <div><b>3</b><span>They tell you “check the artifact”</span></div>
+        <div><b>4</b><span><code>artifact feedback &lt;slug&gt;</code></span></div>
+        <div><b>5</b><span>You reply in the thread and update the page</span></div>
+      </div>
+      <div class="grid cols-2 save-grid">
+        <div>
+          <h3 class="h3">How it works</h3>
+          <ul class="dots">
+            <li>Data is a set of small JSON documents stored <em>beside</em> the artifact, not inside a version — it survives every update and is never part of a download.</li>
+            <li>Each document has a <code>key</code>, a <code>value</code>, a <code>revision</code>, timestamps, an <code>author</code> and a <code>role</code> (<code>human</code> from pages, <code>agent</code> from the CLI).</li>
+            <li>Opened from disk or another host, pages fall back to browser storage and say “Saved in this browser only”. Only the server copy reaches you.</li>
+            <li>Limits: keys of 1–128 letters, digits, <code>.</code> <code>_</code> <code>-</code>; 256 KiB per document; 500 documents per artifact; 1,000 items per thread. Uploads: 500 MB and 10,000 files per publish by default (server settings <code>MAX_UPLOAD_BYTES</code>, <code>MAX_FILES</code>).</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="h3">Key conventions</h3>
+          <div class="table-wrap"><table class="table compact keys">
+            <thead><tr><th>Key</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td><code>comments.&lt;anchor&gt;</code></td><td><code>{ items: [{ id, author, role, createdAt, text, resolved? }] }</code></td></tr>
+              <tr><td><code>answer.&lt;question&gt;</code></td><td><code>{ choice, note }</code> — one document per question</td></tr>
+              <tr><td><code>review.&lt;item&gt;</code></td><td><code>{ verdict: "approved" | "changes" | "question", note }</code></td></tr>
+              <tr><td><code>state.&lt;name&gt;</code></td><td>Anything live: a run's progress, a runbook's ticks, a chosen scope</td></tr>
+            </tbody>
+          </table></div>
+          <p class="muted small">Each reference lists its exact keys in its EDITING GUIDE comment.</p>
+        </div>
+      </div>
+      <div class="grid cols-2 save-code">
+        <div><h3 class="h3">On the page</h3>
+          <pre data-copy>// A comment thread under a finding
+Kit.comments(document.querySelector("#thread-F2"), { key: "finding-F2", title: "Discussion" });
+
+// Save an answer, show who saved it
+await Kit.data.set("answer.q1", { choice: "b", note: "Prefer the pill" });
+
+// Re-render when anyone (or the agent) changes something
+Kit.data.watch("state.", (docs) =&gt; render(docs), { interval: 5000 });</pre>
+          <p class="muted small">Add <code>&lt;span data-save-status&gt;&lt;/span&gt;</code> to the top bar so readers see that their answer reached the server.</p>
+        </div>
+        <div><h3 class="h3">From the CLI</h3>
+          <pre data-copy># read everything, or only recent changes
+artifact feedback my-review
+artifact feedback my-review --since 2h --json
+
+# reply as yourself, then resolve
+artifact data append my-review comments.finding-F2 \
+  --item '{"text":"Fixed in v4","replyTo":"c1eac54f3bc8"}' --author "Claude Code"
+artifact data update-item my-review comments.finding-F2 c1eac54f3bc8 \
+  --changes '{"resolved":true}' --author "Claude Code"
+
+# publish live state for a run log (the page polls it)
+artifact data set my-run state.run --file run.json --author "Claude Code"</pre>
+        </div>
+      </div>
+      <div class="callout"><b>Concurrency</b>Thread replies use <code>append</code>, which never loses a concurrent comment. For whole documents, pass <code>--expected-revision &lt;n&gt;</code> (0 = must not exist yet); a <code>DATA_CONFLICT</code> (exit 2) means someone saved in between — read it again and merge.</div>
+      <div class="callout warn"><b>Privacy</b>Everyone who can reach the server can read every artifact and save data on it, even when a write token protects publishing. Archiving hides an artifact, and only <code>artifact purge</code> removes it for good. Never publish or ask for secrets, credentials or personal data.</div>
+    </section>
+
+    <!-- 07 -->
+    <section class="sec" id="verify">
+      <h2 class="h2 stitch">Verify before sharing</h2>
+      <p class="sub">Tick as you go — ticks are remembered in this browser only.</p>
+      <div class="verify-grid">
+        <div class="panel checklist-panel">
+          <div class="cl-head"><b id="cl-count"></b><button class="btn ghost" type="button" id="cl-reset">Reset</button></div>
+          <div class="meter good" id="cl-meter"><i></i></div>
+          <ul class="checklist" id="checklist"></ul>
+        </div>
+        <div>
+          <h3 class="h3">Screenshot it in three passes</h3>
+          <p class="muted small">Playwright is the quickest way. Read the images — a script that runs without errors is not a page that looks right.</p>
+          <pre data-copy>python3 - &lt;&lt;'EOF'
+import asyncio
+from playwright.async_api import async_playwright
+URL = "https://artifacts.example.ts.net/artifacts/my-review/"
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        for w, h, scheme in [(1440, 900, "light"), (1440, 900, "dark"), (390, 844, "light")]:
+            page = await b.new_page(viewport={"width": w, "height": h}, color_scheme=scheme)
+            errors = []
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            await page.goto(URL); await page.wait_for_timeout(1200)
+            wide = await page.evaluate("document.documentElement.scrollWidth")
+            await page.screenshot(path=f"shot-{w}-{scheme}.png", full_page=True)
+            print(w, scheme, "scrollWidth", wide, "errors", errors)
+        await b.close()
+asyncio.run(main())
+EOF</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section class="sec" id="publish">
+      <h2 class="h2 stitch">Publish &amp; update</h2>
+      <div class="grid cols-2">
+        <div>
+          <h3 class="h3">Titles, descriptions, slugs</h3>
+          <div class="table-wrap"><table class="table compact meta-ex">
+            <thead><tr><th></th><th>Weak</th><th>Strong</th></tr></thead>
+            <tbody>
+              <tr><th>Title</th><td>Report v2 FINAL</td><td>Q3 operations report</td></tr>
+              <tr><th>Description</th><td>Here is the report you asked for.</td><td>Repairs, comebacks and staffing for the workshop, July–September 2026.</td></tr>
+              <tr><th>Slug</th><td><code>report2</code></td><td><code>ops-report-2026-q3</code></td></tr>
+            </tbody>
+          </table></div>
+          <ul class="dots small-list">
+            <li>Slugs are 1–100 lowercase letters, digits and single hyphens, and permanent.</li>
+            <li>One slug per living document. Recurring things (weekly digests, per-task reviews) get a slug each.</li>
+            <li>Titles and descriptions can also come from <code>&lt;title&gt;</code> and <code>&lt;meta name="description"&gt;</code>; explicit flags win.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="h3">Versions, revisions, conflicts</h3>
+          <ul class="dots small-list">
+            <li><b>version</b> numbers content snapshots; <b>revision</b> is a concurrency token that also changes on metadata edits. Don't assume they are equal.</li>
+            <li>Each <code>update</code> is a complete snapshot: files you leave out disappear from latest but stay in history. Identical content creates no version.</li>
+            <li>Tracked folders (published or downloaded by the CLI) remember their revision. From an untracked folder, read the revision with <code>artifact info</code> and pass <code>--expected-revision</code>.</li>
+            <li>On <code>REVISION_CONFLICT</code> someone published in between: <code>artifact diff &lt;slug&gt; --local ./dir</code> or download the newer version, merge, and update with <em>its</em> revision. Never bump the number blindly.</li>
+            <li>A lost response? The CLI saved the upload: <code>artifact retry &lt;operation-key&gt;</code> from the error message — don't publish again.</li>
+          </ul>
+          <h3 class="h3" style="margin-top:16px">Exit codes</h3>
+          <dl class="facts" id="exit-codes"></dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section class="sec" id="anti">
+      <h2 class="h2 stitch">Anti-patterns</h2>
+      <div class="anti" id="anti-list"></div>
+    </section>
+
+    <!-- 10 -->
+    <section class="sec" id="cli">
+      <h2 class="h2 stitch">CLI cheat sheet</h2>
+      <p class="sub">Add <code>--json</code> to any command for machine-readable output on stdout; errors go to stderr. Set the server once with <code>artifact config set server &lt;url&gt;</code> or <code>ARTIFACT_SERVER_URL</code>.</p>
+      <div class="cli" id="cli-groups"></div>
+    </section>
+
+    <!-- 11 -->
+    <section class="sec" id="feedback">
+      <h2 class="h2 stitch">Feedback on this guide</h2>
+      <p class="sub">Something wrong, missing or unclear? Say it here — the guide's maintainers read it with <code>artifact feedback agent-guide</code>.</p>
+      <div id="guide-thread" class="guide-thread"></div>
+    </section>
+
+    <footer class="foot-note">Reference artifact · source <code>examples/reference/agent-guide</code> · facts from <code>src/cli.ts</code>, <code>src/data.ts</code> and <code>kit/kit-data.js</code> at CLI 0.4.0 · built with the shared kit.</footer>
+  </main>
+</div>
+</body>
+</html>

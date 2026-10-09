@@ -1,0 +1,29 @@
+/* Test & performance report — artifact-specific styles. Kit tokens only. */
+html{scrollbar-gutter:stable}
+@media (max-width:560px){.hide-sm{display:none!important}}
+.tr-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px;margin-top:28px}
+@media (max-width:620px){.tr-board{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.budget{padding:12px}.budget .value{font-size:22px}.budget .label{font-size:12.5px;min-height:2.6em}}
+.budget{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;display:grid;gap:6px;align-content:start}
+.budget .foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px}
+.budget .label{font-size:13px;color:var(--muted);font-weight:500}
+.budget .value{font:700 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.budget .value small{font:600 13px var(--body);color:var(--muted);margin-left:3px}
+.budget .limit{font:500 11.5px var(--mono);color:var(--muted)}
+.budget .meter{height:6px}
+.budget.over{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
+.tr-charts{margin-top:18px}
+.tr-wide{margin-top:16px}
+.tr-mini{margin-bottom:14px}
+.tr-mini .stat{padding:10px 14px;background:var(--soft)}
+.tr-mini .stat .value{font-size:22px}
+.tr-filter{margin:22px 0 12px}
+.tr-search{flex:1;max-width:380px;min-width:min(260px,100%);height:40px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 14px;color:var(--ink)}
+#test-table td:first-child{min-width:240px}
+#test-table code{white-space:nowrap}
+.res{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:999px;padding:1px 9px 1px 7px}
+.res::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.res.pass{background:var(--good-soft);color:var(--good)}
+.res.fail{background:var(--bad-soft);color:var(--bad)}
+.tr-discuss{position:sticky;top:calc(var(--bar) + 16px)}
+@media (max-width:620px){.tr-discuss{position:static}}
+.chart-card header>div{flex:1 1 0;min-width:min(220px,100%)}

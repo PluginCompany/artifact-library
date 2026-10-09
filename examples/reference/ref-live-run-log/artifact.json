@@ -1,0 +1,5 @@
+{
+  "slug": "ref-live-run-log",
+  "title": "Live Run Log",
+  "description": "Follow a long agent task as it happens: live step timeline with logs, elapsed time, a blocker panel to answer the agent, and a discussion thread. The agent updates it with one data command, no republish."
+}

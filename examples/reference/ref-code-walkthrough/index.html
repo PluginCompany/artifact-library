@@ -1,0 +1,111 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — Code walkthrough (reference artifact)
+  =====================================================
+  What lives where
+    snapshot.py  Captures the change: `git diff <base>` for tracked files plus whole
+                 new files → diff.js. Edit BASE / TRACKED / NEW_FILES, then run
+                 `python3 snapshot.py`. diff.js is GENERATED; never edit it by hand.
+    data.js      The story: chapters in reading order, each with why / risk / tests /
+                 things to watch, and segments that point into diff.js by file, hunk
+                 index and optional new-side line range. Write your review here.
+    app.js       Renders WALK + DIFF and wires saving. Touch only for new features.
+    style.css    Diff viewer, verdict controls, chapter layout. Kit tokens only.
+    kit/         Shared design system + kit-data.js, copied in by publish.sh.
+
+  What readers save (artifact feedback ref-code-walkthrough shows all of it)
+    review.<chapterId>          { chapter, verdict: approved|changes|question, note }
+    comments.<chapterId>        discussion of the chapter
+    comments.<chapterId>--<n>   discussion anchored to the n-th segment (1-based)
+
+  To review another change
+    1. Set BASE and the file lists in snapshot.py, run it.
+    2. Rewrite data.js: group hunks by purpose, not by file; order chapters so each
+       one only depends on earlier ones; say why, what the tests cover, what to watch.
+    3. Update artifact.json, then ./publish.sh <dir>.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Code Walkthrough</title>
+<meta name="description" content="A real change read by purpose in chapters: readable diffs, why-notes, risk, per-chapter verdicts and comment threads for the agent.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="diff.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Chapters"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="#top"><i>C</i><span>Code walkthrough</span><small>Reference</small></a>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Chapters">
+    <div class="side-progress" id="side-progress"></div>
+    <h5>Start</h5>
+    <a href="#top"><b>00</b>Overview</a>
+    <a href="#asks"><b>✓</b>For the agent</a>
+    <h5>Reading order</h5>
+    <div id="side-chapters"></div>
+    <h5>Reference</h5>
+    <a href="#files"><b>≡</b>All files</a>
+  </nav>
+
+  <main class="main" id="top">
+    <header class="cw-head">
+      <div class="row" style="--gap:8px"><span class="tag thread">Example content</span><span class="eyebrow" id="h-eyebrow"></span></div>
+      <h1 class="h1 rise" id="h-title" style="--i:1"></h1>
+      <p class="lead rise" id="h-summary" style="--i:2"></p>
+      <div class="cw-stats rise" id="h-stats" style="--i:3"></div>
+      <p class="callout note rise" id="h-example" style="--i:4"></p>
+    </header>
+
+    <section class="cw-sec" id="progress-sec" aria-labelledby="progress-title">
+      <div class="grid cols-2 cw-top" style="--gap:18px">
+        <div class="panel cw-progress">
+          <div class="panel-head"><h3 id="progress-title">Review progress</h3><span class="mono muted" id="progress-count"></span></div>
+          <div class="cw-bar" id="progress-bar" role="img"></div>
+          <div class="cw-legend" id="progress-legend"></div>
+          <p class="muted cw-hint">Pick a verdict at the end of each chapter. Everything is saved for the agent as you go.</p>
+        </div>
+        <div class="panel cw-order">
+          <div class="panel-head"><h3>Suggested reading order</h3><span class="mono muted">by purpose</span></div>
+          <ol class="cw-order-list" id="order"></ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="cw-sec" id="asks" aria-labelledby="asks-title">
+      <h2 class="h2 stitch" id="asks-title">For the agent</h2>
+      <p class="muted cw-sub">Requested changes and open questions, collected from every chapter. Live.</p>
+      <div id="asks-list" class="cw-asks" aria-live="polite"></div>
+      <div class="callout stitched cw-agent"><b>Agent: read this review</b>When the reviewer says “check the walkthrough”, run the command below. It prints every verdict, note and comment, including replies in threads.
+        <pre data-copy>artifact feedback ref-code-walkthrough</pre>
+        <span class="muted">Reply in a thread: <code>artifact data append ref-code-walkthrough comments.seeding --item '{"text":"Fixed: state is written per seed."}' --author "Claude Code"</code></span>
+      </div>
+    </section>
+
+    <div id="chapters"></div>
+
+    <section class="cw-sec" id="files" aria-labelledby="files-title">
+      <h2 class="h2 stitch" id="files-title">All files</h2>
+      <p class="muted cw-sub" id="files-sub"></p>
+      <div class="table-wrap"><table class="table compact" data-sortable id="files-table">
+        <thead><tr><th data-sort>File</th><th data-sort>Status</th><th data-sort="num" class="num">Added</th><th data-sort="num" class="num">Removed</th><th>Chapters</th></tr></thead>
+        <tbody></tbody></table></div>
+    </section>
+
+    <footer class="foot-note" id="foot"></footer>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-scope-slicer (choose what fits in a release)
+  =================================================================
+  Use this when the work on the table is bigger than the time available. Readers
+  switch items in and out, set people and weeks, see a schedule, and save their
+  slice as a named proposal that the agent (and other readers) can load.
+
+  Files
+    data.js    Items (effort, value, risk, dependencies, why), areas, capacity
+               defaults and presets. Edit this first.
+    app.js     Scheduling (greedy, one person per item, dependencies first),
+               rendering, URL state (?sel=…&p=…&w=…) and saved proposals.
+    style.css  Styles for this page only (item cards, summary, timeline).
+    kit/       Shared kit (kit.css, kit.js, kit-data.js), copied in by ../publish.sh.
+
+  Saved data — read with  artifact feedback ref-scope-slicer --prefix state.scope.
+    state.scope.<person>  { name, author, selected:[{id,title,effort}], capacity:{people,
+                            weeks,focus,days}, totalDays, finishWeek, fits, valuePoints,
+                            missingDeps }        one proposal per reader (latest wins)
+    comments.scope        discussion
+
+  Common edits
+    New item        add to SCOPE.items; ids must stay stable once proposals exist.
+    New area        add to SCOPE.areas (max 4–5: colours are chart slots in order).
+    Capacity rules  SCOPE.capacity (focus 0.8 = 4 planned days per person-week).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>v0.5 scope slicer</title>
+<meta name="description" content="Interactive scope slicer: toggle candidate work items, set people and weeks, see a schedule with dependency and capacity warnings, and save proposals for the agent.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#top"><i>S</i><span>Scope slicer</span><small>v0.5</small></a>
+  <nav class="topnav" aria-label="Sections"><a href="#slice">Slice</a><a href="#timeline">Timeline</a><a href="#proposals">Proposals</a><a href="#discuss">Discussion</a></nav>
+  <span class="spacer"></span>
+  <span class="hide-md" data-save-status></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero" id="top">
+  <div class="wrap hero-inner">
+    <div class="hero-eyebrow rise"><span class="eyebrow">Planning · <span id="h-release"></span></span><span class="tag thread">Example content</span></div>
+    <h1 class="display rise" style="--i:1">What fits in <em>v0.5</em>?</h1>
+    <p class="lead rise" style="--i:2" id="h-intro"></p>
+  </div>
+</section>
+
+<main class="wrap section" id="slice">
+  <div class="planbar" role="group" aria-label="Plan settings">
+    <div class="ctl"><span class="eyebrow">People</span><div class="stepper" data-k="people"><button type="button" data-d="-1" aria-label="Fewer people">−</button><output aria-live="polite"></output><button type="button" data-d="1" aria-label="More people">+</button></div></div>
+    <div class="ctl"><span class="eyebrow">Weeks</span><div class="stepper" data-k="weeks"><button type="button" data-d="-1" aria-label="Fewer weeks">−</button><output aria-live="polite"></output><button type="button" data-d="1" aria-label="More weeks">+</button></div></div>
+    <div class="ctl cap-note"><span class="eyebrow">Capacity</span><span id="cap-text"></span></div>
+    <span class="spacer"></span>
+    <div class="ctl"><span class="eyebrow">Presets</span><div class="chips" id="presets"></div></div>
+  </div>
+
+  <div class="slice-grid">
+    <div>
+      <div class="area-legend" id="area-legend" aria-label="Areas"></div>
+      <div class="items" id="items"></div>
+    </div>
+    <aside class="summary" id="summary" aria-live="polite">
+      <div class="sum-kpis" id="kpis"></div>
+      <div class="fill"><div class="fill-bar" id="fill-bar"><i></i></div><div class="fill-legend" id="fill-legend"></div></div>
+      <div class="flags" id="flags"></div>
+      <div class="sum-actions"><a class="btn" href="#timeline">See the timeline ↓</a><a class="btn primary" href="#proposals">Save as proposal ↓</a></div>
+    </aside>
+  </div>
+
+  <section class="block" id="timeline">
+    <div class="section-head"><div><h2 class="h2 stitch">Timeline</h2><p>One person per item, dependencies first, must-haves before the rest. The dashed line is the end of your window.</p></div><div class="tl-legend" id="tl-legend"></div></div>
+    <div class="gantt-wrap"><div class="gantt" id="gantt"></div></div>
+  </section>
+
+  <section class="block" id="proposals">
+    <div class="section-head"><div><h2 class="h2 stitch">Proposals</h2><p>Save your slice under a name. Everyone’s latest proposal is listed here; load one to compare.</p></div></div>
+    <div class="prop-grid">
+      <form class="panel save-panel" id="save-form">
+        <h3 class="h3">Save this slice</h3>
+        <label><span>Name</span><input id="prop-name" maxlength="80" placeholder="e.g. Fix the reading experience first" required></label>
+        <p class="muted save-sum" id="save-sum"></p>
+        <div class="row" style="--gap:10px"><button class="author-chip" type="button" data-author-chip></button><span class="spacer"></span><button class="btn primary" type="submit">Save proposal</button></div>
+        <p class="save-status" id="save-status" aria-live="polite"></p>
+        <div class="callout stitched agent-read"><b>How the agent reads this</b><pre data-copy>artifact feedback ref-scope-slicer --prefix state.scope.</pre></div>
+      </form>
+      <div class="props" id="props"></div>
+    </div>
+  </section>
+
+  <section class="block" id="discuss">
+    <div class="section-head"><div><h2 class="h2 stitch">Discussion</h2><p>Questions about an item, or why a proposal leaves something out.</p></div></div>
+    <div class="discuss" id="thread"></div>
+  </section>
+</main>
+
+<footer class="wrap foot-note">Reference artifact · source <code>examples/reference/ref-scope-slicer</code> · items in <code>data.js</code> · built with the reference kit. Items come from real findings and ideas for the artifact service; efforts and values are example estimates.</footer>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — ref-prototype-variants (clickable UI options before building)
+  ============================================================================
+  Use this when several designs are possible and the reader should try them
+  before you build one. The page shows one mock at a time inside a device frame,
+  with controls for variant, device and page scheme, and records each reader’s pick.
+
+  Files
+    data.js    Variant texts (rationale, pros/cons, effect on findings), the
+               version list and the content of the fake page. Edit this first.
+    app.js     Builds the mock page and the three toolbar mock-ups (TOOLBARS),
+               wires their menus, and saves picks and comments with Kit.data.
+               To add a variant: add it to data.js AND a builder to TOOLBARS.
+    style.css  Device frames, the mock page, and one block per toolbar (.tb-a …).
+    kit/       Shared kit (kit.css, kit.js, kit-data.js), copied in by ../publish.sh.
+
+  Saved data — read with  artifact feedback ref-prototype-variants
+    answer.pick.<person>   { choice, choiceLabel, note, author }  one per reader,
+                           so the page can tally picks; <person> is the reader’s
+                           name as a slug.
+    comments.variant-<id>  one thread per variant.
+
+  Mock colours: the fake page has its own light/dark switch. It reuses kit tokens
+  (the opposite scheme is built by inverting --ink/--ground), so there is no raw hex.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Toolbar redesign · three variants</title>
+<meta name="description" content="Clickable prototype of three version-toolbar designs, with device and colour-scheme switches, per-variant trade-offs, saved picks and comments.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#top"><i>P</i><span>Toolbar variants</span><small>Prototype</small></a>
+  <nav class="topnav" aria-label="Sections"><a href="#try">Try them</a><a href="#compare">Compare</a><a href="#pick">Your pick</a></nav>
+  <span class="spacer"></span>
+  <span class="hide-md" data-save-status></span>
+  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero" id="top">
+  <div class="wrap hero-inner pv-hero">
+    <div>
+      <div class="hero-eyebrow rise"><span class="eyebrow">Prototype · Artifact service</span><span class="tag thread">Example content</span></div>
+      <h1 class="display rise" style="--i:1">Three ways to fix the <em>toolbar</em></h1>
+      <p class="lead rise" style="--i:2" id="intro"></p>
+      <div class="tags rise" style="--i:3;margin-top:18px" id="findings"></div>
+    </div>
+    <ol class="how rise" style="--i:2">
+      <li><b>Try each variant</b><span>Click the toolbar in the frame: open menus, switch versions, collapse it.</span></li>
+      <li><b>Switch device and scheme</b><span>The problems were on phones and dark pages, so check both.</span></li>
+      <li><b>Pick one and say why</b><span>Your pick and comments are saved for the agent.</span></li>
+    </ol>
+  </div>
+</section>
+
+<main>
+  <section class="wrap section" id="try">
+    <div class="controls" role="toolbar" aria-label="Prototype controls">
+      <div class="ctl"><span class="eyebrow">Variant</span><div class="seg variant-seg" id="variant-seg" role="group" aria-label="Variant"></div></div>
+      <div class="ctl"><span class="eyebrow">Device</span><div class="seg" id="device-seg" role="group" aria-label="Device"><button type="button" data-v="desktop" aria-pressed="true">Desktop</button><button type="button" data-v="phone" aria-pressed="false">Phone</button></div></div>
+      <div class="ctl"><span class="eyebrow">Page scheme</span><div class="seg" id="scheme-seg" role="group" aria-label="Page colour scheme"><button type="button" data-v="light" aria-pressed="true">Light</button><button type="button" data-v="dark" aria-pressed="false">Dark</button></div></div>
+      <span class="spacer"></span>
+      <span class="keys hide-md"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> variant · <kbd>D</kbd> device · <kbd>S</kbd> scheme</span>
+    </div>
+
+    <div class="studio">
+      <div class="stage" id="stage">
+        <div class="device desktop" id="device">
+          <div class="chrome" aria-hidden="true"><i></i><i></i><i></i><span class="url">artifacts.example.ts.net/artifacts/q3-report/</span></div>
+          <div class="vp" id="vp"><div class="mock" id="mock"></div><div class="tb-host" id="tb-host"></div><div class="toast" id="toast" role="status" aria-live="polite"></div></div>
+        </div>
+        <p class="stage-note" id="stage-note"></p>
+      </div>
+      <aside class="info" id="info" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <section class="wrap section" id="compare">
+    <div class="section-head"><div><h2 class="h2 stitch">Side by side</h2><p>The same trade-offs in one table. Click a column to try that variant.</p></div></div>
+    <div class="table-wrap"><table class="table cmp-table" id="cmp-table"></table></div>
+  </section>
+
+  <section class="wrap section" id="pick">
+    <div class="section-head"><div><h2 class="h2 stitch">Your pick</h2><p>One pick per person. Change it any time; the latest one counts.</p></div></div>
+    <div class="pick-grid">
+      <div class="panel pick-panel">
+        <div class="pick-cards" id="pick-cards" role="radiogroup" aria-label="Your favourite variant"></div>
+        <label class="pick-note"><span>Why this one? <em>optional</em></span><textarea id="pick-note" rows="3" placeholder="What made you choose it, and what would you change?"></textarea></label>
+        <div class="row pick-actions"><button class="author-chip" type="button" data-author-chip></button><span class="spacer"></span><button class="btn ghost" type="button" id="pick-clear" hidden>Remove my pick</button><button class="btn primary" type="button" id="pick-save">Save my pick</button></div>
+        <p class="pick-status" id="pick-status" aria-live="polite"></p>
+      </div>
+      <div class="panel tally-panel">
+        <div class="panel-head"><h3>Picks so far</h3><span class="muted" id="tally-total"></span></div>
+        <div id="tally"></div>
+        <div class="callout stitched agent-read"><b>How the agent reads this</b><pre data-copy>artifact feedback ref-prototype-variants</pre><span>Picks are <code>answer.pick.&lt;person&gt;</code>; comments are <code>comments.variant-a|b|c</code>.</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot-note">Reference artifact · source <code>examples/reference/ref-prototype-variants</code> · variants in <code>data.js</code>, mock-ups in <code>app.js</code> · built with the reference kit. The problems (F2, F3) are real; the designs are example content.</footer>
+</body>
+</html>

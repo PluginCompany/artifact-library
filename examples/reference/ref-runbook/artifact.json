@@ -1,0 +1,5 @@
+{
+  "slug": "ref-runbook",
+  "title": "Runbook: Release and Deploy",
+  "description": "The real release procedure for the artifact service as a shared checklist: copyable commands, expected output, what to do when a step fails, rollback, and live progress showing who ticked what."
+}
