@@ -52,6 +52,9 @@
   #browser .url svg{width:14px;height:14px;flex:none;color:#2E7D4F}
   #browser .url b{font-weight:500;color:#8A929C}
   #browser iframe{width:100%;height:100%;border:0;display:block;background:#F1F2EF}
+  /* Hidden while a page loads: an iframe's first frames can show stale or half-styled content. */
+  #browser iframe{transition:opacity .22s ease}
+  #browser.loading iframe{opacity:0;transition:none}
   #term{background:#11151C}
   #term .bar{background:#171C24;border-bottom:1px solid #232A33;color:#8a929c}
   #term .bar span{margin-left:12px}
@@ -143,10 +146,13 @@ let cx = 960, cy = 1200;
 
 window.stage = {
   layout(name) { const L = LAYOUT[name]; place($("#browser"), L.browser); place($("#term"), L.term); },
-  async open(url, label) {
+  async open(url, label, reveal = 80) {
     const f = $("#web");
     $("#url").innerHTML = esc(label || url).replace(/^(\w+:\/\/[^/]+)/, "<b>$1</b>");
+    $("#browser").classList.add("loading");
     await new Promise((res) => { f.onload = res; f.src = url; });
+    await sleep(reveal);
+    $("#browser").classList.remove("loading");
   },
   caption(k, title, sub) {
     const c = $("#cap"); c.classList.add("swap");

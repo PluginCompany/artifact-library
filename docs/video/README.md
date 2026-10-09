@@ -16,7 +16,7 @@ python3 docs/video/screenshots.py
 cd docs/media
 ffmpeg -ss 0 -t 28 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=12,scale=860:-1:flags=lanczos" \
   -c:v libwebp -quality 62 -compression_level 6 -loop 0 -an intro-teaser.webp
-ffmpeg -ss 12.8 -t 12.8 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=14,scale=900:-1:flags=lanczos" \
+ffmpeg -ss 13.2 -t 12.5 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=14,scale=900:-1:flags=lanczos" \
   -c:v libwebp -quality 64 -compression_level 6 -loop 0 -an answer.webp
 ```
 
