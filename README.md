@@ -25,8 +25,8 @@
 </p>
 
 <p align="center">
-  <a href="docs/media/intro.mp4"><img src="docs/media/intro-teaser.webp" alt="The first 30 seconds: an agent publishes a plan, you click an answer, another agent reads it" width="860"></a><br>
-  <sub>▶ <a href="docs/media/intro.mp4">Watch the full 2½-minute intro</a> — planning, progress, code review, reports and sharing</sub>
+  <a href="https://github.com/PluginCompany/artifact-library/releases/download/v0.4.0/artifact-library-intro-4k60.mp4"><img src="docs/media/intro-teaser.webp" alt="The first 30 seconds: an agent publishes a plan, you click an answer, another agent reads it" width="860"></a><br>
+  <sub>▶ <a href="https://github.com/PluginCompany/artifact-library/releases/download/v0.4.0/artifact-library-intro-4k60.mp4">Watch the full 2½-minute intro</a> (4K, 60 fps) — planning, progress, code review, reports and sharing</sub>
 </p>
 
 ---

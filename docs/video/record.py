@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""Record the Artifact Library intro video: docs/media/intro.mp4 (3840×2160, 30 fps) + poster.
+"""Record the Artifact Library intro video: docs/media/intro.mp4 (3840×2160, 60 fps) + poster.
 
     ORIGIN=http://127.0.0.1:3000 python3 docs/video/record.py
     ORIGIN=… python3 docs/video/record.py --only hook,review     # some segments, for iterating
-    SCALE=1 ORIGIN=… python3 docs/video/record.py                # 1920×1080 instead of 4K
+    CAPTURE=devtools SCALE=1 ORIGIN=… python3 docs/video/record.py   # headless 1920×1080 draft
 
 Needs: a fresh server seeded with the reference collection, the `artifact` CLI (or
-ARTIFACT_CLI=…), Python Playwright with Chromium, ffmpeg and Pillow. Everything shown is
+ARTIFACT_CLI=…), Python Playwright with Chromium, ffmpeg, Pillow and OBS. Everything shown is
 the real product on that server, and every terminal line is the real output of the
 command typed, run against the server just before it is shown.
 
-The stage is laid out in CSS pixels at 1920×1080 and rendered at SCALE× device pixels
-(default 2, so 4K). Takes go to ~/.cache/artifact-intro (or INTRO_WORK): 4K PNG frames
-need about 10 GB, so not tmpfs; the frames are deleted once the film is encoded.
+Capture (docs/video/README.md has the details): by default Chromium runs fullscreen on a real
+3840×2160 monitor (FILM_SCREEN) and OBS records it in real time at 60 fps, cut between two magenta
+marker frames. CAPTURE=devtools records headless through the DevTools screencast instead, in
+slow motion (SLOW), because that screencast only delivers ~11 frames per second at 4K. The stage
+is laid out at 1920×1080 CSS pixels and zoomed by SCALE (default 2), so every pixel is real.
 
 The film plays on stage.html (caption band, chapter rail, a browser window with an iframe
 on the server, a terminal window) and is recorded in one take, so windows move between
@@ -23,7 +25,7 @@ import asyncio, json, mimetypes, os, shutil, subprocess, sys, tempfile, time
 from pathlib import Path
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(Path(__file__).parent))
-from screencast import Recorder, COLOR
+from screencast import COLOR, ObsRecorder, Recorder, find_markers
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -36,10 +38,30 @@ SIZE = (round(1920 * SCALE), round(1080 * SCALE))
 CACHE = Path.home() / ".cache" / "artifact-intro"
 WORK = Path(os.environ["INTRO_WORK"]) if os.environ.get("INTRO_WORK") else Path(tempfile.mkdtemp(prefix="intro-", dir=CACHE.mkdir(parents=True, exist_ok=True) or CACHE))
 HOME = WORK / "home"
+FPS = int(os.environ.get("FPS", "60"))
+# obs: a fullscreen browser on a real 4K monitor, recorded by OBS in real time (default).
+# devtools: headless, captured through the DevTools screencast in slow motion (no monitor needed).
+CAPTURE = os.environ.get("CAPTURE", "obs")
+FILM_SCREEN = os.environ.get("FILM_SCREEN", "2160,490")   # top-left of the 3840×2160 monitor OBS records
+SLOW = float(os.environ.get("SLOW", "1" if CAPTURE == "obs" else "8"))
 CRF = os.environ.get("CRF", "19")  # final quality; aq-mode 3 keeps dark gradients free of blocking
 PACE = 0.72  # cursor travel and post-click pauses, relative to the timings written below
 CHAPTERS = ["Plan", "Build", "Review", "Report", "Share"]
 READER = "Alex"
+
+# Every clock a page can see runs SLOW times slower; CSS and Web Animations are slowed through DevTools.
+TIME_SHIM = """
+(() => {
+  const K = %s, now = performance.now.bind(performance), t0 = now(), dnow = Date.now, d0 = dnow();
+  performance.now = () => t0 + (now() - t0) / K;
+  Date.now = () => d0 + (dnow() - d0) / K;
+  const st = setTimeout, si = setInterval, raf = requestAnimationFrame;
+  window.setTimeout = (f, ms = 0, ...a) => st(f, ms * K, ...a);
+  window.setInterval = (f, ms = 0, ...a) => si(f, ms * K, ...a);
+  // DevTools' playback rate already slows rAF timestamps, so hand callbacks our own clock instead.
+  window.requestAnimationFrame = (cb) => raf(() => cb(performance.now()));
+})();
+""" % SLOW
 
 FRAME_HELPERS = """
 try { localStorage.setItem('kit-author', JSON.stringify(%s)); localStorage.setItem('artifact-toolbar-collapsed','false'); } catch (e) {}
@@ -125,7 +147,7 @@ class Stage:
     def web(self): return self.pg.frame_locator("#web")
     def frame(self): return self.pg.frame(name="web")
     async def js(self, code, arg=None): return await self.pg.evaluate(code, arg)
-    async def wait(self, ms): await self.pg.wait_for_timeout(ms)
+    async def wait(self, ms): await self.pg.wait_for_timeout(ms * SLOW)
     async def caption(self, k, title, sub=""): await self.js("([k,t,s]) => stage.caption(k,t,s)", [k, title, sub])
     async def rail(self, i): await self.js("([c,i]) => stage.rail(c,i)", [CHAPTERS, i])
     async def layout(self, name, settle=900): await self.js("n => stage.layout(n)", name); await self.wait(settle)
@@ -387,20 +409,36 @@ SEGMENTS = ["hook", "plan", "build", "review", "report", "share", "end"]
 async def main(only):
     data, plan_dir = prepare()
     async with async_playwright() as p:
-        b = await p.chromium.launch()
-        # A SCALE-times larger viewport with the stage zoomed by SCALE: real 3840×2160 frames (the
-        # screencast always captures CSS pixels, whatever the device scale factor).
-        ctx = await b.new_context(viewport={"width": SIZE[0], "height": SIZE[1]}, device_scale_factor=1)
+        if CAPTURE == "obs":
+            x, y = FILM_SCREEN.split(",")
+            ctx = await p.chromium.launch_persistent_context(
+                str(WORK / "profile"), headless=False, no_viewport=True, ignore_default_args=["--enable-automation"],
+                args=["--kiosk", "--start-fullscreen", f"--window-position={x},{y}", f"--window-size={SIZE[0]},{SIZE[1]}",
+                      "--ozone-platform=x11", "--hide-scrollbars", "--ignore-gpu-blocklist", "--enable-gpu-rasterization"])
+        else:
+            browser = await p.chromium.launch()
+            ctx = await browser.new_context(viewport={"width": SIZE[0], "height": SIZE[1]}, device_scale_factor=1)
+        if SLOW != 1: await ctx.add_init_script(TIME_SHIM)
         await ctx.add_init_script(FRAME_HELPERS)
         # Serve the stage from the server's origin so the iframe renders in-process: camera moves
         # then scale finished rasters instead of re-laying out text every frame (no wobble).
         await ctx.route(ORIGIN + "/__stage/**", serve_stage)
-        pg = await ctx.new_page()
+        pg = ctx.pages[0] if ctx.pages else await ctx.new_page()
         await pg.goto(ORIGIN + "/__stage/docs/video/stage.html")
+        # The stage is laid out at 1920×1080 and zoomed by SCALE: real 3840×2160 pixels.
         await pg.evaluate("z => document.documentElement.style.zoom = z", SCALE)
         await pg.evaluate("document.fonts.ready"); await pg.wait_for_timeout(600)
+        size = await pg.evaluate("[innerWidth, innerHeight]")
+        if size != list(SIZE): raise RuntimeError(f"browser is {size}, not {SIZE}: check FILM_SCREEN")
+        if SLOW != 1:
+            anim = await ctx.new_cdp_session(pg)
+            await anim.send("Animation.enable"); await anim.send("Animation.setPlaybackRate", {"playbackRate": 1 / SLOW})
         s = Stage(pg)
-        rec = Recorder(pg, str(WORK / "take.mp4"), size=SIZE); await rec.start()
+        if CAPTURE == "obs":
+            rec = ObsRecorder(str(WORK.parent / "obs")); await rec.start()
+            await s.js("stage.marker(true)"); await s.wait(400); await s.js("stage.marker(false)")
+        else:
+            rec = Recorder(pg, str(WORK / "take.mp4"), fps=FPS, size=SIZE, slow=SLOW); await rec.start()
         run = {"hook": hook, "plan": plan, "build": build, "review": review, "report": report,
                "share": lambda s, d: share(s, d, plan_dir), "end": ending}
         for name in SEGMENTS:
@@ -408,17 +446,25 @@ async def main(only):
             if only and name not in ("hook", "end"):
                 await s.js("stage.card(null)"); await s.layout("browser", 300)
             await run[name](s, data)
-        await rec.stop(); await b.close()
-    finish(WORK / "take.mp4")
+        if CAPTURE == "obs":
+            await s.js("stage.marker(true)"); await s.wait(400)
+            take = Path(await rec.stop())
+        else:
+            await rec.stop(); take = WORK / "take.mp4"
+        await ctx.close()
+    finish(take, find_markers(str(take), FPS) if CAPTURE == "obs" else None)
 
 
-def finish(take):
+def finish(take, cut=None):
+    """Final film: cut between the markers (OBS takes), fade in, x264 with BT.709 tags, no audio."""
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    trim = ["-ss", f"{cut[0]:.3f}", "-to", f"{cut[1]:.3f}"] if cut else []
     vf = "fade=t=in:st=0:d=0.6,format=yuv420p,setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(take), "-vf", vf, *COLOR, "-c:v", "libx264", "-preset", "veryslow", "-crf", CRF,
-                    "-x264-params", "aq-mode=3:aq-strength=0.9", "-movflags", "+faststart", str(OUT)], check=True)
-    poster(take)
-    shutil.rmtree(str(take) + ".frames", ignore_errors=True)   # ~10 GB of PNGs at 4K; take.mp4 stays
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *trim, "-i", str(take), "-an", "-vf", vf, *COLOR, "-r", str(FPS),
+                    "-c:v", "libx264", "-preset", "veryslow", "-crf", CRF, "-x264-params", "aq-mode=3:aq-strength=0.9",
+                    "-movflags", "+faststart", str(OUT)], check=True)
+    poster(OUT)
+    shutil.rmtree(str(take) + ".frames", ignore_errors=True)   # DevTools takes: ~10 GB of PNGs at 4K
     dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(OUT)]).decode())
     print(f"{OUT} · {dur:.1f} s · {OUT.stat().st_size / 1e6:.1f} MB · take in {WORK}")
 

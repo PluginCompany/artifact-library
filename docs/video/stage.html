@@ -72,6 +72,9 @@
   #ring.on{opacity:1;box-shadow:0 0 0 4px rgba(143,156,255,.95),0 0 0 9999px rgba(8,10,14,.45)}
 
   /* Cursor */
+  /* Sync marker for screen recordings: the film is cut between two magenta frames */
+  #marker{position:fixed;inset:0;z-index:999;background:#f0f;display:none}
+  #marker.on{display:block}
   #cursor{position:absolute;left:0;top:0;width:34px;height:34px;z-index:50;pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.45));transition:opacity .3s}
   #cursor svg{display:block;width:34px;height:34px;transform-origin:6px 4px}
   .ripple{position:absolute;z-index:49;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid var(--accent);pointer-events:none;animation:rip .6s ease-out forwards}
@@ -120,6 +123,7 @@
   <pre><b>curl</b> -fsSL https://raw.githubusercontent.com/plugincompany/artifact-library/main/install.sh | sh</pre>
   <div class="repo">github.com/<span>plugincompany/artifact-library</span></div>
 </div></div>
+<div id="marker"></div>
 <div id="cursor"><svg viewBox="0 0 24 24"><path d="M4 2.5l15.5 9.2-6.6 1.6 3.9 7.1-2.9 1.6-3.9-7.2L5 19.6z" fill="#fff" stroke="#0B0E13" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
 <script>
 const $ = (s) => document.querySelector(s);
@@ -168,6 +172,7 @@ window.stage = {
     r.innerHTML = items.map((t, i) => `<span class="${i === current ? "on" : i < current ? "done" : ""}"><i>0${i + 1}</i>${t}</span>`).join("");
     r.classList.remove("off");
   },
+  marker(on) { $("#marker").classList.toggle("on", on); },
   card(id) { document.querySelectorAll(".card").forEach((c) => c.classList.toggle("on", c.id === id)); },
   zoom(x, y, s) { const z = s && s !== 1; $("#world").style.transform = z ? `translate(${x}px,${y}px) scale(${s})` : "none"; $("#capbg").classList.toggle("on", z); },
   ring(r) { const g = $("#ring"); if (!r) { g.classList.remove("on"); return; } Object.assign(g.style, { left: r[0] + "px", top: r[1] + "px", width: r[2] + "px", height: r[3] + "px" }); g.classList.add("on"); },

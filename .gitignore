@@ -10,3 +10,6 @@ seed/
 # Built by `npm run build:binary` / `build:binaries`; published as GitHub release assets.
 release/
 __pycache__/
+
+# The intro film is published as a release asset (see docs/video/README.md)
+docs/media/intro.mp4
