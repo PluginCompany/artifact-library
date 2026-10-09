@@ -30,11 +30,16 @@ https://github.com/user-attachments/assets/d76449c8-ae6c-410e-a08d-fa6b91edfac9
 
 ---
 
-Agents are great at producing a plan, a review of what they just built, or a report — and terrible at handing it over. Chat scrolls away, markdown loses the screenshots, and when you finally answer their questions the agent has to scrape your reply out of the conversation.
+Coding agents produce plans, progress updates, reviews and reports, and then lose them in a chat that scrolls away. When you answer their questions, the agent has to dig your reply out of the conversation.
 
-**Artifact Library** gives every one of those pages a home. The agent publishes a folder of HTML with one command and shares a stable link. You read it in the browser, click through versions, and answer *on the page* — pick options, comment on a finding, approve a change. The agent reads your answers back with `artifact feedback` and replies in the same thread.
+**Artifact Library gives that work a home:**
 
-**One library for every agent.** Claude Code writes the plan, Codex builds it and reports progress on a live page, OpenCode reviews the result — and they all publish to, search and read the same library through the same CLI, skill or MCP server. An answer you click on one agent's page is there for the next agent to pick up. No per-tool silos, no copying between chats.
+- **Publish:** the agent publishes a folder of HTML with one command and shares a stable link.
+- **Read:** you open it in the browser, with every version kept.
+- **Answer on the page:** pick an option, comment on a finding, approve a change.
+- **Read back:** the agent picks up your answers with `artifact feedback` and replies in the same thread.
+
+**One library for every agent.** Claude Code writes the plan, Codex builds it and reports progress on a live page, OpenCode reviews the result. They all publish to, search and read the same library through the same CLI, skill or MCP server, so an answer you give on one agent's page is there for the next agent to pick up.
 
 ## What it's for
 
@@ -126,7 +131,22 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 
 <img src="docs/media/collection.webp" alt="The reference collection hub" width="100%">
 
-Every server ships **21 polished reference artifacts**, one per common job — plan deck, decision questionnaire, prototype variants, scope slicer, decision record, live run log, debug notebook, runbook, implementation review, **results and evidence** (the agent's proof of done, with a sign-off), code walkthrough, visual regression gallery, test report, multi-page report, weekly digest, **feature tour** (real screenshots with callouts and paths per role), **user guide** (step-by-step processes with screenshots, in two languages), architecture tour, codebase map — plus a **guide for agents** and a **style guide**. They share a small design system (`kit/`) with light and dark mode, a second **Quiet** theme, charts with table views, comment threads and self-hosted fonts. Agents download the closest one and change the content, not the plumbing. [See the collection →](docs/reference-collection.md)
+Every server ships **21 polished reference artifacts**, one per common job. Agents download the closest one, swap the content and publish; the plumbing (saving answers, comment threads, charts, print, phones) is already done.
+
+| Phase | References |
+|---|---|
+| **Plan** | Plan deck · Decision questionnaire · Prototype variants · Scope slicer · Decision record |
+| **Build** | Live run log · Debug notebook · Runbook |
+| **Review** | Implementation review · Results and evidence · Code walkthrough · Visual regression · Test report |
+| **Report** | Multi-page report · Weekly digest |
+| **Explain** | Feature tour · User guide · Architecture tour · Codebase map |
+| **Start here** | Guide for agents · CLI and skill install page |
+
+- **One design system** (`kit/`) behind all of them, with its own style guide on the collection hub: light and dark mode, charts with table views, comment threads, self-hosted fonts.
+- **Two themes**: the default, and **Quiet** (monochrome, airy, frosted bars), switched on with one stylesheet link.
+- **Seeded on every server** and updated with new releases, without overwriting your own edits.
+
+[See the collection →](docs/reference-collection.md)
 
 <table>
 <tr>
@@ -168,7 +188,10 @@ flowchart LR
   S --- D[("Data volume<br/>versions · previews · saved data")]
 ```
 
-A publication is a complete snapshot of a folder, stored once and served at `/artifacts/<slug>/_versions/<n>/`. The stable link redirects to the latest version, and a small toolbar is injected into HTML on the way out (the stored bytes never change). Previews are rendered by a headless Chromium inside the full image. Saved data lives in small JSON documents next to the versions and is read and written through `/api/v1/artifacts/<slug>/data`.
+- **Versions:** every publication is a complete snapshot of a folder, stored once and served at `/artifacts/<slug>/_versions/<n>/`. The stable link `/artifacts/<slug>/` redirects to the latest.
+- **Toolbar:** a small version toolbar is injected into HTML on the way out; the stored bytes never change.
+- **Previews:** rendered by a headless Chromium inside the full image.
+- **Saved data:** answers, comments and live state are small JSON documents next to the versions, read and written through `/api/v1/artifacts/<slug>/data`.
 
 ## Using it with agents
 
