@@ -76,7 +76,7 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 
 ### Feedback on the page, read by the agent
 
-<img src="docs/media/answer.webp" alt="Clicking an answer on a questionnaire, then an agent reading it with artifact data get" width="100%">
+<img src="docs/media/answer.webp" alt="Clicking answers on a questionnaire, then Codex reading them with artifact feedback" width="100%">
 
 <table>
 <tr>

@@ -69,7 +69,7 @@
 
   /* Cursor */
   #cursor{position:absolute;left:0;top:0;width:34px;height:34px;z-index:50;pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.45));transition:opacity .3s}
-  #cursor svg{width:34px;height:34px}
+  #cursor svg{display:block;width:34px;height:34px;transform-origin:6px 4px}
   .ripple{position:absolute;z-index:49;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid var(--accent);pointer-events:none;animation:rip .6s ease-out forwards}
   @keyframes rip{from{transform:scale(.25);opacity:.95}to{transform:scale(1.5);opacity:0}}
 
@@ -180,7 +180,8 @@ window.stage = {
       requestAnimationFrame(step);
     });
   },
-  press() { const c = $("#cursor"); c.animate([{ scale: 1 }, { scale: .82 }, { scale: 1 }], { duration: 260, easing: "ease-out" }); stage.ripple(cx, cy); },
+  // Squeeze the arrow around its tip; scaling #cursor itself would scale its translate too and make it jump.
+  press() { $("#cursor svg").animate([{ transform: "scale(1)" }, { transform: "scale(.82)" }, { transform: "scale(1)" }], { duration: 220, easing: "ease-out" }); stage.ripple(cx, cy); },
   hideCursor(h = true) { $("#cursor").style.opacity = h ? "0" : "1"; },
   ripple(x, y) { const r = document.createElement("div"); r.className = "ripple"; r.style.left = x + "px"; r.style.top = y + "px"; document.body.appendChild(r); setTimeout(() => r.remove(), 700); },
   term: {

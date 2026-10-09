@@ -28,6 +28,7 @@ CLI = os.environ.get("ARTIFACT_CLI", "artifact")
 OUT = ROOT / "docs/media/intro.mp4"
 WORK = Path(os.environ["INTRO_WORK"]) if os.environ.get("INTRO_WORK") else Path(tempfile.mkdtemp(prefix="intro-"))
 HOME = WORK / "home"
+PACE = 0.72  # cursor travel and post-click pauses, relative to the timings written below
 CHAPTERS = ["Plan", "Build", "Review", "Report", "Share"]
 READER = "Alex"
 
@@ -132,7 +133,7 @@ class Stage:
         return x * s + tx, y * s + ty
     async def glide(self, x, y, ms=800):
         """Move the drawn cursor smoothly (animated in the page), then the real pointer."""
-        await self.js("([x,y,ms]) => stage.glide(x,y,ms)", [x, y, ms])
+        await self.js("([x,y,ms]) => stage.glide(x,y,ms)", [x, y, int(ms * PACE)])
         await self.pg.mouse.move(x, y)
     async def box(self, loc):
         if isinstance(loc, str): loc = self.web.locator(loc).first
@@ -143,10 +144,10 @@ class Stage:
         loc, b = await self.box(loc)
         x, y = self.screen(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
         await self.glide(x, y, ms)
-        await self.wait(120)
+        await self.wait(70)
         await self.js("stage.press()")
-        await self.pg.mouse.down(); await self.wait(90); await self.pg.mouse.up()
-        await self.wait(after)
+        await self.pg.mouse.down(); await self.wait(80); await self.pg.mouse.up()
+        await self.wait(int(after * PACE))
     async def zoom_to(self, b, s=1.55, cx=960, cy=640, settle=1150):
         """Camera move: scale the window layer so box b sits at (cx, cy)."""
         bx, by = b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
@@ -155,16 +156,36 @@ class Stage:
     async def unzoom(self, settle=1100):
         self.z = (0.0, 0.0, 1.0); await self.js("stage.zoom(0,0,1)"); await self.wait(settle)
     async def choose(self, loc, s=1.5, hold=1300):
-        """The prominent choice click: zoom in on the option, a slow deliberate click, hold, zoom out."""
+        """The prominent choice click: zoom in on the option, a deliberate click, hold, zoom out."""
         loc, b = await self.box(loc)
         await self.zoom_to(b, s)
-        x, y = self.screen(b["x"] + b["width"] * 0.3, b["y"] + b["height"] * 0.4)
-        await self.glide(x, y, 1000)
-        await self.wait(250)
-        await self.js("stage.press()")
-        await self.pg.mouse.down(); await self.wait(110); await self.pg.mouse.up()
+        await self.press_at(b, 850)
         await self.wait(hold)
         await self.unzoom()
+    async def press_at(self, b, ms):
+        """Glide to a box measured in unzoomed stage coordinates and click it."""
+        x, y = self.screen(b["x"] + b["width"] * 0.3, b["y"] + b["height"] * 0.4)
+        await self.glide(x, y, ms)
+        await self.wait(120)
+        await self.js("stage.press()")
+        await self.pg.mouse.down(); await self.wait(90); await self.pg.mouse.up()
+    async def choose_many(self, picks, s=1.35, offset=300, hold=650):
+        """Several answers in a row under one camera move: each question scrolls up to the
+        same spot inside the zoomed window, so the options land where the camera looks."""
+        web = await self.pg.locator("#web").bounding_box()      # measured unzoomed
+        async def opt_box(sel, n):
+            r = await self.frame().evaluate("([q,n]) => { const b = document.querySelectorAll(q)[n].getBoundingClientRect(); return [b.x,b.y,b.width,b.height]; }", [sel, n])
+            return {"x": web["x"] + r[0], "y": web["y"] + r[1], "width": r[2], "height": r[3]}
+        for i, (qid, n) in enumerate(picks):
+            await self.scroll(f"#{qid} .opts", 800 if i else 900, offset); await self.wait(120)
+            b = await opt_box(f"#{qid} .opt", n)
+            if i == 0:
+                row = await opt_box(f"#{qid} .opts", 0)
+                await self.zoom_to({**row, "height": b["height"]}, s, cy=620, settle=950)
+            await self.press_at(b, 700 if i else 850)
+            await self.wait(hold)
+        await self.wait(300)
+        await self.unzoom(900)
     async def type(self, loc, text, cps=20):
         await self.click(loc, 650, 200)
         for ch in text: await self.pg.keyboard.type(ch); await self.wait(int(1000 / cps))
@@ -193,17 +214,16 @@ async def hook(s, data):
     await s.caption("You decide", "It asks the open questions. <em>You click your answer.</em>")
     await s.open("/artifacts/ref-decision-questionnaire/", 200)
     await s.layout("browser", 750)
-    qid = await s.frame().evaluate("document.querySelector('section.q').id")
-    await s.scroll(f"#{qid}", 900, 70)
-    await s.choose(s.web.locator(f"#{qid} .opt").nth(1), 1.6, 1400)
+    qids = await s.frame().evaluate("[...document.querySelectorAll('section.q')].map(q => q.id)")
+    await s.choose_many([(qids[0], 1), (qids[1], 0), (qids[3], 1)])
 
     fb = cli("feedback", "ref-decision-questionnaire", "--prefix", "answer.")
-    picked = [l for l in fb.splitlines() if l.startswith("##") or '"question"' in l or '"choiceLabel"' in l]
+    picked = [l for l in fb.splitlines() if l.startswith("##") or '"choiceLabel"' in l]
     await s.agent("Codex", "~/projects/artifact-library")
     await s.caption("Any agent reads it", "Codex picks up your answer from the <em>same library</em>",
                     "Claude Code, Codex and opencode share, create and read the same artifacts.")
     await s.layout("splitWide", 750)
-    await s.term("artifact feedback ref-decision-questionnaire", "\n".join(picked[:3]), after=1700)
+    await s.term("artifact feedback ref-decision-questionnaire", "\n".join(picked[:6]), after=1700)
 
     await s.caption("One library", "Plans, progress, reviews and reports — <em>versioned and self-hosted</em>")
     await s.open("/", 250)
