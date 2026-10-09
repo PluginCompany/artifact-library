@@ -18,7 +18,7 @@ permissions:
 
 env:
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
-  IMAGE: ghcr.io/${{ github.repository_owner }}/artifact-library
+  IMAGE: ghcr.io/plugincompany/artifact-library  # lowercase: image names may not contain capitals
 
 jobs:
   verify:
