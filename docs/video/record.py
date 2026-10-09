@@ -16,7 +16,7 @@ marker frames. CAPTURE=devtools records headless through the DevTools screencast
 slow motion (SLOW), because that screencast only delivers ~11 frames per second at 4K. The stage
 is laid out at 1920×1080 CSS pixels and zoomed by SCALE (default 2), so every pixel is real.
 
-The film plays on stage.html (caption band, chapter rail, a browser window with an iframe
+The film plays on stage.html (caption band, a browser window with an iframe
 on the server, a terminal window) and is recorded in one take, so windows move between
 layouts instead of cutting. Story: Claude Code plans, you answer, Codex builds, Claude
 Code reviews, everyone reads and writes the same library.
@@ -46,7 +46,6 @@ FILM_SCREEN = os.environ.get("FILM_SCREEN", "2160,490")   # top-left of the 3840
 SLOW = float(os.environ.get("SLOW", "1" if CAPTURE == "obs" else "8"))
 CRF = os.environ.get("CRF", "19")  # final quality; aq-mode 3 keeps dark gradients free of blocking
 PACE = 0.72  # cursor travel and post-click pauses, relative to the timings written below
-CHAPTERS = ["Plan", "Build", "Review", "Report", "Share"]
 READER = "Alex"
 
 # Every clock a page can see runs SLOW times slower; CSS and Web Animations are slowed through DevTools.
@@ -149,7 +148,6 @@ class Stage:
     async def js(self, code, arg=None): return await self.pg.evaluate(code, arg)
     async def wait(self, ms): await self.pg.wait_for_timeout(ms * SLOW)
     async def caption(self, k, title, sub=""): await self.js("([k,t,s]) => stage.caption(k,t,s)", [k, title, sub])
-    async def rail(self, i): await self.js("([c,i]) => stage.rail(c,i)", [CHAPTERS, i])
     async def layout(self, name, settle=900): await self.js("n => stage.layout(n)", name); await self.wait(settle)
     async def agent(self, name, path="~/projects/artifact-library"):
         await self.js("([a,p]) => { stage.term.agent(a); stage.term.title(p); stage.term.clear(); }", [name, path])
@@ -219,8 +217,13 @@ class Stage:
             await self.scroll(f"#{qid} .opts", 800 if i else 900, offset); await self.wait(120)
             b = await opt_box(f"#{qid} .opt", n)
             if i == 0:
-                row = await opt_box(f"#{qid} .opts", 0)
-                await self.zoom_to({**row, "height": b["height"]}, s, cy=620, settle=950)
+                # The card alone is too narrow to fill the frame at a zoom that keeps the options in
+                # view, so frame the question list beside it too (it marks each answer as it lands).
+                row, card = await opt_box(f"#{qid} .opts", 0), await opt_box(f"#{qid}", 0)
+                left = web["x"] + await self.frame().evaluate("() => { const l = document.querySelector('.q-layout'); return l.getBoundingClientRect().x + parseFloat(getComputedStyle(l).paddingLeft); }")
+                right = card["x"] + card["width"]
+                s = min(1.6, 1840 / (right - left))
+                await self.zoom_to({"x": left, "width": right - left, "y": row["y"], "height": b["height"]}, s, cy=615, settle=950)
             await self.press_at(b, 700 if i else 850)
             await self.wait(hold)
         await self.wait(300)
@@ -268,20 +271,18 @@ async def hook(s, data):
     picked = [l for l in fb.splitlines() if l.startswith("##") or '"choiceLabel"' in l]
     await s.agent("Codex", "~/projects/artifact-library")
     await s.caption("Any agent reads it", "Codex picks up your answer from the <em>same library</em>",
-                    "Claude Code, Codex and opencode share, create and read the same artifacts.")
+                    "Claude Code, Codex and OpenCode share, create and read the same artifacts.")
     await s.layout("splitWide", 750)
     await s.term("artifact feedback ref-decision-questionnaire", "\n".join(picked[:6]), after=1700)
 
     await s.caption("One library", "Plans, progress, reviews and reports — <em>versioned and self-hosted</em>")
     await s.open("/", 250)
     await s.layout("browser", 650)
-    await s.js("c => stage.rail(c, -1)", CHAPTERS)
     await s.glide(700, 650, 900); await s.glide(1330, 690, 900)
     await s.wait(1100)
 
 
 async def plan(s, data):
-    await s.rail(0)
     await s.caption("Plan", "Decks, decision records and questionnaires", "Pitch the approach, weigh the options, settle the open questions.")
     await s.open("/artifacts/v05-plan/", 600)
     await s.click(s.web.locator("body"), 600, 150)
@@ -302,7 +303,6 @@ async def plan(s, data):
 
 
 async def build(s, data):
-    await s.rail(1)
     await s.caption("Build", "Codex keeps a <em>live run log</em> while it works", "Progress is written with artifact data set — no new versions; the page updates itself.")
     await s.open("/artifacts/ref-live-run-log/", 800)
     await asyncio.to_thread(run_state, 1); await s.wait(4700)
@@ -323,8 +323,7 @@ async def build(s, data):
 
 
 async def review(s, data):
-    await s.rail(2)
-    await s.caption("Review", "Claude Code proves the work: criteria, screenshots, findings")
+    await s.caption("Review", "Claude Code proves the work: <em>criteria, screenshots, findings</em>")
     await s.open("/artifacts/toolbar-review/", 1000)
     await s.scroll("#findings", 1300)
     await s.click("#finding-list .f-open", 800, 1500)
@@ -357,7 +356,6 @@ async def review(s, data):
 
 
 async def report(s, data):
-    await s.rail(3)
     await s.caption("Report", "Reports with real charts, <em>table views</em> and pages")
     await s.layout("browser", 500)
     await s.open("/artifacts/ref-ops-report/", 700)
@@ -377,7 +375,6 @@ async def share(s, data, plan_dir):
     with open(plan_dir / "index.html", "a") as fh: fh.write("\n<!-- v2: milestones moved after review -->\n")  # a real second version
     rev = json.loads(cli("info", "v05-plan", "--json", quiet=True))["revision"]
     cli("update", "v05-plan", str(plan_dir), "--message", "Milestones moved after review", "--expected-revision", str(rev))
-    await s.rail(4)
     await s.caption("Share", "One stable link, <em>every version kept</em>", "Readers on an older version see a newer one exists; nothing reloads under them.")
     await s.open("/artifacts/v05-plan/_versions/1/", 1200)
     latest = s.web.get_by_role("link", name="Open latest").first
@@ -391,14 +388,14 @@ async def share(s, data, plan_dir):
     HOME.mkdir(parents=True, exist_ok=True)
     skill = cli("skill", "install", "--agent", "claude,codex,opencode", home=HOME)
     await s.agent("You", "~")
-    await s.caption("Share", "One library for Claude Code, Codex and opencode — <em>skill or MCP</em>")
+    await s.caption("Share", "One library for Claude Code, Codex and OpenCode — <em>skill or MCP</em>")
     await s.layout("terminal", 800)
     await s.term("artifact skill install --agent claude,codex,opencode", skill, after=400)
     await s.term("claude mcp add artifact -- artifact mcp", "", after=1500)
 
 
 async def ending(s, data):
-    await s.js("stage.rail(null)"); await s.layout("none", 300)
+    await s.layout("none", 300)
     await s.js("stage.caption('', '')")
     await s.js("stage.cursor(1500, 1160)"); await s.js("stage.card('end')")
     await s.wait(6400)

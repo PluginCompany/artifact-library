@@ -7,7 +7,7 @@
 
 <p align="center">
   One self-hosted library for the pages all your coding agents make — plans, progress, reviews, reports, questionnaires.<br>
-  Claude Code, Codex and opencode publish to it, read from it and pick up your answers. Every version kept, every link stable.
+  Claude Code, Codex and OpenCode publish to it, read from it and pick up your answers. Every version kept, every link stable.
 </p>
 
 <p align="center">
@@ -35,7 +35,7 @@ Agents are great at producing a plan, a review of what they just built, or a rep
 
 **Artifact Library** gives every one of those pages a home. The agent publishes a folder of HTML with one command and shares a stable link. You read it in the browser, click through versions, and answer *on the page* — pick options, comment on a finding, approve a change. The agent reads your answers back with `artifact feedback` and replies in the same thread.
 
-**One library for every agent.** Claude Code writes the plan, Codex builds it and reports progress on a live page, opencode reviews the result — and they all publish to, search and read the same library through the same CLI, skill or MCP server. An answer you click on one agent's page is there for the next agent to pick up. No per-tool silos, no copying between chats.
+**One library for every agent.** Claude Code writes the plan, Codex builds it and reports progress on a live page, OpenCode reviews the result — and they all publish to, search and read the same library through the same CLI, skill or MCP server. An answer you click on one agent's page is there for the next agent to pick up. No per-tool silos, no copying between chats.
 
 ## Quick start
 
@@ -111,7 +111,7 @@ Every server ships **18 polished reference artifacts**, one per common job — p
 ### Built for agents — all of them
 
 - **One shared library**: every agent on every machine publishes to and reads from the same server. Plans from one agent, progress from another, reviews from a third, all at stable links you and the agents can pass around.
-- **Agent skill** for Claude Code, opencode and Codex: `artifact skill install --agent claude`. It teaches the publish → share → feedback → update loop and points to the reference collection.
+- **Agent skill** for Claude Code, OpenCode and Codex: `artifact skill install --agent claude`. It teaches the publish → share → feedback → update loop and points to the reference collection.
 - **MCP server**: `artifact mcp` exposes search, publish, update, download, feedback, saved data and create-from-reference as tools for any MCP client.
 - **Agent-friendly CLI**: `--json` everywhere, stable exit codes, idempotent uploads with `artifact retry`, optimistic revisions, `check` and `diff` against local folders, profiles for several servers.
 

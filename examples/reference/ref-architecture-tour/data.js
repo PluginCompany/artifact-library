@@ -48,7 +48,7 @@ window.TOUR = {
     {
       id: "agent", name: "Agent + skill", short: "Agent + skill", kind: "client", file: "SKILL.md",
       at: { wide: [20, 40, 170, 66], narrow: [12, 30, 160, 56] },
-      summary: "Coding agents (Claude Code, opencode, Codex…) learn the workflow from the bundled skill and drive the CLI with --json, or call the same operations through `artifact mcp`.",
+      summary: "Coding agents (Claude Code, OpenCode, Codex…) learn the workflow from the bundled skill and drive the CLI with --json, or call the same operations through `artifact mcp`.",
       does: [
         "Searches existing work before creating new artifacts",
         "Publishes a self-contained directory, keeps url and versionUrl",

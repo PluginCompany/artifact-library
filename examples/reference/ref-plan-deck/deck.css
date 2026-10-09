@@ -27,8 +27,9 @@ body.deck-body:has(#deck[data-mode="present"]){height:100vh;height:100dvh;overfl
 .deck-frame{position:relative;width:min(100cqw,calc(100cqh * 16 / 9));aspect-ratio:16/9;container-type:inline-size}
 
 /* ---------- Slide base ---------- */
-.slide{position:absolute;inset:0;overflow:hidden;font-size:calc(100cqw / 64);line-height:1.45;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:.9em;box-shadow:var(--shadow);padding:2.6em 3.4em 3.4em;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateX(1.2em);transition:opacity .35s ease,transform .45s var(--ease),visibility 0s linear .45s}
-.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .35s ease,transform .45s var(--ease),visibility 0s}
+.slide{position:absolute;inset:0;overflow:hidden;font-size:calc(100cqw / 64);line-height:1.45;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:.9em;box-shadow:var(--shadow);padding:2.6em 3.4em 3.4em;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateX(1.2em);transition:opacity .16s ease,transform .3s var(--ease),visibility 0s linear .3s}
+/* Fade-through: the old slide is gone before the new one appears, so two slides never show at once */
+.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .3s ease .14s,transform .45s var(--ease) .1s,visibility 0s}
 .slide.before{transform:translateX(-1.2em)}
 .slide .notes{display:none}
 .slide h1,.slide h2,.slide h3,.slide h4{margin:0}
