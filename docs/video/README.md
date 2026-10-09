@@ -57,6 +57,8 @@ gh release upload v0.4.0 artifact-library-intro-4k60.mp4 --clobber
 `find_markers()` in `screencast.py` prints `<start>` and `<end>` for a take. The README embeds a 1080p version that fits GitHub's 10 MB attachment limit (Free plan) and links to the 4K release asset. GitHub only plays a README video when the file is uploaded through the web editor, which returns a `https://github.com/user-attachments/assets/…` link; there is no API for that upload, so it is a manual step:
 
 ```bash
+# from the OBS take, starting once the title card is fully in (no fade): players show the first frame before play
+ffmpeg -ss <start + 1.33> -to <end> -i ~/.cache/artifact-intro/obs/<take>.mkv -an -r 60 -c:v libx264 -preset ultrafast -qp 0 master.mkv
 ffmpeg -i master.mkv -an -vf "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p" -c:v libx264 -preset veryslow -b:v 500k -pass 1 -f null /dev/null
 ffmpeg -i master.mkv -an -vf "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p" -c:v libx264 -preset veryslow -b:v 500k -pass 2 \
   -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -movflags +faststart readme-embed.mp4
