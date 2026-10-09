@@ -17,11 +17,11 @@ python3 docs/video/screenshots.py
 cd docs/media
 ffmpeg -ss 0 -t 28 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=12,scale=860:-1:flags=lanczos" \
   -c:v libwebp -quality 62 -compression_level 6 -loop 0 -an intro-teaser.webp
-ffmpeg -ss 13.0 -t 13.2 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=14,scale=900:-1:flags=lanczos" \
+ffmpeg -ss 13.2 -t 13.6 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=14,scale=900:-1:flags=lanczos" \
   -c:v libwebp -quality 64 -compression_level 6 -loop 0 -an answer.webp
 ```
 
-The stage is laid out at 1920×1080 CSS pixels and rendered at `SCALE`× (default 2, so 4K). Takes are written to `~/.cache/artifact-intro/` (or `INTRO_WORK`): a 4K take holds about 10 GB of PNG frames while recording, so it stays off tmpfs, and the frames are deleted once the film is encoded.
+The stage is laid out at 1920×1080 CSS pixels in a `SCALE`× larger viewport with CSS `zoom: SCALE` (default 2, so real 3840×2160 frames: the DevTools screencast captures CSS pixels, so a device scale factor alone only upscales). The stage is served from the server's own origin (`/__stage/`, intercepted by Playwright), which keeps the iframe in-process: camera moves then scale finished rasters instead of re-laying out text every frame, so text doesn't wobble while zooming. The final encode is H.264 at `CRF` 19 (veryslow, aq-mode 3 against blocking in dark gradients), just under 50 MB. Takes are written to `~/.cache/artifact-intro/` (or `INTRO_WORK`): a 4K take holds about 10 GB of PNG frames while recording, so it stays off tmpfs, and the frames are deleted once the film is encoded.
 
 | File | Role |
 |---|---|

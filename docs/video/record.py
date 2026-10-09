@@ -19,7 +19,7 @@ on the server, a terminal window) and is recorded in one take, so windows move b
 layouts instead of cutting. Story: Claude Code plans, you answer, Codex builds, Claude
 Code reviews, everyone reads and writes the same library.
 """
-import asyncio, json, os, shutil, subprocess, sys, tempfile, time
+import asyncio, json, mimetypes, os, shutil, subprocess, sys, tempfile, time
 from pathlib import Path
 from playwright.async_api import async_playwright
 sys.path.insert(0, str(Path(__file__).parent))
@@ -31,11 +31,12 @@ ORIGIN = os.environ.get("ORIGIN", "http://127.0.0.1:3000").rstrip("/")
 SHOWN = "https://artifacts.example.com"           # address shown in the browser bar
 CLI = os.environ.get("ARTIFACT_CLI", "artifact")
 OUT = ROOT / "docs/media/intro.mp4"
-SCALE = float(os.environ.get("SCALE", "2"))     # device pixels per CSS pixel: 2 → 3840×2160
+SCALE = float(os.environ.get("SCALE", "2"))     # stage zoom: 2 → 3840×2160 (the stage is laid out at 1920×1080)
 SIZE = (round(1920 * SCALE), round(1080 * SCALE))
 CACHE = Path.home() / ".cache" / "artifact-intro"
 WORK = Path(os.environ["INTRO_WORK"]) if os.environ.get("INTRO_WORK") else Path(tempfile.mkdtemp(prefix="intro-", dir=CACHE.mkdir(parents=True, exist_ok=True) or CACHE))
 HOME = WORK / "home"
+CRF = os.environ.get("CRF", "19")  # final quality; aq-mode 3 keeps dark gradients free of blocking
 PACE = 0.72  # cursor travel and post-click pauses, relative to the timings written below
 CHAPTERS = ["Plan", "Build", "Review", "Report", "Share"]
 READER = "Alex"
@@ -142,12 +143,20 @@ class Stage:
     async def glide(self, x, y, ms=800):
         """Move the drawn cursor smoothly (animated in the page), then the real pointer."""
         await self.js("([x,y,ms]) => stage.glide(x,y,ms)", [x, y, int(ms * PACE)])
-        await self.pg.mouse.move(x, y)
+        await self.mouse(x, y)
+    async def mouse(self, x, y):
+        """The real pointer, from stage coordinates (the viewport is SCALE times larger)."""
+        await self.pg.mouse.move(x * SCALE, y * SCALE)
+    @staticmethod
+    def stage_box(b):
+        """Viewport pixels of a main-frame element → stage coordinates."""
+        return {k: b[k] / SCALE for k in ("x", "y", "width", "height")}
     async def box(self, loc):
         if isinstance(loc, str): loc = self.web.locator(loc).first
         await loc.scroll_into_view_if_needed()
-        b = await loc.bounding_box()
-        return loc, b
+        # Under the stage zoom Playwright reports boxes inside the iframe in stage coordinates
+        # already (it adds the iframe's unzoomed offset); only main-frame boxes need stage_box().
+        return loc, await loc.bounding_box()
     async def click(self, loc, ms=800, after=450):
         loc, b = await self.box(loc)
         x, y = self.screen(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
@@ -180,7 +189,7 @@ class Stage:
     async def choose_many(self, picks, s=1.35, offset=300, hold=650):
         """Several answers in a row under one camera move: each question scrolls up to the
         same spot inside the zoomed window, so the options land where the camera looks."""
-        web = await self.pg.locator("#web").bounding_box()      # measured unzoomed
+        web = self.stage_box(await self.pg.locator("#web").bounding_box())      # measured unzoomed
         async def opt_box(sel, n):
             r = await self.frame().evaluate("([q,n]) => { const b = document.querySelectorAll(q)[n].getBoundingClientRect(); return [b.x,b.y,b.width,b.height]; }", [sel, n])
             return {"x": web["x"] + r[0], "y": web["y"] + r[1], "width": r[2], "height": r[3]}
@@ -202,6 +211,14 @@ class Stage:
         await self.js("([c,s]) => stage.term.type(c,s)", [cmd, cps])
         if output: await self.js("o => stage.term.print(o, 36)", output)
         await self.wait(after)
+
+
+async def serve_stage(route):
+    rel = route.request.url.split("/__stage/", 1)[1].split("?")[0]
+    f = (ROOT / rel).resolve()
+    if not (f.is_file() and f.is_relative_to(ROOT) and rel.split("/")[0] in ("docs", "examples")):
+        return await route.fulfill(status=404)
+    await route.fulfill(body=f.read_bytes(), content_type=mimetypes.guess_type(f.name)[0] or "application/octet-stream")
 
 
 # ---------------------------------------------------------------- the film
@@ -257,7 +274,7 @@ async def plan(s, data):
     await s.pg.mouse.down()
     for i in range(1, 31):
         x = x0 - b["width"] * 0.5 * i / 30
-        await s.pg.mouse.move(x, y); await s.js("([x,y]) => stage.cursor(x,y)", [x, y]); await s.wait(28)
+        await s.mouse(x, y); await s.js("([x,y]) => stage.cursor(x,y)", [x, y]); await s.wait(28)
     await s.pg.mouse.up()
     await s.wait(1900)
 
@@ -371,10 +388,17 @@ async def main(only):
     data, plan_dir = prepare()
     async with async_playwright() as p:
         b = await p.chromium.launch()
-        ctx = await b.new_context(viewport={"width": 1920, "height": 1080}, device_scale_factor=SCALE)
+        # A SCALE-times larger viewport with the stage zoomed by SCALE: real 3840×2160 frames (the
+        # screencast always captures CSS pixels, whatever the device scale factor).
+        ctx = await b.new_context(viewport={"width": SIZE[0], "height": SIZE[1]}, device_scale_factor=1)
         await ctx.add_init_script(FRAME_HELPERS)
+        # Serve the stage from the server's origin so the iframe renders in-process: camera moves
+        # then scale finished rasters instead of re-laying out text every frame (no wobble).
+        await ctx.route(ORIGIN + "/__stage/**", serve_stage)
         pg = await ctx.new_page()
-        await pg.goto((HERE / "stage.html").as_uri()); await pg.evaluate("document.fonts.ready"); await pg.wait_for_timeout(600)
+        await pg.goto(ORIGIN + "/__stage/docs/video/stage.html")
+        await pg.evaluate("z => document.documentElement.style.zoom = z", SCALE)
+        await pg.evaluate("document.fonts.ready"); await pg.wait_for_timeout(600)
         s = Stage(pg)
         rec = Recorder(pg, str(WORK / "take.mp4"), size=SIZE); await rec.start()
         run = {"hook": hook, "plan": plan, "build": build, "review": review, "report": report,
@@ -391,8 +415,8 @@ async def main(only):
 def finish(take):
     OUT.parent.mkdir(parents=True, exist_ok=True)
     vf = "fade=t=in:st=0:d=0.6,format=yuv420p,setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(take), "-vf", vf, *COLOR, "-c:v", "libx264", "-preset", "veryslow", "-crf", "24",
-                    "-tune", "animation", "-movflags", "+faststart", str(OUT)], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(take), "-vf", vf, *COLOR, "-c:v", "libx264", "-preset", "veryslow", "-crf", CRF,
+                    "-x264-params", "aq-mode=3:aq-strength=0.9", "-movflags", "+faststart", str(OUT)], check=True)
     poster(take)
     shutil.rmtree(str(take) + ".frames", ignore_errors=True)   # ~10 GB of PNGs at 4K; take.mp4 stays
     dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(OUT)]).decode())
