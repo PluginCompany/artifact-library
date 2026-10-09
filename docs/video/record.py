@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Record the Artifact Library intro video: docs/media/intro.mp4 (1920×1080, 30 fps) + poster.
+"""Record the Artifact Library intro video: docs/media/intro.mp4 (3840×2160, 30 fps) + poster.
 
     ORIGIN=http://127.0.0.1:3000 python3 docs/video/record.py
     ORIGIN=… python3 docs/video/record.py --only hook,review     # some segments, for iterating
+    SCALE=1 ORIGIN=… python3 docs/video/record.py                # 1920×1080 instead of 4K
 
 Needs: a fresh server seeded with the reference collection, the `artifact` CLI (or
 ARTIFACT_CLI=…), Python Playwright with Chromium, ffmpeg and Pillow. Everything shown is
 the real product on that server, and every terminal line is the real output of the
 command typed, run against the server just before it is shown.
+
+The stage is laid out in CSS pixels at 1920×1080 and rendered at SCALE× device pixels
+(default 2, so 4K). Takes go to ~/.cache/artifact-intro (or INTRO_WORK): 4K PNG frames
+need about 10 GB, so not tmpfs; the frames are deleted once the film is encoded.
 
 The film plays on stage.html (caption band, chapter rail, a browser window with an iframe
 on the server, a terminal window) and is recorded in one take, so windows move between
@@ -26,7 +31,10 @@ ORIGIN = os.environ.get("ORIGIN", "http://127.0.0.1:3000").rstrip("/")
 SHOWN = "https://artifacts.example.com"           # address shown in the browser bar
 CLI = os.environ.get("ARTIFACT_CLI", "artifact")
 OUT = ROOT / "docs/media/intro.mp4"
-WORK = Path(os.environ["INTRO_WORK"]) if os.environ.get("INTRO_WORK") else Path(tempfile.mkdtemp(prefix="intro-"))
+SCALE = float(os.environ.get("SCALE", "2"))     # device pixels per CSS pixel: 2 → 3840×2160
+SIZE = (round(1920 * SCALE), round(1080 * SCALE))
+CACHE = Path.home() / ".cache" / "artifact-intro"
+WORK = Path(os.environ["INTRO_WORK"]) if os.environ.get("INTRO_WORK") else Path(tempfile.mkdtemp(prefix="intro-", dir=CACHE.mkdir(parents=True, exist_ok=True) or CACHE))
 HOME = WORK / "home"
 PACE = 0.72  # cursor travel and post-click pauses, relative to the timings written below
 CHAPTERS = ["Plan", "Build", "Review", "Report", "Share"]
@@ -363,12 +371,12 @@ async def main(only):
     data, plan_dir = prepare()
     async with async_playwright() as p:
         b = await p.chromium.launch()
-        ctx = await b.new_context(viewport={"width": 1920, "height": 1080}, device_scale_factor=1)
+        ctx = await b.new_context(viewport={"width": 1920, "height": 1080}, device_scale_factor=SCALE)
         await ctx.add_init_script(FRAME_HELPERS)
         pg = await ctx.new_page()
         await pg.goto((HERE / "stage.html").as_uri()); await pg.evaluate("document.fonts.ready"); await pg.wait_for_timeout(600)
         s = Stage(pg)
-        rec = Recorder(pg, str(WORK / "take.mp4")); await rec.start()
+        rec = Recorder(pg, str(WORK / "take.mp4"), size=SIZE); await rec.start()
         run = {"hook": hook, "plan": plan, "build": build, "review": review, "report": report,
                "share": lambda s, d: share(s, d, plan_dir), "end": ending}
         for name in SEGMENTS:
@@ -383,9 +391,10 @@ async def main(only):
 def finish(take):
     OUT.parent.mkdir(parents=True, exist_ok=True)
     vf = "fade=t=in:st=0:d=0.6,format=yuv420p,setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(take), "-vf", vf, *COLOR, "-c:v", "libx264", "-preset", "veryslow", "-crf", "21",
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(take), "-vf", vf, *COLOR, "-c:v", "libx264", "-preset", "veryslow", "-crf", "24",
                     "-tune", "animation", "-movflags", "+faststart", str(OUT)], check=True)
     poster(take)
+    shutil.rmtree(str(take) + ".frames", ignore_errors=True)   # ~10 GB of PNGs at 4K; take.mp4 stays
     dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(OUT)]).decode())
     print(f"{OUT} · {dur:.1f} s · {OUT.stat().st_size / 1e6:.1f} MB · take in {WORK}")
 
@@ -397,13 +406,14 @@ def poster(take):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "3.6", "-i", str(take), "-frames:v", "1",
                     "-vf", "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24", str(frame)], check=True)
     im = Image.open(frame).convert("RGBA"); w, h = im.size
-    cx, cy, r = w // 2, int(h * 0.88), 56
+    k = w / 1920                                   # sizes below are for a 1920-wide frame
+    cx, cy, r = w // 2, int(h * 0.88), 56 * k
     shadow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).ellipse((cx - r, cy - r + 10, cx + r, cy + r + 10), fill=(0, 0, 0, 130))
+    ImageDraw.Draw(shadow).ellipse((cx - r, cy - r + 10 * k, cx + r, cy + r + 10 * k), fill=(0, 0, 0, 130))
     btn = Image.new("RGBA", (w, h), (0, 0, 0, 0)); d = ImageDraw.Draw(btn)
     d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(143, 156, 255, 255))
-    d.polygon([(cx - 16, cy - 25), (cx - 16, cy + 25), (cx + 27, cy)], fill=(11, 14, 19, 255))
-    out = Image.alpha_composite(Image.alpha_composite(im, shadow.filter(ImageFilter.GaussianBlur(14))), btn).convert("RGB")
+    d.polygon([(cx - 16 * k, cy - 25 * k), (cx - 16 * k, cy + 25 * k), (cx + 27 * k, cy)], fill=(11, 14, 19, 255))
+    out = Image.alpha_composite(Image.alpha_composite(im, shadow.filter(ImageFilter.GaussianBlur(14 * k))), btn).convert("RGB")
     out.resize((1600, 900), Image.LANCZOS).save(OUT.with_name("intro-poster.png"), optimize=True)
 
 

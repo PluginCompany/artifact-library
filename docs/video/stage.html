@@ -25,6 +25,7 @@
   #cap{position:absolute;left:100px;top:52px;width:1180px;height:150px}
   #cap .k{font:500 17px "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--thread);display:flex;align-items:center;gap:14px}
   #cap .k::before{content:"";width:26px;border-top:2px dashed var(--thread)}
+  #cap .k:empty{display:none}
   #cap h1{margin:10px 0 0;font:800 50px/1.08 "Bricolage Grotesque",sans-serif;letter-spacing:-.02em;color:#fff}
   #cap h1 em{font-style:normal;color:var(--accent)}
   #cap p{margin:10px 0 0;font-size:22px;color:var(--muted);max-width:60ch}
@@ -81,9 +82,9 @@
   .card.on{opacity:1}
   .card .wrap{display:grid;justify-items:center;gap:30px}
   .card img{height:112px}
-  .card h2{margin:0;font:800 74px/1.04 "Bricolage Grotesque",sans-serif;letter-spacing:-.03em;color:#fff;max-width:20ch}
+  .card h2{margin:0;font:800 64px/1.06 "Bricolage Grotesque",sans-serif;letter-spacing:-.03em;color:#fff;max-width:32ch;text-wrap:balance}
   .card h2 em{font-style:normal;color:var(--accent)}
-  .card p{margin:0;font-size:27px;color:var(--muted);max-width:56ch;line-height:1.45}
+  .card p{margin:0;font-size:27px;color:var(--muted);max-width:56ch;line-height:1.45;text-wrap:balance}
   .card .line{width:380px;border-top:3px dashed var(--thread)}
   .card .feat{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:1300px}
   .card .feat span{font:600 20px "Noto Sans",sans-serif;padding:11px 20px;border-radius:999px;background:rgba(143,156,255,.12);border:1px solid rgba(143,156,255,.35);color:#DDE1FF}
