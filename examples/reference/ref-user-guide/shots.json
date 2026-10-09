@@ -1,0 +1,555 @@
+{
+ "shots": {
+  "library": {
+   "file": "shots/library.webp",
+   "w": 1600,
+   "h": 844,
+   "scheme": "light",
+   "pins": {
+    "search": [
+     8.4,
+     18.74,
+     54.23,
+     5.16
+    ],
+    "sort": [
+     63.47,
+     18.96,
+     9.72,
+     4.74
+    ],
+    "since": [
+     74.02,
+     18.96,
+     8.26,
+     4.74
+    ],
+    "views": [
+     83.12,
+     18.68,
+     8.48,
+     5.28
+    ],
+    "card": [
+     7.5,
+     31.99,
+     27.22,
+     50.75
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 72114
+  },
+  "library-search": {
+   "file": "shots/library-search.webp",
+   "w": 1600,
+   "h": 711,
+   "scheme": "light",
+   "pins": {
+    "search": [
+     8.4,
+     22.26,
+     54.23,
+     6.13
+    ],
+    "card": [
+     7.5,
+     37.99,
+     27.22,
+     64.12
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 56232
+  },
+  "toolbar": {
+   "file": "shots/toolbar.webp",
+   "w": 1436,
+   "h": 278,
+   "scheme": "light",
+   "pins": {
+    "library": [
+     10.16,
+     62.86,
+     11.14,
+     13.07
+    ],
+    "title": [
+     22.7,
+     62.86,
+     23.66,
+     13.07
+    ],
+    "version": [
+     47.75,
+     58.26,
+     32.01,
+     22.27
+    ],
+    "copy": [
+     81.15,
+     58.55,
+     9.67,
+     21.69
+    ],
+    "more": [
+     92.21,
+     58.19,
+     3.76,
+     22.41
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 16760
+  },
+  "toolbar-menu": {
+   "file": "shots/toolbar-menu.webp",
+   "w": 1436,
+   "h": 464,
+   "scheme": "light",
+   "pins": {
+    "latest": [
+     70.5,
+     15.94,
+     24.49,
+     14.13
+    ],
+    "snapshot": [
+     70.5,
+     30.06,
+     24.49,
+     14.13
+    ],
+    "download": [
+     70.5,
+     44.19,
+     24.49,
+     14.13
+    ],
+    "collapse": [
+     70.5,
+     58.31,
+     24.49,
+     14.13
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 28586
+  },
+  "toolbar-collapsed": {
+   "file": "shots/toolbar-collapsed.webp",
+   "w": 744,
+   "h": 346,
+   "scheme": "light",
+   "pins": {
+    "expand": [
+     69.79,
+     69.29,
+     25.64,
+     20.89
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 5270
+  },
+  "update": {
+   "file": "shots/update.webp",
+   "w": 1436,
+   "h": 328,
+   "scheme": "light",
+   "pins": {
+    "notice": [
+     8.49,
+     36.97,
+     89.14,
+     21.7
+    ],
+    "open": [
+     26.04,
+     43.03,
+     9.1,
+     8.49
+    ],
+    "dismiss": [
+     88.73,
+     42.43,
+     7.24,
+     12.61
+    ],
+    "version": [
+     47.75,
+     64.79,
+     32.01,
+     18.79
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 15564
+  },
+  "questionnaire": {
+   "file": "shots/questionnaire.webp",
+   "w": 1600,
+   "h": 996,
+   "scheme": "light",
+   "pins": {
+    "options": [
+     6.49,
+     35.98,
+     89.18,
+     115.9
+    ],
+    "chosen": [
+     51.73,
+     35.98,
+     43.94,
+     58.8
+    ],
+    "recommended": [
+     8.33,
+     67.56,
+     11.26,
+     3.69
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 68372
+  },
+  "name": {
+   "file": "shots/name.webp",
+   "w": 1000,
+   "h": 670,
+   "scheme": "light",
+   "pins": {
+    "input": [
+     12.6,
+     51.9,
+     74.8,
+     12.52
+    ],
+    "skip": [
+     12.6,
+     68.59,
+     9.4,
+     12.63
+    ],
+    "go": [
+     68.0,
+     68.59,
+     19.4,
+     12.63
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 30392
+  },
+  "saved": {
+   "file": "shots/saved.webp",
+   "w": 684,
+   "h": 124,
+   "scheme": "light",
+   "pins": {
+    "status": [
+     7.02,
+     34.4,
+     39.18,
+     25.6
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 3418
+  },
+  "comment": {
+   "file": "shots/comment.webp",
+   "w": 800,
+   "h": 894,
+   "scheme": "light",
+   "pins": {
+    "thread": [
+     5.0,
+     10.72,
+     90.0,
+     56.07
+    ],
+    "box": [
+     5.0,
+     69.02,
+     90.0,
+     15.26
+    ],
+    "resolve": [
+     16.25,
+     29.73,
+     14.75,
+     5.62
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 29432
+  },
+  "verdict": {
+   "file": "shots/verdict.webp",
+   "w": 920,
+   "h": 480,
+   "scheme": "light",
+   "pins": {
+    "approve": [
+     4.34,
+     26.23,
+     22.16,
+     16.49
+    ],
+    "changes": [
+     28.24,
+     26.23,
+     35.19,
+     16.49
+    ],
+    "note": [
+     4.34,
+     46.88,
+     91.31,
+     26.14
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 15738
+  },
+  "chapter": {
+   "file": "shots/chapter.webp",
+   "w": 1600,
+   "h": 399,
+   "scheme": "light",
+   "pins": {
+    "verdicts": [
+     1.46,
+     5.82,
+     47.72,
+     88.36
+    ],
+    "thread": [
+     50.82,
+     5.82,
+     47.72,
+     65.74
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 18844
+  },
+  "live": {
+   "file": "shots/live.webp",
+   "w": 1600,
+   "h": 622,
+   "scheme": "light",
+   "pins": {
+    "status": [
+     29.99,
+     30.04,
+     7.29,
+     5.18
+    ],
+    "steps": [
+     10.0,
+     48.75,
+     62.5,
+     1.79
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 30972
+  },
+  "phone": {
+   "file": "shots/phone.webp",
+   "w": 780,
+   "h": 1688,
+   "scheme": "light",
+   "pins": {
+    "toolbar": [
+     4.1,
+     88.82,
+     91.79,
+     9.29
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 82470
+  },
+  "dark": {
+   "file": "shots/dark.webp",
+   "w": 1600,
+   "h": 622,
+   "scheme": "dark",
+   "pins": {
+    "toggle": [
+     95.69,
+     1.88,
+     2.64,
+     6.79
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 42644
+  },
+  "list": {
+   "file": "shots/list.webp",
+   "w": 1600,
+   "h": 689,
+   "scheme": "light",
+   "pins": {
+    "views": [
+     83.12,
+     22.9,
+     8.48,
+     6.47
+    ],
+    "card": [
+     7.5,
+     39.22,
+     85.0,
+     34.42
+    ],
+    "desc": [
+     27.01,
+     53.67,
+     43.26,
+     7.22
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 36134
+  },
+  "card-menu": {
+   "file": "shots/card-menu.webp",
+   "w": 864,
+   "h": 850,
+   "scheme": "light",
+   "pins": {
+    "menu": [
+     82.87,
+     84.26,
+     7.64,
+     6.11
+    ],
+    "copy": [
+     57.41,
+     65.89,
+     31.48,
+     8.13
+    ],
+    "download": [
+     57.41,
+     74.02,
+     31.48,
+     8.13
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 33802
+  },
+  "q-hero": {
+   "file": "shots/q-hero.webp",
+   "w": 1600,
+   "h": 689,
+   "scheme": "light",
+   "pins": {
+    "start": [
+     10.0,
+     65.24,
+     14.58,
+     8.64
+    ],
+    "accept": [
+     25.42,
+     65.24,
+     13.19,
+     8.64
+    ],
+    "ring": [
+     72.18,
+     22.94,
+     9.17,
+     21.29
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 39274
+  },
+  "q-note": {
+   "file": "shots/q-note.webp",
+   "w": 1600,
+   "h": 371,
+   "scheme": "light",
+   "pins": {
+    "then": [
+     2.75,
+     19.77,
+     46.1,
+     46.24
+    ],
+    "note": [
+     51.15,
+     19.77,
+     46.1,
+     46.24
+    ],
+    "who": [
+     2.75,
+     76.38,
+     21.1,
+     10.28
+    ],
+    "clear": [
+     71.39,
+     72.92,
+     11.7,
+     17.19
+    ],
+    "next": [
+     84.0,
+     72.92,
+     13.25,
+     17.19
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 22732
+  },
+  "light": {
+   "file": "shots/light.webp",
+   "w": 1600,
+   "h": 622,
+   "scheme": "light",
+   "pins": {
+    "toggle": [
+     95.69,
+     1.88,
+     2.64,
+     6.79
+    ]
+   },
+   "missing": [],
+   "errors": [],
+   "bytes": 43620
+  }
+ },
+ "capturedAt": "2026-10-10T00:49:27+0200"
+}

@@ -12,14 +12,17 @@ Every server starts with a collection of finished, polished artifacts, one per c
 | Build | `ref-live-run-log` | Show a long task as it happens (driven by `artifact data set`) | ✓ |
 | Build | `ref-debug-notebook` | Write up a bug investigation (hypotheses, evidence, root cause, fix) | ✓ |
 | Build | `ref-runbook` | Run an operational procedure together (shared ticks, rollback) | ✓ |
-| Review | `ref-implementation-review` | Prove finished work with annotated screenshots, criteria and findings | ✓ |
+| Review | `ref-implementation-review` | Review finished work finding by finding (annotated screenshots, criteria, a verdict) | ✓ |
+| Review | `ref-results-evidence` | Hand finished work back with proof: criteria and their checks, before/after, evidence, sign-off | ✓ |
 | Review | `ref-code-walkthrough` | Walk a reviewer through a change by purpose, with a verdict per chapter | ✓ |
 | Review | `ref-visual-regression` | Approve before/after screenshots with pixel diffs, screen by screen | ✓ |
 | Review | `ref-test-report` | Show tests and performance against budgets | ✓ |
 | Report | `ref-ops-report` | Report numbers across several pages (charts with table views, CSV) | |
 | Report | `ref-weekly-digest` | Summarise a week for stakeholders | ✓ |
+| Explain | `ref-feature-tour` | Show people around a product: real screenshots with callouts, paths per role, a guided player | ✓ |
 | Explain | `ref-architecture-tour` | Explain how a system works (clickable diagram, step-through flows) | |
 | Explain | `ref-codebase-map` | Find your way around a codebase (treemap, module graph) | |
+| Explain | `ref-user-guide` | Give people a step-by-step guide with real screenshots, processes, roles and two languages | ✓ |
 | Explain | `agent-guide` | How agents should make artifacts on this server | |
 | Explain | `artifact-cli` | Install the CLI and the agent skill | |
 

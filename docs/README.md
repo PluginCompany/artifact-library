@@ -5,7 +5,7 @@
 | [CLI reference](cli.md) | Install, connect, publish, find, archive, saved data, exit codes |
 | [Agents](agents.md) | The skill, the MCP server and the publish → feedback → update loop |
 | [Saved data](saved-data.md) | Answers, comments, verdicts and live state; `kit-data.js` |
-| [Reference collection](reference-collection.md) | The 18 reference artifacts and the shared kit |
+| [Reference collection](reference-collection.md) | The 21 reference artifacts, the shared kit and its themes |
 | [Deployment](deployment.md) | Docker, Compose, Tailscale, reverse proxies, backups, upgrades |
 | [HTTP API](api.md) | Routes, publishing headers, errors |
 | [Release process](release-process.md) | Tags, CI, GHCR, npm |

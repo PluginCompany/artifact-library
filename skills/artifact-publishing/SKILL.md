@@ -33,14 +33,17 @@ Every server ships a reference collection (`<server>/artifacts/reference-collect
 | Show progress of a long task live | `ref-live-run-log` |
 | Write up a bug investigation | `ref-debug-notebook` |
 | Operational procedure with shared ticks | `ref-runbook` |
-| Prove finished work with screenshots | `ref-implementation-review` |
+| Review finished work finding by finding | `ref-implementation-review` |
+| Hand finished work back with proof and a sign-off | `ref-results-evidence` |
 | Walk a reviewer through a code change | `ref-code-walkthrough` |
 | Before/after screenshots to approve | `ref-visual-regression` |
 | Tests, performance and budgets | `ref-test-report` |
 | Numbers across several pages | `ref-ops-report` |
 | Record a decision between options | `ref-decision-record` |
+| Feature tour of a product, with screenshots | `ref-feature-tour` |
 | Explain how a system works | `ref-architecture-tour` |
 | Map an unfamiliar codebase | `ref-codebase-map` |
+| Step-by-step guide for people, with screenshots | `ref-user-guide` |
 | Weekly summary for stakeholders | `ref-weekly-digest` |
 
 ```bash

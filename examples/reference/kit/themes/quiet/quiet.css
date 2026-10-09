@@ -202,6 +202,7 @@ pre .copy{border:0;border-radius:999px;box-shadow:var(--ring);background:var(--g
 .section .callout.warn{background:color-mix(in oklab,var(--warn-soft) 70%,var(--panel))}
 .section .callout.bad{background:color-mix(in oklab,var(--bad-soft) 70%,var(--panel))}
 .section pre,.section :not(pre)>code,.section .seg,.section .chip,.section .meter{background:color-mix(in oklab,var(--soft) 55%,var(--panel))}
+.section .chip[aria-pressed="true"]{background:var(--ink);color:var(--ground)}
 
 /* Showcase cards: a white card holding the preview, the caption underneath */
 .card{border:0;border-radius:var(--radius-lg);background:var(--panel);padding:6px;box-shadow:var(--ring),var(--lift);transition:transform .5s var(--ease),box-shadow .5s var(--ease),background .3s var(--ease)}

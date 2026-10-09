@@ -99,7 +99,7 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 
 <img src="docs/media/collection.webp" alt="The reference collection hub" width="100%">
 
-Every server ships **18 polished reference artifacts**, one per common job — plan deck, decision questionnaire, prototype variants, scope slicer, decision record, live run log, debug notebook, runbook, implementation review, code walkthrough, visual regression gallery, test report, multi-page report, weekly digest, architecture tour, codebase map — plus a **guide for agents** and a **style guide**. They share a small design system (`kit/`) with light and dark mode, charts with table views, comment threads and self-hosted fonts. Agents download the closest one and change the content, not the plumbing. [See the collection →](docs/reference-collection.md)
+Every server ships **21 polished reference artifacts**, one per common job — plan deck, decision questionnaire, prototype variants, scope slicer, decision record, live run log, debug notebook, runbook, implementation review, **results and evidence** (the agent's proof of done, with a sign-off), code walkthrough, visual regression gallery, test report, multi-page report, weekly digest, **feature tour** (real screenshots with callouts and paths per role), **user guide** (step-by-step processes with screenshots, in two languages), architecture tour, codebase map — plus a **guide for agents** and a **style guide**. They share a small design system (`kit/`) with light and dark mode, a second **Quiet** theme, charts with table views, comment threads and self-hosted fonts. Agents download the closest one and change the content, not the plumbing. [See the collection →](docs/reference-collection.md)
 
 <table>
 <tr>
@@ -179,7 +179,7 @@ Compose file, reverse proxy and Tailscale examples, backups and upgrades: [docs/
 | [CLI reference](docs/cli.md) | Every command, configuration, profiles, exit codes |
 | [Agents](docs/agents.md) | Skill, MCP server, the feedback loop |
 | [Saved data](docs/saved-data.md) | Answers, comments and live state from pages and agents |
-| [Reference collection](docs/reference-collection.md) | The 18 references and the shared kit |
+| [Reference collection](docs/reference-collection.md) | The 21 references, the shared kit and its themes |
 | [Deployment](docs/deployment.md) | Docker, Compose, TLS, backups, upgrades |
 | [HTTP API](docs/api.md) | Routes, headers, errors |
 | [Release process](docs/release-process.md) | How releases are built and published |

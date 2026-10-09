@@ -1,0 +1,76 @@
+<!doctype html>
+<!--
+  EDITING GUIDE: ref-user-guide (a user guide: processes, areas, topics, real screenshots)
+  ==========================================================================================
+  A one-page app with its own routes:  #/  start · #/p/<process> · #/a/<area> ·
+  #/t/<topic> · #/print (or #/print/<area>) for a printable document.
+
+  Files
+    data.js     ALL content in window.GUIDE: interface words, roles, areas with their
+                topics (steps, "the screen explained", good to know, inside, questions,
+                related), and processes that walk through topics. Texts are { en, nl }.
+    shots/      screenshots (webp) and shots.js (sizes + pin rectangles), written by
+                capture.py from a real server. Re-run it after the UI changes.
+    app.js      Renders data.js: search with suggestions, role filter, language switch,
+                the screenshot camera (moves in on the part a step is about), compare
+                slider, diagrams, print view, and "was this helpful?" per topic.
+    style.css   Styles for this artifact only (kit and theme tokens only).
+    kit/        Shared kit, copied in by ../publish.sh. Never edit the copy.
+
+  Common edits
+    New topic        Add { id, title, summary, steps | screen, rules, faq, related } to an
+                     area in data.js. A step can point at a screenshot and one of its pins:
+                     { text, shot: "toolbar", pin: "copy" }.
+    New screenshot   Add a declarative entry to SHOTS in capture.py (url, clip, actions, pins)
+                     and run:  ORIGIN=https://your-server python3 capture.py <id>
+    New process      Add { id, title, intro, roles, steps: [{ topic, title, text }] }.
+    Another product  Replace data.js and the screenshots; keep app.js and style.css.
+    New language     Add it to GUIDE.langs and give the texts that key.
+
+  Saved data (shared by everyone who opens the page)
+    answer.helpful.<topic>.<person>  { question, topic, choice: yes|no, choiceLabel, note }
+    comments.topic.<topic>           questions about one topic (thread)
+  Agents:  artifact feedback ref-user-guide
+           artifact data append ref-user-guide comments.topic.<topic> --author "<agent>" \
+             --item '{"text":"…"}'          answer a reader's question in its thread
+
+  Do not
+    - rename topic ids casually (orphans saved feedback and breaks links)
+    - hard-code colours; use kit tokens
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>User guide · Artifact Library</title>
+<meta name="description" content="How to find, read, share and answer artifacts: processes from start to finish, topics with step-by-step screenshots, and a question box per topic.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="shots.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle id="nav-btn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="#/"><i>U</i><span id="brand"></span></a>
+  <div class="searchbox" role="search">
+    <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 12l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <input id="q" type="search" autocomplete="off" spellcheck="false" aria-controls="results">
+    <span class="hint" aria-hidden="true">/</span>
+    <div class="results" id="results" hidden></div>
+  </div>
+  <button class="icon-btn" type="button" id="print-btn"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M5 6V2.5h8V6M5 13H3V7.5h12V13h-2M5 10.5h8v5H5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+  <div class="seg roles-seg" id="roles" role="group"></div>
+  <div class="seg lang" id="langs" role="group" aria-label="Language"></div>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" id="side"></nav>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+</body>
+</html>
