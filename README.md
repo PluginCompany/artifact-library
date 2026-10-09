@@ -36,6 +36,34 @@ Agents are great at producing a plan, a review of what they just built, or a rep
 
 **One library for every agent.** Claude Code writes the plan, Codex builds it and reports progress on a live page, OpenCode reviews the result — and they all publish to, search and read the same library through the same CLI, skill or MCP server. An answer you click on one agent's page is there for the next agent to pick up. No per-tool silos, no copying between chats.
 
+## What it's for
+
+Anything an agent would otherwise dump into a chat, as a page you can read, answer and share. Every use case below has a polished reference on the server that agents copy and fill in.
+
+| Use case | What the page does | Starts from |
+|---|---|---|
+| **Planning** | A plan deck, open questions you answer with a click, options weighed in a decision record, scope cut to fit | `ref-plan-deck`, `ref-decision-questionnaire`, `ref-decision-record`, `ref-scope-slicer`, `ref-prototype-variants` |
+| **Progress tracking** | A live run log the agent updates while it works; blockers you answer on the page | `ref-live-run-log`, `ref-runbook`, `ref-debug-notebook` |
+| **Code review** | Findings on annotated screenshots, a walkthrough with a verdict per chapter, before/after diffs to approve | `ref-implementation-review`, `ref-code-walkthrough`, `ref-visual-regression` |
+| **Results and evidence** | The agent's proof of done: criteria linked to the checks that prove them, before/after, what was restored, and your sign-off | `ref-results-evidence` |
+| **Reporting** | Multi-page reports with charts and table views, test and performance results against budgets, a weekly digest | `ref-ops-report`, `ref-test-report`, `ref-weekly-digest` |
+| **Feature tours and showcases** | A guided tour of a product or a release: real screenshots with callouts, paths per role, a player that walks every feature | `ref-feature-tour` |
+| **User guides** | Step-by-step processes on real screenshots for the people who use a product, searchable, in two languages, with a question box per topic | `ref-user-guide` |
+| **Explaining a system** | Architecture tours with clickable diagrams, a map of an unfamiliar codebase | `ref-architecture-tour`, `ref-codebase-map` |
+
+<table>
+<tr>
+<td width="33%"><img src="docs/media/feature-tour.webp" alt="A feature tour with real screenshots and numbered callouts"></td>
+<td width="33%"><img src="docs/media/user-guide.webp" alt="A user guide process with numbered steps on screenshots"></td>
+<td width="33%"><img src="docs/media/results-evidence.webp" alt="A results and evidence page with criteria, measured checks and a sign-off"></td>
+</tr>
+<tr>
+<td><b>Feature tour.</b> Show people around a product, chapter by chapter.</td>
+<td><b>User guide.</b> Processes and steps on real screenshots.</td>
+<td><b>Results and evidence.</b> Proof of done, signed off on the page.</td>
+</tr>
+</table>
+
 ## Quick start
 
 **1. Run a server** (seeds a reference collection and a guide for agents on first start)

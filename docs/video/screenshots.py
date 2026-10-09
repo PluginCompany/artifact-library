@@ -90,6 +90,10 @@ async def main():
         live_run()
         await shot(ctx, "run-log", ORIGIN + "/artifacts/ref-live-run-log/")
         await shot(ctx, "report", ORIGIN + "/artifacts/ref-ops-report/")
+        await shot(ctx, "feature-tour", ORIGIN + "/artifacts/ref-feature-tour/")
+        await shot(ctx, "user-guide", ORIGIN + "/artifacts/ref-user-guide/#/p/first-visit")
+        await shot(ctx, "results-evidence", ORIGIN + "/artifacts/ref-results-evidence/")
         await b.close()
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
