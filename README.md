@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  A self-hosted home for the HTML pages your coding agents make — plans, reviews, reports, questionnaires —<br>
-  with stable links, every version kept, and feedback that flows straight back to the agent.
+  One self-hosted library for the pages all your coding agents make — plans, progress, reviews, reports, questionnaires.<br>
+  Claude Code, Codex and opencode publish to it, read from it and pick up your answers. Every version kept, every link stable.
 </p>
 
 <p align="center">
@@ -25,8 +25,8 @@
 </p>
 
 <p align="center">
-  <a href="docs/media/intro.mp4"><img src="docs/media/intro-poster.png" alt="Watch the two-minute intro" width="860"></a><br>
-  <sub>▶ <a href="docs/media/intro.mp4">Watch the two-minute intro</a></sub>
+  <a href="docs/media/intro.mp4"><img src="docs/media/intro-teaser.webp" alt="The first 30 seconds: an agent publishes a plan, you click an answer, another agent reads it" width="860"></a><br>
+  <sub>▶ <a href="docs/media/intro.mp4">Watch the full 2½-minute intro</a> — planning, progress, code review, reports and sharing</sub>
 </p>
 
 ---
@@ -34,6 +34,8 @@
 Agents are great at producing a plan, a review of what they just built, or a report — and terrible at handing it over. Chat scrolls away, markdown loses the screenshots, and when you finally answer their questions the agent has to scrape your reply out of the conversation.
 
 **Artifact Library** gives every one of those pages a home. The agent publishes a folder of HTML with one command and shares a stable link. You read it in the browser, click through versions, and answer *on the page* — pick options, comment on a finding, approve a change. The agent reads your answers back with `artifact feedback` and replies in the same thread.
+
+**One library for every agent.** Claude Code writes the plan, Codex builds it and reports progress on a live page, opencode reviews the result — and they all publish to, search and read the same library through the same CLI, skill or MCP server. An answer you click on one agent's page is there for the next agent to pick up. No per-tool silos, no copying between chats.
 
 ## Quick start
 
@@ -55,7 +57,7 @@ artifact config set server http://localhost:3000
 **3. Give your agent the skill or the MCP server**
 
 ```bash
-artifact skill install --agent claude          # or opencode, codex
+artifact skill install --agent claude,codex,opencode   # one skill, every agent
 claude mcp add artifact -- artifact mcp        # any MCP-capable agent
 ```
 
@@ -73,6 +75,8 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 - **Version toolbar** on every page: switch versions, copy links, download, and a quiet "new version available" notice instead of surprise reloads.
 
 ### Feedback on the page, read by the agent
+
+<img src="docs/media/answer.webp" alt="Clicking an answer on a questionnaire, then an agent reading it with artifact data get" width="100%">
 
 <table>
 <tr>
@@ -104,8 +108,9 @@ Every server ships **18 polished reference artifacts**, one per common job — p
 </tr>
 </table>
 
-### Built for agents
+### Built for agents — all of them
 
+- **One shared library**: every agent on every machine publishes to and reads from the same server. Plans from one agent, progress from another, reviews from a third, all at stable links you and the agents can pass around.
 - **Agent skill** for Claude Code, opencode and Codex: `artifact skill install --agent claude`. It teaches the publish → share → feedback → update loop and points to the reference collection.
 - **MCP server**: `artifact mcp` exposes search, publish, update, download, feedback, saved data and create-from-reference as tools for any MCP client.
 - **Agent-friendly CLI**: `--json` everywhere, stable exit codes, idempotent uploads with `artifact retry`, optimistic revisions, `check` and `diff` against local folders, profiles for several servers.

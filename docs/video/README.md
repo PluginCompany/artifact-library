@@ -1,23 +1,33 @@
 # Intro video
 
-`record.py` records the intro video (`docs/media/intro.mp4`, 1920×1080, 30 fps) from a real server. Every page is the real UI and every terminal shows the real output of the command it types: the script runs each command against the server first and replays its output.
+`record.py` records the intro video (`docs/media/intro.mp4`, 1920×1080, 30 fps, about 2½ minutes) from a real server. Every page is the real UI inside a framed stage, and every terminal shows the real output of the command it types: the script runs each command against the server first and replays its output.
 
 ```bash
 # 1. a fresh server seeded with the reference collection
 npm run build:binary && npm run build:seed
 DATA_DIR=$(mktemp -d) PORT=3000 SEED_DIR=$PWD/seed PUBLIC_BASE_URL=http://127.0.0.1:3000 npx tsx src/server.ts &
 
-# 2. record (needs: artifact CLI on PATH, Python Playwright with Chromium, ffmpeg)
+# 2. record (needs: artifact CLI on PATH, Python Playwright with Chromium, ffmpeg, Pillow)
 python3 docs/video/record.py
-python3 docs/video/record.py --scenes library,review   # re-record some scenes
+python3 docs/video/record.py --only hook,review   # some segments, for iterating
+
+# 3. README stills and the animated previews
+python3 docs/video/screenshots.py
+cd docs/media
+ffmpeg -ss 0 -t 28 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=12,scale=860:-1:flags=lanczos" \
+  -c:v libwebp -quality 62 -compression_level 6 -loop 0 -an intro-teaser.webp
+ffmpeg -ss 11.6 -t 10 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=15,scale=900:-1:flags=lanczos" \
+  -c:v libwebp -quality 66 -compression_level 6 -loop 0 -an answer.webp
 ```
 
 | File | Role |
 |---|---|
-| `record.py` | Scenes, demo content and the final cut with crossfades |
-| `screencast.py` | Captures frames through the DevTools screencast and encodes constant-rate H.264 |
-| `overlay.js` | Cursor, click ripples, captions and eased scrolling injected into every page |
-| `terminal.html` | The terminal scenes |
-| `card.html` | Title and end cards |
+| `record.py` | Demo content, the segments, camera moves and the final encode plus poster |
+| `stage.html` | The stage: browser window (an iframe of the real server), agent terminal, captions, chapter rail, cards, zoom and an eased cursor |
+| `screencast.py` | Captures PNG frames through the DevTools screencast, resamples them to a constant 30 fps and encodes BT.709 H.264 |
+| `screenshots.py` | README screenshots (`docs/media/*.webp`) |
+| `terminal.html` | The terminal used for the `feedback` screenshot |
 
-Scenes: title · publish · library · review · questions · feedback · reply · live run log · versions · reference collection · agents · end.
+Segments: **hook** (the first 30 seconds: Claude Code publishes a plan, you click an answer, Codex reads it, one library for every agent) · **plan** · **build** (live run log, a blocker answered on the page) · **review** (findings, a comment thread, a verdict per chapter) · **report** · **share** (versions, the hub, skill and MCP setup) · **end**.
+
+GitHub only plays videos inline in a README when they are uploaded through the web editor, so the README shows the animated `intro-teaser.webp` and links to the mp4.
