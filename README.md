@@ -43,7 +43,11 @@ Coding agents produce plans, progress updates, reviews and reports, and then los
 
 ## What it's for
 
-Anything an agent would otherwise dump into a chat, as a page you can read, answer and share. Every use case below has a polished reference on the server that agents copy and fill in.
+Anything an agent would otherwise dump into a chat, as a page you can read, answer and share.
+
+> **Publish anything that runs in a browser.** Any static folder works: a single hand-written HTML file, a React, Vue or Svelte build, a generated report, a slide deck, a prototype with its own JavaScript, images, video, fonts or WebAssembly. Files are served exactly as uploaded, with no framework, template or content rules. The references below are optional starting points, not a format you have to follow.
+
+For common jobs there is a polished reference on the server that agents copy and fill in:
 
 | Use case | What the page does | Starts from |
 |---|---|---|
@@ -101,7 +105,7 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 
 <img src="docs/media/library.webp" alt="The library: previews of published artifacts with search, sort and grid/list views" width="100%">
 
-- **One command to publish** a folder of HTML, CSS, JS, images, fonts or video: `artifact publish ./review --title "Login review"`.
+- **One command to publish any static site**: a folder of HTML, CSS, JavaScript, images, fonts, video or WebAssembly, served exactly as uploaded: `artifact publish ./review --title "Login review"`. Bring your own build or start from a reference.
 - **Stable links and immutable versions.** `/artifacts/<slug>/` always shows the latest; every version stays at its own URL. Updates never change a published snapshot.
 - **Server-side previews**, search, sorting, time filters and grid or list views.
 - **Version toolbar** on every page: switch versions, copy links, download, and a quiet "new version available" notice instead of surprise reloads.
@@ -164,7 +168,7 @@ Every server ships **21 polished reference artifacts**, one per common job. Agen
 
 ### Safe to run
 
-- **Static only**: uploaded files are served, never executed.
+- **Static only**: uploaded files are served to the browser, never executed on the server. Pages keep their own JavaScript; the version toolbar can be turned off per artifact (`--no-toolbar`).
 - **Optional write token** (`ARTIFACT_TOKEN`) for publishing, updates, archive and purge; reading and reader feedback stay open.
 - **Archive and purge**: hide an artifact (reversible) or delete it with all its versions and comments.
 - **Upload limits** (500 MB / 10,000 files by default), size limits on saved data, and pages cannot write other artifacts' data.
