@@ -24,10 +24,9 @@
   <a href="docs/">Docs</a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/PluginCompany/artifact-library/releases/download/v0.4.0/artifact-library-intro-4k60.mp4"><img src="docs/media/intro-teaser.webp" alt="The first 30 seconds: an agent publishes a plan, you click an answer, another agent reads it" width="860"></a><br>
-  <sub>▶ <a href="https://github.com/PluginCompany/artifact-library/releases/download/v0.4.0/artifact-library-intro-4k60.mp4">Watch the full 2½-minute intro</a> (4K, 60 fps) — planning, progress, code review, reports and sharing</sub>
-</p>
+https://github.com/user-attachments/assets/97685171-8008-47a6-bef2-ecfc91eda349
+
+<p align="center"><sub>The 2½-minute intro: planning, progress, code review, reports and sharing. ▶ <a href="https://github.com/PluginCompany/artifact-library/releases/download/v0.4.0/artifact-library-intro-4k60.mp4">Watch it in 4K, 60 fps</a></sub></p>
 
 ---
 

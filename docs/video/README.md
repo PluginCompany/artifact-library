@@ -13,11 +13,9 @@ python3 docs/video/record.py --only hook,review   # some segments, for iterating
 FILM_SCREEN=0,0 python3 docs/video/record.py      # where the 3840×2160 monitor sits in the desktop layout
 CAPTURE=devtools python3 docs/video/record.py     # no monitor: headless, DevTools screencast in slow motion
 
-# 3. README stills and the animated previews
+# 3. README stills and the answer clip
 python3 docs/video/screenshots.py
 cd docs/media
-ffmpeg -ss 0 -t 28 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=15,scale=1100:-1:flags=lanczos" \
-  -c:v libwebp -quality 75 -compression_level 6 -loop 0 -an intro-teaser.webp
 ffmpeg -ss 11.9 -t 14.7 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=20,scale=1280:-1:flags=lanczos" \
   -c:v libwebp -quality 80 -compression_level 6 -loop 0 -an answer.webp
 ```
@@ -56,4 +54,12 @@ flatpak run --command=HandBrakeCLI fr.handbrake.ghb -i master.mkv -o artifact-li
 gh release upload v0.4.0 artifact-library-intro-4k60.mp4 --clobber
 ```
 
-`find_markers()` in `screencast.py` prints `<start>` and `<end>` for a take. GitHub only plays videos inline in a README when they are uploaded through the web editor, so the README shows the animated `intro-teaser.webp` and links to the release asset.
+`find_markers()` in `screencast.py` prints `<start>` and `<end>` for a take. The README embeds a 1080p version that fits GitHub's 10 MB attachment limit (Free plan) and links to the 4K release asset. GitHub only plays a README video when the file is uploaded through the web editor, which returns a `https://github.com/user-attachments/assets/…` link; there is no API for that upload, so it is a manual step:
+
+```bash
+ffmpeg -i master.mkv -an -vf "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p" -c:v libx264 -preset veryslow -b:v 500k -pass 1 -f null /dev/null
+ffmpeg -i master.mkv -an -vf "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p" -c:v libx264 -preset veryslow -b:v 500k -pass 2 \
+  -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -movflags +faststart readme-embed.mp4
+```
+
+Drag `readme-embed.mp4` into README.md in GitHub's editor and replace the old `user-attachments` link with the new one.
