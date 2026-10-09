@@ -32,7 +32,7 @@
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
 .toolbar .seg{max-width:100%;overflow-x:auto}
 .toolbar .note{font-size:13px;color:var(--muted)}
-.chart-card .filtered-by{font:500 11px var(--mono);letter-spacing:.04em;color:var(--thread);text-transform:uppercase;display:block;margin-bottom:2px}
+.chart-card .filtered-by{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.04em*var(--label-k));color:var(--thread);text-transform:var(--label-case);display:block;margin-bottom:2px}
 
 /* KPI tiles: tidy spark spacing, 3-up on wide screens */
 .stats.six{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -62,14 +62,14 @@
 /* Incidents */
 .incidents{display:grid;gap:14px;grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:1000px){.incidents{grid-template-columns:minmax(0,1fr)}}
-.incident{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--bad);border-radius:var(--radius);padding:16px 18px;display:grid;gap:8px;align-content:start}
+.incident{background:var(--panel);border:1px solid var(--line);border-top:calc(3px*var(--strip)) solid var(--bad);border-radius:var(--radius);padding:16px 18px;display:grid;gap:8px;align-content:start}
 .incident.warn{border-top-color:var(--warn)}
 .incident header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
 .incident h3{font-size:18px;font-weight:700}
 .incident p{color:var(--muted);font-size:14px}
-.incident dl{margin:4px 0 0;display:grid;gap:6px;border-top:1px dashed var(--line);padding-top:10px}
+.incident dl{margin:4px 0 0;display:grid;gap:6px;border-top:1px var(--rule) var(--line);padding-top:10px}
 .incident dl div{display:grid;grid-template-columns:64px 1fr;gap:8px;font-size:13.5px}
-.incident dt{font:500 10.5px/1.9 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.incident dt{font:500 calc(10.5px*var(--label-scale))/1.9 var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);color:var(--muted)}
 .incident dd{margin:0}
 
 /* Skills heat-table: single-hue tint (--s1) mixed into the panel, numbers always shown */

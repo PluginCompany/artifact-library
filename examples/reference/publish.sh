@@ -2,6 +2,7 @@
 # Publish (or update) one reference artifact with the shared kit bundled in.
 #
 #   ./publish.sh <artifact-dir> ["update message"]
+#   KIT_THEME=quiet ./publish.sh <artifact-dir>     # with a theme from kit/themes/
 #
 # <artifact-dir>/artifact.json holds slug, title and description.
 # The directory is staged to a temp folder, ./kit is copied in (the server
@@ -21,6 +22,14 @@ stage="$(mktemp -d)"; trap 'rm -rf "$stage"' EXIT
 cp -R "$src/." "$stage/"
 rm -f "$stage/artifact.json"
 rm -rf "$stage/kit" && cp -R "$here/kit" "$stage/kit"
+if [ -n "${KIT_THEME:-}" ]; then
+  [ -f "$here/kit/themes/$KIT_THEME/$KIT_THEME.css" ] || { echo "no theme kit/themes/$KIT_THEME" >&2; exit 1; }
+  # Link the theme last in every page so it wins over the page's own styles.
+  find "$stage" -name '*.html' -not -path "$stage/kit/*" | while read -r f; do
+    rel="$(python3 -c "import os,sys; print(os.path.relpath(sys.argv[1], os.path.dirname(sys.argv[2])))" "$stage/kit" "$f")"
+    sed -i "s|</head>|<link rel=\"stylesheet\" href=\"$rel/themes/$KIT_THEME/$KIT_THEME.css\">\n</head>|" "$f"
+  done
+fi
 
 if info="$(artifact info "$slug" --json 2>/dev/null)"; then
   rev="$(python3 -c "import json,sys; print(json.load(sys.stdin)['revision'])" <<<"$info")"

@@ -14,8 +14,9 @@ Find the closest reference (table in SKILL.md, or `artifact search ref-`), then 
 - `kit.js` — theme toggle (`[data-theme-toggle]`), side-nav scroll spy, copy buttons, sortable tables, reveal-on-scroll, and charts: `Kit.chart.line|column|bar|donut|spark(el, spec)` with tooltips, legends and a table view (`.chart-card` + `button.as-table`). Call `Kit.refresh()` after rendering content late.
 - `kit-data.js` — saving (below).
 - `fonts/` — self-hosted; pages work without internet.
+- `themes/quiet/` — a second look: white space, monochrome neutrals, Geist and Inter, faint rings instead of borders, sections on light grey bands. Enable it with one line after every other stylesheet: `<link rel="stylesheet" href="kit/themes/quiet/quiet.css">`. Keep the default unless the reader wants a calm product look.
 
-Use tokens, never raw colours. Status always carries a word, never colour alone. One axis per chart; every chart has a takeaway subtitle and a table view.
+Use tokens, never raw colours. In page CSS, route the signature details through the theme tokens (`var(--w-heavy)` for heavy display weight, `var(--rule)`/`var(--rule-w)` for dashed rules, `var(--label)` with `var(--label-case)` for small labels, `calc(3px*var(--strip))` for coloured edge strips) so themes restyle the page as well. Status always carries a word, never colour alone. One axis per chart; every chart has a takeaway subtitle and a table view.
 
 ## Let people answer on the page
 

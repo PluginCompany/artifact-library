@@ -39,6 +39,36 @@ ref-implementation-review/
 
 `kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme toggle, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md)) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
 
+## Themes
+
+The kit's own look is the default. `kit/themes/` holds alternatives that restyle any kit page without touching its markup or scripts; light and dark mode keep working.
+
+**Quiet** (`kit/themes/quiet/`) is white space and monochrome neutrals: Geist headings and Inter text at medium weights, faint rings instead of borders, sentence-case labels, each section on a light grey rounded band, an inset hero with soft blue light, frosted bars and popovers, no coloured edge strips. Its fonts (SIL OFL) are bundled. Look and feel inspired by [Arc](https://github.com/kuratlielia/arc-library) (MIT).
+
+Enable it with one line after every other stylesheet of the page:
+
+```html
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="kit/themes/quiet/quiet.css">
+```
+
+or publish a reference with it: `KIT_THEME=quiet ./publish.sh <dir>` (from `examples/reference/`) links the theme into every HTML page of the staged copy.
+
+Besides the colour, font and radius tokens, a theme sets these, which pages use for the kit's signature details:
+
+| Token | Default | Controls |
+|---|---|---|
+| `--w-heavy` | `800` | Weight of display headings and big numbers |
+| `--rule` / `--rule-w` | `dashed` / `2px` | Style and width of section rules and "stitch" lines |
+| `--strip` | `1` | Coloured status strips on card and callout edges (`0` removes them) |
+| `--label` | `var(--mono)` | Font of small labels (eyebrows, table heads, field names) |
+| `--label-case` | `uppercase` | Their text transform |
+| `--label-k` | `1` | Multiplier for their letter spacing |
+| `--label-scale` | `1` | Multiplier for their size |
+
+Page CSS should use them too (`font:var(--w-heavy) 40px var(--display)`, `border-top:var(--rule-w) var(--rule) var(--line)`, `font:500 calc(11px*var(--label-scale)) var(--label)`, `border-left:calc(3px*var(--strip)) solid var(--good)`), so a theme restyles the whole page. To make another theme, copy `kit/themes/quiet/` to `kit/themes/<name>/`, rename the CSS file, change the tokens, and keep component overrides to what tokens cannot express.
+
 ## Make your own
 
 ```bash

@@ -27,7 +27,7 @@ pre,code{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
 .run-id b{font:700 16px var(--display)}
 .run-id .muted{font-size:12.5px}
 .run-count{display:flex;align-items:baseline;gap:6px}
-.run-count b{font:800 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.run-count b{font:var(--w-heavy) 34px/1 var(--display);font-variant-numeric:tabular-nums}
 .run-count span{color:var(--muted);font-size:14px}
 .run-bar.complete{border-color:var(--good)}
 .run-bar.complete .run-count b{color:var(--good)}
@@ -46,13 +46,13 @@ pre,code{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
 @media (max-width:560px){.phase-head{grid-template-columns:auto minmax(0,1fr)}.phase-count{grid-column:2;justify-self:start}}
 .rb-steps{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .rb-step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;margin:0;position:relative;scroll-margin-top:200px}
-.rb-step:not(:last-child)::after{content:"";position:absolute;left:21px;top:48px;bottom:-14px;border-left:2px dashed var(--line-strong)}
+.rb-step:not(:last-child)::after{content:"";position:absolute;left:21px;top:48px;bottom:-14px;border-left:var(--rule-w) var(--rule) var(--line-strong)}
 .rb-step.done:not(:last-child)::after{border-left-color:var(--good);border-left-style:solid;opacity:.45}
 .tick{position:relative;z-index:1;width:44px;height:44px;border-radius:12px;border:2px solid var(--line-strong);background:var(--panel);cursor:pointer;display:grid;place-items:center;color:var(--muted);transition:background .2s,border-color .2s,transform .15s;padding:0}
 .tick:hover{border-color:var(--accent)}
 .tick:active{transform:scale(.94)}
 .tick svg{width:20px;height:20px;position:absolute;opacity:0;transform:scale(.4);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1.6)}
-.tick-n{font:800 16px var(--display);transition:opacity .2s}
+.tick-n{font:var(--w-heavy) 16px var(--display);transition:opacity .2s}
 .rb-step.done .tick{background:var(--good);border-color:var(--good);color:var(--panel)}
 .rb-step.done .tick svg{opacity:1;transform:none}
 .rb-step.done .tick-n{opacity:0}
@@ -74,7 +74,7 @@ pre,code{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
 pre.cmd{font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere;padding-right:64px}
 pre.cmd .copy{opacity:1}
 .expect{display:grid;gap:4px}
-.expect pre{background:transparent;border-style:dashed;font-size:12px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.expect pre{background:transparent;border-style:var(--rule);font-size:12px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
 details.fail{border-color:color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn-soft) 40%,var(--panel))}
 details.fail>summary{font-size:14px;color:var(--warn);padding:9px 14px}
 details.fail .in{font-size:14px}
@@ -83,13 +83,13 @@ details.fail .in{font-size:14px}
 .note-btn{font-size:13px;padding:4px 8px}
 .note-box{display:grid;gap:8px}
 .note-box textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--ground);color:var(--ink);font:inherit;font-size:14px;resize:vertical}
-.note-text{border-left:3px solid var(--thread);background:var(--thread-soft);padding:8px 12px;border-radius:0 10px 10px 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.note-text{border-left:calc(3px*var(--strip)) solid var(--thread);background:var(--thread-soft);padding:8px 12px;border-radius:calc(10px - 10px*var(--strip)) 10px 10px calc(10px - 10px*var(--strip));font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .note-text .mono{display:block;font-size:11px;color:var(--thread);margin-bottom:2px}
 @media (max-width:560px){.rb-step{grid-template-columns:36px minmax(0,1fr);gap:10px}.tick{width:36px;height:36px;border-radius:10px}.rb-step:not(:last-child)::after{left:17px;top:40px}.rb-card{padding:12px 12px 10px}}
 
 /* ---------- Rollback & history ---------- */
 .rollback{display:grid;gap:12px;margin-top:18px}
-.rb-roll{background:var(--panel);border:1px solid color-mix(in srgb,var(--bad) 30%,var(--line));border-left:4px solid var(--bad);border-radius:var(--radius);padding:14px 18px;display:grid;gap:10px}
+.rb-roll{background:var(--panel);border:1px solid color-mix(in srgb,var(--bad) 30%,var(--line));border-left:calc(4px*var(--strip)) solid var(--bad);border-radius:var(--radius);padding:14px 18px;display:grid;gap:10px}
 .rb-roll h3{font:700 17px var(--display)}
 .rb-roll p{font-size:14px}
 #seeding .callout{max-width:none}
@@ -97,7 +97,7 @@ details.fail .in{font-size:14px}
 .runs{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px}
 .runs li{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:6px 16px;align-items:center;margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px}
 .runs li .mono{font-size:12px;color:var(--muted)}
-.runs li.empty{display:block;color:var(--muted);background:transparent;border-style:dashed}
+.runs li.empty{display:block;color:var(--muted);background:transparent;border-style:var(--rule)}
 @media (max-width:640px){.runs li{grid-template-columns:minmax(0,1fr) auto}}
 
 @media print{

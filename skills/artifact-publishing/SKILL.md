@@ -15,7 +15,7 @@ This file works on its own. Two optional references sit beside it: `references/b
 ## Core rules for a good artifact
 
 1. **Copy a reference, don't start blank.** Download the closest reference artifact (table below) and change its content; keep its plumbing and the shared `kit/`.
-2. **Use the kit.** Colours come from kit tokens (light and dark mode work automatically), status always carries a word, charts use `Kit.chart` with a table view.
+2. **Use the kit.** Colours come from kit tokens (light and dark mode work automatically), status always carries a word, charts use `Kit.chart` with a table view. For a calmer, monochrome look, link `kit/themes/quiet/quiet.css` after the page's other stylesheets.
 3. **Let readers answer on the page** with `kit/kit-data.js` (`Kit.data`, `Kit.comments`) instead of asking them to paste text back. Store readable labels next to ids.
 4. **Verify before sharing:** look at screenshots at 1440 px and 390 px, light and dark; no horizontal scroll, no console errors; label invented content "Example content".
 5. **Publish with a title that says what it is and a description that says what the reader gets**, share the stable `url`, and revise with `artifact update` so the link and history stay.

@@ -185,7 +185,7 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
           <ul class="dots">
             <li>Colours only from tokens: <code>--ink</code>, <code>--muted</code>, <code>--accent</code>, <code>--thread</code>, <code>--good</code>/<code>--warn</code>/<code>--bad</code>, series <code>--s1…--s5</code>. Dark mode then works for free.</li>
             <li>Bricolage Grotesque for headings, Noto Sans for text, JetBrains Mono for labels — all bundled in <code>kit/fonts</code>.</li>
-            <li>Signature details: mono uppercase eyebrows, dashed “stitch” lead-ins on section headings, cards that lift on hover.</li>
+            <li>Signature details: mono uppercase eyebrows, dashed “stitch” lead-ins on section headings, cards that lift on hover. In page CSS, use the theme tokens for them (<code>var(--label)</code>, <code>var(--rule)</code>, <code>var(--w-heavy)</code>) so a theme can restyle the page too.</li>
             <li>Changeable content in <code>data.js</code>; an EDITING GUIDE comment at the top of <code>index.html</code>.</li>
             <li>Page-specific CSS in the artifact's <code>style.css</code>. Never edit the copy of <code>kit/</code>.</li>
           </ul>
@@ -200,6 +200,11 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
           </ul>
         </div>
       </div>
+      <h3 class="h3 sub-h">Pick a theme</h3>
+      <p class="sub">The default look is the one above. <b>Quiet</b> is a second theme in <code>kit/themes/quiet/</code>: white space, monochrome neutrals, Geist and Inter at medium weights, faint rings instead of borders, sections on light grey bands and frosted bars. Use it when the reader expects a calm product look; keep the default otherwise. Link it after every other stylesheet — nothing else changes, light and dark mode included:</p>
+      <pre data-copy>&lt;link rel="stylesheet" href="kit/kit.css"&gt;
+&lt;link rel="stylesheet" href="style.css"&gt;
+&lt;link rel="stylesheet" href="kit/themes/quiet/quiet.css"&gt;</pre>
     </section>
 
     <!-- 06 -->

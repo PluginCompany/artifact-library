@@ -32,7 +32,7 @@
 .tm{position:relative;height:var(--tm-h);width:100%}
 @media (max-width:700px){:root{--tm-h:720px}}
 .tm .grp{position:absolute;border-radius:8px;background:var(--soft);overflow:hidden}
-.tm .grp>b{position:absolute;left:8px;top:3px;right:8px;font:500 10.5px/16px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.tm .grp>b{position:absolute;left:8px;top:3px;right:8px;font:500 calc(10.5px*var(--label-scale))/16px var(--label);letter-spacing:calc(.04em*var(--label-k));text-transform:var(--label-case);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .tm .tile{position:absolute;border:0;padding:5px 6px;margin:0;border-radius:4px;background:var(--fill);color:var(--fg,var(--ink));text-align:left;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:1px;transition:filter .15s,opacity .2s,box-shadow .15s;font:inherit}
 .tm .tile:hover{filter:brightness(1.08)}
 .tm .tile:focus-visible{outline:2px solid var(--ink);outline-offset:-2px;z-index:2}
@@ -81,11 +81,11 @@
 #graph .node.dep rect{fill:var(--accent-soft);stroke:var(--accent)}
 #graph .node.user rect{fill:var(--thread-soft);stroke:var(--thread)}
 #graph.focus .node:not(.sel):not(.dep):not(.user){opacity:.3}
-#graph .layer-label{font:500 11px var(--mono);letter-spacing:.08em;fill:var(--faint);text-transform:uppercase}
+#graph .layer-label{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));fill:var(--faint);text-transform:var(--label-case)}
 .g-detail{position:sticky;top:calc(var(--bar) + 14px);display:grid;gap:12px;align-content:start}
 @media (max-width:1000px){.g-detail{position:static}}
 .g-detail h3{font:700 19px var(--display)}
-.g-detail h4{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.g-detail h4{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);color:var(--muted);margin-top:4px}
 .g-detail ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
 .g-detail li{margin:0}
 .g-detail li button{font:500 12px var(--mono);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:3px 10px;cursor:pointer}

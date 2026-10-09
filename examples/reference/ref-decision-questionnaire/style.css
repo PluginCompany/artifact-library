@@ -15,10 +15,10 @@
 .ring .fill{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:0 400;transition:stroke-dasharray .6s var(--ease)}
 .ring.complete .fill{stroke:var(--good)}
 .ring>div{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
-.ring b{font:800 40px/1 var(--display)}
+.ring b{font:var(--w-heavy) 40px/1 var(--display)}
 .ring span{font:500 11px/1.35 var(--mono);color:var(--muted);letter-spacing:.04em;margin:4px auto 0;max-width:76px}
-.submitted-banner{border-left:3px solid var(--good);background:var(--good-soft);border-radius:0 10px 10px 0;padding:10px 12px;font-size:13.5px}
-.submitted-banner b{display:block;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--good)}
+.submitted-banner{border-left:calc(3px*var(--strip)) solid var(--good);background:var(--good-soft);border-radius:calc(10px - 10px*var(--strip)) 10px 10px calc(10px - 10px*var(--strip));padding:10px 12px;font-size:13.5px}
+.submitted-banner b{display:block;font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);color:var(--good)}
 
 /* Layout: sticky jump nav + questions */
 .q-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px;padding-top:40px;align-items:start}
@@ -33,7 +33,7 @@
 .jump .dot{width:9px;height:9px;border-radius:50%;border:2px solid var(--line-strong);transform:translateY(1px)}
 .jump a[data-state="default"] .dot{background:var(--good);border-color:var(--good)}
 .jump a[data-state="custom"] .dot{background:var(--thread);border-color:var(--thread)}
-.jump .jump-summary{display:block;font-weight:600;font-size:14px;padding:8px 10px;border-top:2px dashed var(--line);text-decoration:none}
+.jump .jump-summary{display:block;font-weight:600;font-size:14px;padding:8px 10px;border-top:var(--rule-w) var(--rule) var(--line);text-decoration:none}
 
 /* Question card */
 .q-list{display:grid;gap:28px;min-width:0}
@@ -41,10 +41,10 @@
 .q:target{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .q.saving{border-color:color-mix(in srgb,var(--warn) 60%,var(--line))}
 .q-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 18px;align-items:start}
-.q-num{font:800 clamp(38px,4vw,54px)/.85 var(--display);color:var(--thread)}
+.q-num{font:var(--w-heavy) clamp(38px,4vw,54px)/.85 var(--display);color:var(--thread)}
 .q-titles h2{font-size:clamp(20px,2vw,25px);line-height:1.2}
 .q-context{color:var(--muted);margin:8px 0 10px;max-width:72ch}
-.q-state{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 10px;white-space:nowrap;background:var(--soft);color:var(--muted)}
+.q-state{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.06em*var(--label-k));text-transform:var(--label-case);border-radius:999px;padding:3px 10px;white-space:nowrap;background:var(--soft);color:var(--muted)}
 .q-state[data-state="default"]{background:var(--good-soft);color:var(--good)}
 .q-state[data-state="custom"]{background:var(--thread-soft);color:var(--thread)}
 @media (max-width:620px){.q-head{grid-template-columns:auto minmax(0,1fr)}.q-state{grid-column:1 / -1;justify-self:start}}
@@ -101,11 +101,11 @@
 .sk .sk-t.dim{opacity:.75}
 
 /* Footer of a question */
-.q-foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px 20px;margin-top:20px;padding-top:18px;border-top:2px dashed var(--line)}
+.q-foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px 20px;margin-top:20px;padding-top:18px;border-top:var(--rule-w) var(--rule) var(--line)}
 @media (max-width:820px){.q-foot{grid-template-columns:minmax(0,1fr)}}
-.then{border-left:3px solid var(--line-strong);padding:2px 0 2px 14px;font-size:14px;color:var(--muted);transition:border-color .3s}
+.then{border-left:calc(3px*var(--strip)) solid var(--line-strong);padding:2px 0 2px 14px;font-size:14px;color:var(--muted);transition:border-color .3s}
 .then.chosen{border-color:var(--accent);color:var(--ink)}
-.then b{display:block;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.then b{display:block;font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);color:var(--accent);margin-bottom:2px}
 .note{display:grid;gap:6px}
 .note>span{font-size:13px;font-weight:600}
 .note em{font-style:normal;font-weight:400;color:var(--faint);margin-left:4px}

@@ -4,6 +4,12 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- **Quiet theme** for the reference kit (`kit/themes/quiet/`): white space, monochrome neutrals, Geist and Inter at medium weights, faint rings instead of borders, sections on light grey bands, an inset hero with soft blue light and frosted bars. One `<link>` after the page's other stylesheets turns it on; light and dark mode included, fonts bundled. Look and feel inspired by Arc (MIT).
+- **Theme tokens** in `kit.css` for the kit's signature details: `--w-heavy`, `--rule`/`--rule-w`, `--strip`, `--label`, `--label-case`, `--label-k`, `--label-scale`. Every reference routes its CSS through them; the default look is unchanged.
+- `KIT_THEME=<name> ./publish.sh <dir>` in `examples/reference/` publishes a reference with a theme linked in.
+- The agent guide, the agent skill, the style guide and `docs/reference-collection.md` describe the theme and the tokens.
+
 ## [0.4.0] - first public release
 
 ### Added

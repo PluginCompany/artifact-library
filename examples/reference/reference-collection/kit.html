@@ -18,7 +18,7 @@
 <script src="kit/kit-data.js" defer></script>
 <style>
   .sg h2{font-size:clamp(24px,2.6vw,32px)}
-  .sg>section{padding-block:8px 44px;border-bottom:2px dashed var(--line);margin-bottom:40px}
+  .sg>section{padding-block:8px 44px;border-bottom:var(--rule-w) var(--rule) var(--line);margin-bottom:40px}
   .sg>section:last-child{border-bottom:0}
   .sg>section>p.muted{margin-top:6px;max-width:68ch}
   .demo-block{margin-top:20px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--panel)}
@@ -36,7 +36,7 @@
   .sw code{background:none;border:0;padding:0;font-size:11px;color:var(--muted)}
   .type-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:baseline;padding:12px 0;border-top:1px solid var(--line)}
   .type-row:first-child{border-top:0}
-  .type-row>span{font:500 11px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  .type-row>span{font:500 calc(11px*var(--label-scale)) var(--label);color:var(--muted);letter-spacing:calc(.06em*var(--label-k));text-transform:var(--label-case)}
   @media (max-width:620px){.type-row{grid-template-columns:1fr;gap:4px}}
 </style>
 </head>
@@ -90,6 +90,18 @@
       <div class="sw-grid" data-tokens="accent accent-soft thread thread-soft info good warn bad"></div>
       <h3 class="h3" style="margin:22px 0 10px">Chart series (fixed order)</h3>
       <div class="sw-grid" data-tokens="s1 s2 s3 s4 s5"></div>
+      <h3 class="h3" style="margin:22px 0 10px">Theme tokens</h3>
+      <p class="muted">The kit's signature details, as tokens so a theme in <code>kit/themes/</code> can restyle every page. Use them in page CSS too. Link <code>kit/themes/quiet/quiet.css</code> after every other stylesheet for the Quiet theme.</p>
+      <div class="table-wrap" style="margin-top:12px"><table class="table compact">
+        <thead><tr><th>Token</th><th>Value here</th><th>Controls</th></tr></thead>
+        <tbody>
+          <tr><td><code>--w-heavy</code></td><td data-token-value="w-heavy"></td><td>Weight of display headings and big numbers</td></tr>
+          <tr><td><code>--rule</code> · <code>--rule-w</code></td><td data-token-value="rule rule-w"></td><td>Style and width of section rules and stitch lines</td></tr>
+          <tr><td><code>--strip</code></td><td data-token-value="strip"></td><td>Coloured status strips on card edges (<code>0</code> removes them)</td></tr>
+          <tr><td><code>--label</code> · <code>--label-case</code></td><td data-token-value="label label-case"></td><td>Font and case of small labels</td></tr>
+          <tr><td><code>--label-k</code> · <code>--label-scale</code></td><td data-token-value="label-k label-scale"></td><td>Letter-spacing and size multipliers for those labels</td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <section id="type">
@@ -279,6 +291,11 @@ document.addEventListener("kit:ready", () => {
     const cs = getComputedStyle(document.documentElement);
     g.innerHTML = g.dataset.tokens.split(" ").map((t) => `<div class="sw"><i style="--c:var(--${t})"></i><div><b>--${t}</b><code>${cs.getPropertyValue("--" + t).trim()}</code></div></div>`).join("");
   });
+  const paintValues = () => {
+    const cs = getComputedStyle(document.documentElement);
+    $$("[data-token-value]").forEach((td) => { td.innerHTML = td.dataset.tokenValue.split(" ").map((t) => `<code>${cs.getPropertyValue("--" + t).trim()}</code>`).join(" · "); });
+  };
+  paintValues();
   paint();
   document.addEventListener("kit:theme", paint);
   if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paint);

@@ -32,8 +32,8 @@
 .progress .seg-blocked{background:var(--warn)}
 .progress .seg-failed{background:var(--bad)}
 @keyframes flowbar{from{background-position:100% 0}to{background-position:-100% 0}}
-.run-stats{display:flex;flex-wrap:wrap;gap:14px 34px;margin-top:22px;padding-top:18px;border-top:2px dashed color-mix(in srgb,var(--thread) 70%,transparent)}
-.run-stats b{display:block;font:800 clamp(24px,2.6vw,34px)/1.05 var(--display);font-variant-numeric:tabular-nums}
+.run-stats{display:flex;flex-wrap:wrap;gap:14px 34px;margin-top:22px;padding-top:18px;border-top:var(--rule-w) var(--rule) color-mix(in srgb,var(--thread) 70%,transparent)}
+.run-stats b{display:block;font:var(--w-heavy) clamp(24px,2.6vw,34px)/1.05 var(--display);font-variant-numeric:tabular-nums}
 .run-stats b small{font:600 16px var(--body);color:var(--muted)}
 .run-stats span{font-size:13px;color:var(--muted)}
 
@@ -81,19 +81,19 @@
 /* ---------- Spotlight ---------- */
 .now{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:clamp(18px,2.4vw,26px);box-shadow:var(--shadow-sm)}
 .now.st-wrap-running{border:1.5px dashed var(--accent)}
-.now.st-wrap-blocked{border:1.5px dashed var(--warn)}
+.now.st-wrap-blocked{border:1.5px var(--rule) var(--warn)}
 .now.st-wrap-failed{border:1.5px solid var(--bad)}
 .now-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.now-head h3{font:800 clamp(20px,2.2vw,26px)/1.15 var(--display);margin-top:4px}
+.now-head h3{font:var(--w-heavy) clamp(20px,2.2vw,26px)/1.15 var(--display);margin-top:4px}
 .now-sum{margin-top:8px;font-size:16px;max-width:70ch}
 .now-meta{margin-top:6px;font-size:12px;color:var(--muted)}
 .empty{color:var(--muted);padding:12px 2px}
 
 /* ---------- Log ---------- */
 .log{list-style:none;margin:14px 0 0;padding:10px 0;background:var(--soft);border:1px solid var(--line);border-radius:12px;font:12.5px/1.55 var(--mono);display:grid;gap:0;overflow:hidden}
-.log li{display:grid;grid-template-columns:70px 48px minmax(0,1fr);gap:10px;padding:3px 14px;margin:0;border-left:3px solid transparent}
+.log li{display:grid;grid-template-columns:70px 48px minmax(0,1fr);gap:10px;padding:3px 14px;margin:0;border-left:calc(3px*var(--strip)) solid transparent}
 .log time{color:var(--faint)}
-.log .lv{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding-top:1px}
+.log .lv{font-size:10.5px;font-weight:600;text-transform:var(--label-case);letter-spacing:.06em;color:var(--muted);padding-top:1px}
 .log .tx{overflow-wrap:anywhere;color:var(--ink)}
 .log .lv-ok .lv{color:var(--good)}
 .log .lv-warn{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn-soft) 60%,transparent)}
@@ -106,7 +106,7 @@
 /* ---------- Step timeline ---------- */
 .run-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;position:relative}
 .rs{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;margin:0;position:relative}
-.rs:not(:last-child)::after{content:"";position:absolute;left:16px;top:36px;bottom:-12px;border-left:2px dashed var(--line-strong)}
+.rs:not(:last-child)::after{content:"";position:absolute;left:16px;top:36px;bottom:-12px;border-left:var(--rule-w) var(--rule) var(--line-strong)}
 .rs.st-wrap-done:not(:last-child)::after{border-left-color:var(--good);border-left-style:solid;opacity:.5}
 .rs-dot{z-index:1;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:2px solid var(--line-strong);color:var(--muted);margin-top:8px}
 .rs-dot svg{width:15px;height:15px}
@@ -116,7 +116,7 @@
 .st-wrap-failed .rs-dot{background:var(--bad);border-color:var(--bad);color:var(--panel)}
 .rs-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;transition:border-color .3s,box-shadow .3s}
 .rs.is-current .rs-card{border-color:var(--accent);box-shadow:var(--shadow-sm)}
-.rs.st-wrap-pending .rs-card{background:transparent;border-style:dashed}
+.rs.st-wrap-pending .rs-card{background:transparent;border-style:var(--rule)}
 .rs.changed .rs-card{animation:flash 1.6s ease}
 @keyframes flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--thread) 60%,transparent);border-color:var(--thread)}100%{box-shadow:0 0 0 14px transparent}}
 .rs-head{display:grid;grid-template-columns:30px minmax(0,1fr) auto 18px;gap:12px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:12px 16px;cursor:pointer;color:inherit;font:inherit}

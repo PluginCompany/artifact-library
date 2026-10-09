@@ -11,7 +11,7 @@ html{scrollbar-gutter:stable}
 .vr-bar i{flex:var(--n) 1 0;background:var(--c)}
 .vr-counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .vr-counts div{display:grid}
-.vr-counts b{font:800 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.vr-counts b{font:var(--w-heavy) 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .vr-counts span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .vr-counts span i{width:8px;height:8px;border-radius:2px;background:var(--c)}
 .vr-summary .callout{max-width:none;font-size:13.5px}
@@ -21,10 +21,10 @@ html{scrollbar-gutter:stable}
 .vr-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .chip .c{font:500 11px var(--mono);opacity:.7;margin-left:4px}
 .vr-list{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
-.vr-empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:20px;color:var(--muted);text-align:center}
+.vr-empty{border:1px var(--rule) var(--line-strong);border-radius:var(--radius);padding:20px;color:var(--muted);text-align:center}
 
 /* screen card */
-.vr-card{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--vc,var(--line));border-radius:var(--radius-lg);display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);overflow:hidden;scroll-margin-top:calc(var(--bar) + 16px);animation:rise .45s var(--ease) both}
+.vr-card{background:var(--panel);border:1px solid var(--line);border-left:calc(4px*var(--strip)) solid var(--vc,var(--line));border-radius:var(--radius-lg);display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);overflow:hidden;scroll-margin-top:calc(var(--bar) + 16px);animation:rise .45s var(--ease) both}
 .vr-card.approved{--vc:var(--good)}.vr-card.changes{--vc:var(--bad)}.vr-card.question{--vc:var(--warn)}
 @media (max-width:1000px){.vr-card{grid-template-columns:minmax(0,1fr)}}
 .vr-main{padding:16px 18px 18px;min-width:0;display:grid;gap:12px;align-content:start}
@@ -35,8 +35,8 @@ html{scrollbar-gutter:stable}
 .vr-route code{font-size:12px;overflow-wrap:anywhere}
 .vr-change{display:grid;grid-template-columns:auto minmax(80px,180px);gap:8px;align-items:center;font:500 12px var(--mono);color:var(--muted)}
 .vr-change b{color:var(--ink);font-size:13px}
-.vr-intent{font-size:14px;color:var(--ink);border-left:2px dashed var(--thread);padding:2px 0 2px 12px}
-.vr-intent b{display:block;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--thread)}
+.vr-intent{font-size:14px;color:var(--ink);border-left:var(--rule-w) var(--rule) var(--thread);padding:2px 0 2px 12px}
+.vr-intent b{display:block;font:500 calc(10.5px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);color:var(--thread)}
 .vr-modes{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .vr-modes .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}
 .vr-modes .seg::-webkit-scrollbar{display:none}
@@ -83,11 +83,11 @@ html{scrollbar-gutter:stable}
 .vd.approved{background:var(--good-soft);color:var(--good)}
 .vd.changes{background:var(--bad-soft);color:var(--bad)}
 .vd.question{background:var(--warn-soft);color:var(--warn)}
-.vd.none{background:transparent;border:1px dashed var(--line-strong)}
+.vd.none{background:transparent;border:1px var(--rule) var(--line-strong)}
 
 /* asks */
 .vr-asks{display:grid;gap:10px}
-.vr-ask{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;align-items:start;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:var(--radius);padding:12px 16px}
+.vr-ask{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;align-items:start;background:var(--panel);border:1px solid var(--line);border-left:calc(4px*var(--strip)) solid var(--c);border-radius:var(--radius);padding:12px 16px}
 .vr-ask.changes{--c:var(--bad)}.vr-ask.question{--c:var(--warn)}
 .vr-ask a{font-weight:700;color:var(--ink);text-decoration:none}
 .vr-ask a:hover{color:var(--accent)}
