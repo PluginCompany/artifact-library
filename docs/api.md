@@ -61,4 +61,22 @@ Errors: `INVALID_DATA_KEY`, `INVALID_DATA`, `DATA_NOT_FOUND` (404), `DATA_CONFLI
 | `/favicon.ico`, `/_artifact/icon.svg`, `/_artifact/logo.svg`, `/_artifact/app-icon.png` | Brand assets |
 | `/_artifact/notice.js`, `/_artifact/library.css`, `/_artifact/library.js` | Toolbar and library assets |
 
+### The version toolbar and your page
+
+The toolbar is injected into HTML responses in a shadow root, fixed to the bottom-right corner (turn it off per artifact with `--no-toolbar`). It tells the page how much room it takes, so full-screen views and bottom-anchored controls can stay clear of it:
+
+| | |
+|---|---|
+| `--artifact-toolbar-space` | CSS variable on `<html>`: pixels from the bottom of the viewport to the top of the toolbar (`0px` when hidden or absent) |
+| `--artifact-toolbar-width` | CSS variable on `<html>`: pixels from the right edge to its left edge |
+| `artifact-toolbar` event | Fired on `window` whenever that changes; `event.detail` is `{ space, width, collapsed, hidden }` |
+| `window.artifactToolbar.hide(true \| false)` | Hide it while a full-screen view is open, show it again on close |
+| `window.artifactToolbar.state` | The current `{ space, width, collapsed, hidden }` |
+
+```css
+.player-controls { bottom: calc(16px + var(--artifact-toolbar-space, 0px)); }
+```
+
+Guard for its absence (`window.artifactToolbar?.hide(true)`): downloaded copies and `--no-toolbar` artifacts have no toolbar.
+
 Snapshot assets are cached for a year (`immutable`); HTML is revalidated. HEAD, conditional requests and byte ranges are supported (not on HTML with an injected toolbar). Missing files answer a styled 404, archived artifacts a styled 410. Browser redirects stay on the address the visitor used; API receipts use `PUBLIC_BASE_URL`.

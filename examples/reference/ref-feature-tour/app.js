@@ -119,7 +119,7 @@ const chapterShots = c => {
 /* Hero reel: one screen per chapter, cross-fading. */
 const REEL_MS = 3600;
 const reelItems = chapters.map(c => ({c, shot: chapterShots(c)[0]})).filter(r => screenLike(r.shot));
-let reelI = 0, reelT = 0;
+let reelI = 0, reelT = 0, reelHold = false, reelIdle = 0;
 $('#reel-view').innerHTML = reelItems.map(r => img(r.shot, r.c.title, '', false)).join('');
 $('#pips').innerHTML = reelItems.map((r, i) => `<button class="pip" type="button" data-i="${i}" aria-label="${esc(r.c.title)}"></button>`).join('');
 $('#pips').style.setProperty('--reel', `${REEL_MS}ms`);
@@ -131,7 +131,9 @@ function reelShow(i){
   $('#reel-n').textContent = String(reelItems[reelI].c.index + 1).padStart(2, '0');
   $('#reel-title').textContent = reelItems[reelI].c.title;
 }
-function reelRun(){ clearInterval(reelT); reelT = setInterval(() => { if ($('#player').hidden && !document.hidden) reelShow(reelI + 1); }, REEL_MS); }
+function reelRun(){ clearInterval(reelT); reelT = setInterval(() => { if ($('#player').hidden && !document.hidden && !reelHold) reelShow(reelI + 1); }, REEL_MS); }
+function reelPause(){ reelHold = true; clearTimeout(reelIdle); }
+function reelResume(ms = 2500){ clearTimeout(reelIdle); reelIdle = setTimeout(() => { reelHold = false; if (!reduced) reelRun(); }, ms); }
 reelShow(0); if (!reduced) reelRun();
 $('#pips').addEventListener('click', e => { const b = e.target.closest('.pip'); if (b) { reelShow(+b.dataset.i); reelRun(); } });
 $('#reel').onclick = () => { if (reelItems.length) openPlayer('all', `${reelItems[reelI].c.id}-intro`, 'watch'); };
@@ -146,6 +148,123 @@ $('#reel-float').innerHTML = img(H.collage[1].shot, '', '', false);
   const row = hidden => items.map(s => `<button type="button" data-slide="${s.id}"${hidden ? ' tabindex="-1" aria-hidden="true"' : ''}>${img(slideShot(s), s.title, '', false)}<span>${esc(s.title)}</span></button>`).join('');
   $('#marquee').innerHTML = items.length ? `<div class="marquee-track">${row(false)}${row(true)}</div>` : '';
   $('#marquee').addEventListener('click', e => { const b = e.target.closest('[data-slide]'); if (b) openPlayer('all', b.dataset.slide, 'explore'); });
+}
+
+/* Carousels you can grab: drag with mouse or finger (1:1), fling, or scroll sideways with a trackpad
+   or Shift + wheel. Auto-motion pauses while you hold, hover or focus, and resumes after a short idle. */
+function grabbable(el, {onStart, onMove, onEnd}){
+  let id = null, x0 = 0, y0 = 0, last = 0, lastT = 0, v = 0, dragging = false, moved = false;
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    id = e.pointerId; x0 = last = e.clientX; y0 = e.clientY; lastT = performance.now(); v = 0; dragging = moved = false;
+  });
+  el.addEventListener('pointermove', e => {
+    if (e.pointerId !== id) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (!dragging) {
+      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy)) return;
+      dragging = moved = true; try { el.setPointerCapture(id); } catch (_) {}
+      el.classList.add('grabbing'); onStart();
+    }
+    const now = performance.now(), dt = Math.max(1, now - lastT);
+    v = 0.7 * ((e.clientX - last) / dt) + 0.3 * v; last = e.clientX; lastT = now;
+    onMove(dx); e.preventDefault();
+  });
+  const up = e => {
+    if (e.pointerId !== id) return;
+    id = null;
+    if (dragging) { el.classList.remove('grabbing'); onEnd(e.clientX - x0, e.type === 'pointercancel' || performance.now() - lastT > 90 ? 0 : v); }
+    dragging = false;
+  };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  /* a drag is not a click */
+  el.addEventListener('click', e => { if (moved) { moved = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  el.addEventListener('dragstart', e => e.preventDefault());
+}
+const sideways = e => Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+
+/* Hero reel: swipe to the next or previous screen. */
+{
+  const view = $('#reel-view'), reel = $('#reel'), pics = () => [...view.querySelectorAll('img')];
+  const at = i => pics()[((i % reelItems.length) + reelItems.length) % reelItems.length];
+  let w = 1, side = 0;
+  const ease = 'translate .35s cubic-bezier(.2,.7,.2,1), opacity .35s ease';
+  const clear = () => pics().forEach(im => { im.style.transition = 'none'; im.style.translate = ''; im.style.opacity = ''; });
+  function place(dx, animate){
+    const s = dx < 0 ? 1 : -1, cur = at(reelI), next = at(reelI + s);
+    if (side && side !== s) { const old = at(reelI + side); if (old !== cur) { old.style.transition = 'none'; old.style.translate = ''; old.style.opacity = ''; } }
+    side = s;
+    for (const im of [cur, next]) im.style.transition = animate ? ease : 'none';
+    cur.style.translate = `${dx}px 0`;
+    if (next !== cur) { next.style.translate = `${dx + s * w}px 0`; next.style.opacity = '1'; }
+  }
+  if (reelItems.length > 1) grabbable(reel, {
+    onStart(){ reelPause(); w = view.getBoundingClientRect().width || 1; side = 0; },
+    onMove(dx){ place(dx, false); },
+    onEnd(dx, v){
+      const go = (Math.abs(dx) > w * 0.2 || Math.abs(v) > 0.4) && dx !== 0 ? (dx < 0 ? 1 : -1) : 0;
+      if (go) {
+        place(-go * w, true);
+        setTimeout(() => { const cur = at(reelI); cur.style.transition = 'none'; cur.style.opacity = '0'; reelShow(reelI + go); requestAnimationFrame(clear); }, reduced ? 0 : 360);
+      } else {
+        place(0, true); const s = side;
+        if (s) { const n = at(reelI + s); if (n !== at(reelI)) { n.style.translate = `${s * w}px 0`; } }
+        setTimeout(clear, reduced ? 0 : 360);
+      }
+      reelResume();
+    },
+  });
+  let wheel = 0, wheelT = 0;
+  reel.addEventListener('wheel', e => {
+    const d = sideways(e); if (!d) return;
+    e.preventDefault(); reelPause(); reelResume();
+    wheel += d; const now = performance.now();
+    if (Math.abs(wheel) > 50 && now - wheelT > 450) { reelShow(reelI + (wheel > 0 ? 1 : -1)); wheel = 0; wheelT = now; }
+  }, {passive: false});
+  reel.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault(); reelShow(reelI + (e.key === 'ArrowRight' ? 1 : -1)); reelPause(); reelResume();
+  });
+  reel.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') reelPause(); });
+  reel.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') reelResume(1200); });
+  reel.addEventListener('focusin', reelPause); reel.addEventListener('focusout', () => reelResume(1200));
+}
+
+/* Screen strip: drifts on its own; grab it, fling it, or scroll it sideways. */
+{
+  const box = $('#marquee'), track = box.querySelector('.marquee-track');
+  if (track) {
+    let x = 0, half = 1, speed = 0, held = false, hover = false, focus = false, v = 0, idleUntil = 0, start = 0, lastT = performance.now();
+    const measure = () => { half = Math.max(1, (track.scrollWidth + 18) / 2); speed = half / 80000; };
+    const wrap = () => { x = ((x % half) + half) % half - half; };
+    measure(); addEventListener('resize', measure); if ('ResizeObserver' in window) new ResizeObserver(measure).observe(track);
+    const visible = () => $('#player').hidden && !document.hidden;
+    (function frame(now){
+      const dt = Math.min(64, now - lastT); lastT = now;
+      if (!held && visible()) {
+        if (Math.abs(v) > 0.01) { x += v * dt; v *= Math.pow(0.95, dt / 16); }
+        else if (!hover && !focus && !reduced && now > idleUntil) x -= speed * dt;
+      }
+      wrap(); track.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
+      requestAnimationFrame(frame);
+    })(lastT);
+    grabbable(box, {
+      onStart(){ held = true; v = 0; start = x; },
+      onMove(dx){ x = start + dx; },
+      onEnd(dx, vel){ held = false; v = Math.max(-3, Math.min(3, vel)); idleUntil = performance.now() + 1600; },
+    });
+    box.addEventListener('wheel', e => { const d = sideways(e); if (!d) return; e.preventDefault(); v = 0; x -= d; idleUntil = performance.now() + 1500; }, {passive: false});
+    box.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') hover = true; });
+    box.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { hover = false; idleUntil = performance.now() + 500; } });
+    /* keyboard: a focused screen scrolls into view and the strip holds still */
+    box.addEventListener('focusin', e => {
+      focus = true; v = 0;
+      const b = e.target.closest('button'); if (!b) return;
+      const bl = b.offsetLeft + x, bw = b.offsetWidth, vw = box.clientWidth;
+      if (bl < 40 || bl + bw > vw - 40) { x = -b.offsetLeft + (vw - bw) / 2; wrap(); }
+    });
+    box.addEventListener('focusout', () => { focus = false; idleUntil = performance.now() + 1200; });
+  }
 }
 
 /* Everything that shows a duration, re-rendered when the speed changes. */
@@ -229,14 +348,14 @@ $('#p-speed').textContent = `${P.speed}×`;
 function openPlayer(role, start, mode){
   P.role = role; P.list = playlist(role); P.mode = mode;
   P.idx = typeof start === 'number' ? start : Math.max(0, P.list.findIndex(s => s.id === start));
-  $('#player').hidden = false; document.body.style.overflow = 'hidden';
+  $('#player').hidden = false; document.body.style.overflow = 'hidden'; window.artifactToolbar?.hide(true);
   setMode(mode);
   renderSlide();
   if (mode === 'watch') play(); else pause();
   $('#p-play').focus();
 }
 function closePlayer(){
-  pause(); $('#player').hidden = true; document.body.style.overflow = ''; $('#p-menu').hidden = true;
+  pause(); $('#player').hidden = true; document.body.style.overflow = ''; $('#p-menu').hidden = true; window.artifactToolbar?.hide(false);
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
 /* Watch: full-width picture with one caption at a time. Explore: picture plus the full text panel. */
@@ -607,15 +726,6 @@ const DIAGRAMS = {
   },
 };
 
-/* The artifact server injects a fixed toolbar (bottom right). Measure it and keep the player's
-   controls above it; it is absent locally and in print. */
-(function watchToolbar(tries){
-  const host = [...document.body.children].find(e => e.shadowRoot && e.shadowRoot.querySelector('.dock'));
-  if (!host) { if (tries > 0) setTimeout(() => watchToolbar(tries - 1), 250); return; }
-  const set = () => document.documentElement.style.setProperty('--toolbar-h', Math.ceil(host.getBoundingClientRect().height) + 16 + 'px');
-  set();
-  if ('ResizeObserver' in window) new ResizeObserver(set).observe(host);
-})(12);
 
 renderTimes();
 renderGallery();

@@ -4,6 +4,8 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-10
+
 ### Added
 - **Quiet theme** for the reference kit (`kit/themes/quiet/`): white space, monochrome neutrals, Geist and Inter at medium weights, faint rings instead of borders, sections on light grey bands, an inset hero with soft blue light and frosted bars. One `<link>` after the page's other stylesheets turns it on; light and dark mode included, fonts bundled. Look and feel inspired by Arc (MIT).
 - **Theme tokens** in `kit.css` for the kit's signature details: `--w-heavy`, `--rule`/`--rule-w`, `--strip`, `--label`, `--label-case`, `--label-k`, `--label-scale`. Every reference routes its CSS through them; the default look is unchanged.
@@ -13,6 +15,13 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
   - `ref-user-guide`: a task-based guide for people with processes and areas, numbered steps on real screenshots, search, a role filter, English and Dutch, and a "was this helpful?" box per topic.
   - `ref-results-evidence`: the implementer's proof of done, with criteria linked to the checks that prove them, before/after, measured evidence, what was restored, caveats and a sign-off saved on the page.
 - The agent guide, the agent skill, the style guide and `docs/reference-collection.md` describe the theme and the tokens.
+- **Toolbar footprint for pages.** The injected version toolbar publishes the space it takes: `--artifact-toolbar-space` and `--artifact-toolbar-width` on `<html>`, an `artifact-toolbar` event on `window`, and `window.artifactToolbar.hide(true|false)` for full-screen views such as players and lightboxes. See `docs/api.md`.
+
+### Fixed
+- The version toolbar keeps one row on phones: the title and version shrink instead of wrapping, so the ⋯ menu stays at the right edge and its menu opens on screen.
+- Tours: the auto-moving carousels can be dragged and flung by touch or mouse, and the player's phone layout keeps its controls in their own bar, clear of the text and the toolbar.
+- Plan deck: slides fade through instead of crossfading, so two slides never show at once.
+- Quiet theme: a selected filter chip stays visible inside section bands.
 
 ## [0.4.0] - first public release
 
