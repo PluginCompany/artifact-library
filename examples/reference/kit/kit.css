@@ -49,7 +49,7 @@
      heavy display weight, dashed "stitch" rules, small mono uppercase labels,
      coloured status strips on the edge of cards (--strip: 1 on, 0 off). */
   --w-heavy:800; --rule:dashed; --rule-w:2px; --strip:1;
-  --label:var(--mono); --label-case:uppercase; --label-k:1; --label-scale:1;
+  --label:var(--mono); --label-case:uppercase; --label-k:1; --label-scale:1; --em:var(--accent);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -115,7 +115,7 @@ li+li{margin-top:.25em}
 .eyebrow.thread{color:var(--thread)}
 .eyebrow.accent{color:var(--accent)}
 .display{font-size:clamp(36px,5.4vw,68px);font-weight:var(--w-heavy);line-height:.98;letter-spacing:-.02em}
-.display em,.h1 em,h1 em{font-style:normal;color:var(--accent)}
+.display em,.h1 em,h1 em{font-style:normal;color:var(--em,var(--accent))}
 .h1{font-size:clamp(30px,3.8vw,46px)}
 .h2{font-size:clamp(22px,2.4vw,30px)}
 .h3{font-size:19px;font-weight:700}

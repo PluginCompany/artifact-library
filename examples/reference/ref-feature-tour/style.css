@@ -12,7 +12,7 @@
 /* ---------- Landing ---------- */
 .tour-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:36px 60px;align-items:center;padding-block:clamp(36px,6vw,76px) 34px}
 .tour-hero h1{font-size:clamp(40px,5.8vw,76px);font-weight:var(--w-heavy);line-height:.96;margin-top:16px}
-.tour-hero h1 em{font-style:normal;color:var(--accent)}
+.tour-hero h1 em{font-style:normal;color:var(--em,var(--accent))}
 .tour-hero .lead{margin-top:20px;color:var(--muted);font-size:18.5px;max-width:46ch}
 .hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:28px}
 .tour-hero .btn.cta{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-size:16.5px;padding:15px 24px;border-radius:14px;position:relative;transition:transform .2s ease}

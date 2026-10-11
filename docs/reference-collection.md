@@ -46,7 +46,7 @@ ref-implementation-review/
 
 The kit's own look is the default. `kit/themes/` holds alternatives that restyle any kit page without touching its markup or scripts; light and dark mode keep working.
 
-**Quiet** (`kit/themes/quiet/`) is white space and monochrome neutrals: Geist headings and Inter text at medium weights, faint rings instead of borders, sentence-case labels, each section on a light grey rounded band, an inset hero with soft blue light, frosted bars and popovers, no coloured edge strips. Its fonts (SIL OFL) are bundled. Look and feel inspired by [Arc](https://github.com/kuratlielia/arc-library) (MIT).
+**Quiet** (`kit/themes/quiet/`) is a calm, professional documentation look: a flat white page, hairline borders, small radii, no gradients and no decorative shadows, Inter for text and semibold headings, Geist Mono for code, one blue accent for links and primary actions, sentence-case labels and no coloured edge strips. Its fonts (SIL OFL) are bundled.
 
 Enable it with one line after every other stylesheet of the page:
 
@@ -69,6 +69,7 @@ Besides the colour, font and radius tokens, a theme sets these, which pages use 
 | `--label-case` | `uppercase` | Their text transform |
 | `--label-k` | `1` | Multiplier for their letter spacing |
 | `--label-scale` | `1` | Multiplier for their size |
+| `--em` | `var(--accent)` | Colour of emphasised words in headlines (`<em>`) |
 
 Page CSS should use them too (`font:var(--w-heavy) 40px var(--display)`, `border-top:var(--rule-w) var(--rule) var(--line)`, `font:500 calc(11px*var(--label-scale)) var(--label)`, `border-left:calc(3px*var(--strip)) solid var(--good)`), so a theme restyles the whole page. To make another theme, copy `kit/themes/quiet/` to `kit/themes/<name>/`, rename the CSS file, change the tokens, and keep component overrides to what tokens cannot express.
 

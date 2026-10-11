@@ -147,7 +147,7 @@ Every server ships **21 polished reference artifacts**, one per common job. Agen
 | **Start here** | Guide for agents · CLI and skill install page |
 
 - **One design system** (`kit/`) behind all of them, with its own style guide on the collection hub: light and dark mode, charts with table views, comment threads, self-hosted fonts.
-- **Two themes**: the default, and **Quiet** (monochrome, airy, frosted bars), switched on with one stylesheet link.
+- **Two themes**: the default, and **Quiet** (plain documentation style: hairline borders, semibold Inter, one blue accent), switched on with one stylesheet link.
 - **Seeded on every server** and updated with new releases, without overwriting your own edits.
 
 [See the collection →](docs/reference-collection.md)

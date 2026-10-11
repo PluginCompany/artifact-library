@@ -4,6 +4,10 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed
+- **Quiet theme redesigned** as a calm, professional documentation look: a flat white page, hairline borders, small radii, no gradients, section bands or decorative shadows, Inter for text and semibold headings, Geist Mono for code and one blue accent. Pages that link the theme get the new look without changes.
+- New `--em` theme token for the colour of emphasised headline words (the default keeps the accent; Quiet keeps them in the text colour).
+
 ## [0.5.0] - 2026-10-10
 
 ### Added
