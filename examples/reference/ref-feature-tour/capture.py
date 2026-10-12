@@ -164,7 +164,7 @@ def shots():
         "hub": {"url": "/artifacts/reference-collection/", "wait": ".card", "do": [("scroll", "#collection", 60), ("wait", 900)], "targets": {
             "search": ".search", "chips": ".chips, [role=group]", "card": ".card", "kind": ".card .kind", "saves": "text:.card .tag|Saves feedback"}},
         "theme_default": {"url": "/artifacts/ref-test-report/", "wait": "main, .wrap", "local_kit": "ref-test-report", "do": [("wait", 1200)], "targets": {"title": "h1"}},
-        "theme_quiet": {"url": "/artifacts/ref-test-report/", "wait": "main, .wrap", "local_kit": "ref-test-report", "quiet": True, "do": [("wait", 1400)], "targets": {"title": "h1"}},
+        "theme_clean": {"url": "/artifacts/ref-test-report/", "wait": "main, .wrap", "local_kit": "ref-test-report", "style": "clean", "do": [("wait", 1400)], "targets": {"title": "h1"}},
         # ------------------------------------------------------------ terminals
         "t_publish": terminal("agent — ~/projects/login-flow", [("artifact publish ./login-review --slug login-review --title \"Login flow review\" --json", publish)]) | {"targets": {
             "cmd": "text:.cmd|publish", "url": 'text:#out div|"url"', "version": 'text:#out div|"versionUrl"'}},
@@ -229,8 +229,8 @@ async def capture(ctx, sid, spec):
     else:
         await pg.goto(ORIGIN + spec["url"], wait_until="load")
         await pg.evaluate("document.fonts.ready")
-        if spec.get("quiet"):
-            await pg.evaluate("""() => new Promise((ok) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'kit/themes/quiet/quiet.css'; l.onload = ok; l.onerror = ok; document.head.appendChild(l); })""")
+        # Every kit page has a Bold / Clean switch; capture the style the shot asks for (Bold by default).
+        await pg.evaluate("s => new Promise((ok) => { document.addEventListener('kit:style', () => setTimeout(ok, 300), { once: true }); if (window.Kit && Kit.style && Kit.style.get() !== s) Kit.style.set(s); else ok(); })", spec.get("style", "bold"))
         for _ in range(40):
             if await pg.evaluate(FIND, [spec["wait"], True]): break
             await pg.wait_for_timeout(250)

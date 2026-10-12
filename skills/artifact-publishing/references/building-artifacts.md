@@ -14,7 +14,7 @@ Find the closest reference (table in SKILL.md, or `artifact search ref-`), then 
 - `kit.js` — theme toggle (`[data-theme-toggle]`), side-nav scroll spy, copy buttons, sortable tables, reveal-on-scroll, and charts: `Kit.chart.line|column|bar|donut|spark(el, spec)` with tooltips, legends and a table view (`.chart-card` + `button.as-table`). Call `Kit.refresh()` after rendering content late.
 - `kit-data.js` — saving (below).
 - `fonts/` — self-hosted; pages work without internet.
-- `themes/quiet/` — a second look: plain, professional documentation style (flat white page, hairline borders, small radii, semibold Inter headings, one blue accent). Enable it with one line after every other stylesheet: `<link rel="stylesheet" href="kit/themes/quiet/quiet.css">`. Good for plans, specs, reviews and reports that should read like product docs.
+- `themes/clean/` — the Clean style: plain, professional documentation look (flat white page, hairline borders, small radii, semibold Inter headings, one blue accent). Readers switch between Bold (the default) and Clean with a button kit.js adds next to the light/dark toggle; make Clean a page's default with one line after every other stylesheet: `<link rel="stylesheet" href="kit/themes/clean/clean.css">`. Good for plans, specs, reviews and reports that should read like product docs.
 
 Keep bottom-anchored controls clear of the server's version toolbar with `var(--artifact-toolbar-space, 0px)`, and call `window.artifactToolbar?.hide(true)` while a full-screen view (player, lightbox) is open and `hide(false)` when it closes.
 

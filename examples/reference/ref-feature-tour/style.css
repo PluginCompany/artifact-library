@@ -1,5 +1,5 @@
 /* Feature tour — page styles. Colours, type and radii come from the kit (kit/kit.css) and
-   its theme tokens, so a theme such as kit/themes/quiet restyles the tour too. */
+   its theme tokens, so the Clean style (kit/themes/clean) restyles the tour too. */
 .tour-bar{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding-top:16px}
 .tour-bar [data-save-status]{margin-right:auto}
 .tags .tag{background:var(--info-soft);color:var(--info)}

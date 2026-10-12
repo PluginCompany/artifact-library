@@ -42,21 +42,24 @@ ref-implementation-review/
 
 `kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme toggle, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md)) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
 
-## Themes
+## Themes: Bold and Clean
 
-The kit's own look is the default. `kit/themes/` holds alternatives that restyle any kit page without touching its markup or scripts; light and dark mode keep working.
+Every kit page comes in two styles that share the same markup, scripts and saved data; light and dark mode work in both.
 
-**Quiet** (`kit/themes/quiet/`) is a calm, professional documentation look: a flat white page, hairline borders, small radii, no gradients and no decorative shadows, Inter for text and semibold headings, Geist Mono for code, one blue accent for links and primary actions, sentence-case labels and no coloured edge strips. Its fonts (SIL OFL) are bundled.
+- **Bold** (`kit/kit.css`, the default): heavy display type, dashed "stitch" rules, small mono uppercase labels, an indigo accent with a burnt-orange thread and coloured status strips.
+- **Clean** (`kit/themes/clean/clean.css`): a calm, professional documentation look: a flat white page, hairline borders, small radii, no gradients and no decorative shadows, Inter for text and semibold headings, Geist Mono for code, one blue accent for links and primary actions. Its fonts (SIL OFL) are bundled.
 
-Enable it with one line after every other stylesheet of the page:
+**Readers choose.** `kit.js` puts a *Bold / Clean* button next to the light/dark toggle of every kit page and remembers the choice for every kit page on the server. Fully custom pages that don't load the kit get no button. Put `data-style-toggle` on a button of your own to place it yourself; `Kit.style.get()`, `Kit.style.set("clean")` and the `kit:style` event are there for scripts. After a switch the page also gets `kit:theme` and a `resize`, so charts and measured layouts redraw.
+
+**Authors pick the default.** A page defaults to Bold. Link Clean after every other stylesheet to make Clean the default:
 
 ```html
 <link rel="stylesheet" href="kit/kit.css">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="kit/themes/quiet/quiet.css">
+<link rel="stylesheet" href="kit/themes/clean/clean.css">
 ```
 
-or publish a reference with it: `KIT_THEME=quiet ./publish.sh <dir>` (from `examples/reference/`) links the theme into every HTML page of the staged copy.
+or publish a reference with it: `KIT_THEME=clean ./publish.sh <dir>` (from `examples/reference/`) links the theme into every HTML page of the staged copy. `kit/themes/quiet/quiet.css` is an alias of Clean (its earlier name), so older pages keep working.
 
 Besides the colour, font and radius tokens, a theme sets these, which pages use for the kit's signature details:
 
@@ -71,7 +74,7 @@ Besides the colour, font and radius tokens, a theme sets these, which pages use 
 | `--label-scale` | `1` | Multiplier for their size |
 | `--em` | `var(--accent)` | Colour of emphasised words in headlines (`<em>`) |
 
-Page CSS should use them too (`font:var(--w-heavy) 40px var(--display)`, `border-top:var(--rule-w) var(--rule) var(--line)`, `font:500 calc(11px*var(--label-scale)) var(--label)`, `border-left:calc(3px*var(--strip)) solid var(--good)`), so a theme restyles the whole page. To make another theme, copy `kit/themes/quiet/` to `kit/themes/<name>/`, rename the CSS file, change the tokens, and keep component overrides to what tokens cannot express.
+Page CSS should use them too (`font:var(--w-heavy) 40px var(--display)`, `border-top:var(--rule-w) var(--rule) var(--line)`, `font:500 calc(11px*var(--label-scale)) var(--label)`, `border-left:calc(3px*var(--strip)) solid var(--good)`), so a theme restyles the whole page. To make another theme, copy `kit/themes/clean/` to `kit/themes/<name>/`, rename the CSS file, change the tokens, and keep component overrides to what tokens cannot express.
 
 ## Make your own
 

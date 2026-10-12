@@ -4,6 +4,8 @@
 
    Auto-wired on DOMContentLoaded (just add the attribute):
      [data-theme-toggle]   button that cycles system → light → dark
+                           (kit.js puts a Bold / Clean style button next to it)
+     [data-style-toggle]   place the style button yourself instead
      [data-side-toggle]    button that opens the .side nav on small screens
      .side a[href^="#"]    scroll-spy: marks the current section link
      pre[data-copy]        adds a Copy button
@@ -58,6 +60,69 @@
     set(t) { store.set(THEME_KEY, t); applyTheme(t); },
     cycle() { const order = [null, "light", "dark"]; const i = order.indexOf(this.get()); this.set(order[(i + 1) % 3]); },
   };
+
+  /* ---------- Style: Bold (kit.css) or Clean (themes/clean/clean.css) ----------
+     A page that links the Clean stylesheet defaults to Clean, otherwise to Bold. Readers switch
+     with the style button; their choice is remembered for every kit page on the server. Clean is
+     loaded up front but inactive (media "not all"), so switching is instant. After a switch the
+     page gets kit:style and kit:theme events and a resize, so charts and layouts redraw. */
+  const STYLE_KEY = "kit-style";
+  const CLEAN_CSS = /themes\/(clean\/clean|quiet\/quiet)\.css(\?|#|$)/;
+  const kitBase = (() => {
+    const s = document.currentScript || $$("script[src]").find((x) => /kit\.js(\?|$)/.test(x.src));
+    return s ? s.src.replace(/kit\.js(\?.*)?$/, "") : "kit/";
+  })();
+  const authored = $$('link[rel~="stylesheet"]').find((l) => CLEAN_CSS.test(l.getAttribute("href") || ""));
+  const defaultStyle = authored ? "clean" : "bold";
+  let cleanLink = authored;
+  if (!cleanLink) {
+    cleanLink = document.createElement("link");
+    cleanLink.rel = "stylesheet"; cleanLink.href = kitBase + "themes/clean/clean.css"; cleanLink.media = "not all";
+    document.head.appendChild(cleanLink);
+  }
+  const styleName = (s) => (s === "clean" ? "Clean" : "Bold");
+  function applyStyle(s, announce) {
+    s = s === "clean" ? "clean" : "bold";
+    const root = document.documentElement, before = root.getAttribute("data-kit-style");
+    root.setAttribute("data-kit-style", s);
+    cleanLink.media = s === "clean" ? "all" : "not all";
+    $$("[data-style-toggle]").forEach((b) => {
+      const other = s === "clean" ? "bold" : "clean";
+      b.innerHTML = '<b aria-hidden="true">Aa</b><span>' + styleName(s) + "</span>";
+      b.setAttribute("aria-label", "Style: " + styleName(s) + " (click for " + styleName(other) + ")");
+      b.title = "Style: " + styleName(s) + " · switch to " + styleName(other);
+    });
+    if (!announce || before === s) return;
+    const done = () => {
+      document.dispatchEvent(new CustomEvent("kit:style", { detail: { style: s } }));
+      document.dispatchEvent(new CustomEvent("kit:theme"));
+      window.dispatchEvent(new Event("resize"));
+    };
+    if (s === "clean" && !cleanLink.sheet) cleanLink.addEventListener("load", done, { once: true });
+    else requestAnimationFrame(() => requestAnimationFrame(done));
+  }
+  Kit.style = {
+    default: defaultStyle,
+    get: () => document.documentElement.getAttribute("data-kit-style") || defaultStyle,
+    set(s) { store.set(STYLE_KEY, s); applyStyle(s, true); },
+    toggle() { this.set(this.get() === "clean" ? "bold" : "clean"); },
+  };
+  applyStyle(store.get(STYLE_KEY) || defaultStyle, false);
+  function wireStyleToggle() {
+    $$("[data-theme-toggle]").forEach((t) => {
+      if (t.previousElementSibling && t.previousElementSibling.matches("[data-style-toggle]")) return;
+      if (document.querySelector("[data-style-toggle]:not([data-kit-made])") ) return;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "icon-btn kit-style-toggle"; b.setAttribute("data-style-toggle", ""); b.setAttribute("data-kit-made", "");
+      t.parentNode.insertBefore(b, t);
+    });
+    $$("[data-style-toggle]").forEach((b) => {
+      if (b.dataset.kitWired) return;
+      b.dataset.kitWired = "1"; b.classList.add("kit-style-toggle");
+      b.addEventListener("click", () => Kit.style.toggle());
+    });
+    applyStyle(Kit.style.get(), false);
+  }
   applyTheme(store.get(THEME_KEY)); // run early to avoid a flash
 
   /* ---------- Small helpers ---------- */
@@ -504,6 +569,7 @@
     started = true;
     applyTheme(store.get(THEME_KEY));
     $$("[data-theme-toggle]").forEach((b) => b.addEventListener("click", () => Kit.theme.cycle()));
+    wireStyleToggle();
     wireSide(); wireCopy(); wireSort(); wireReveal(); wireCharts();
     document.dispatchEvent(new CustomEvent("kit:ready"));
   }

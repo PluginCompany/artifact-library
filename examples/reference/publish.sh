@@ -2,7 +2,7 @@
 # Publish (or update) one reference artifact with the shared kit bundled in.
 #
 #   ./publish.sh <artifact-dir> ["update message"]
-#   KIT_THEME=quiet ./publish.sh <artifact-dir>     # with a theme from kit/themes/
+#   KIT_THEME=clean ./publish.sh <artifact-dir>     # default to a theme from kit/themes/
 #
 # <artifact-dir>/artifact.json holds slug, title and description.
 # The directory is staged to a temp folder, ./kit is copied in (the server

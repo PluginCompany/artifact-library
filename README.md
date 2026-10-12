@@ -79,7 +79,7 @@ For common jobs there is a polished reference on the server that agents copy and
 
 ```bash
 docker run -d --name artifacts -p 3000:3000 -v artifact-data:/data \
-  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.5.1
+  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.6.0
 ```
 
 **2. Install the CLI** — standalone binaries, no Node.js needed
@@ -147,7 +147,7 @@ Every server ships **21 polished reference artifacts**, one per common job. Agen
 | **Start here** | Guide for agents · CLI and skill install page |
 
 - **One design system** (`kit/`) behind all of them, with its own style guide on the collection hub: light and dark mode, charts with table views, comment threads, self-hosted fonts.
-- **Two themes**: the default, and **Quiet** (plain documentation style: hairline borders, semibold Inter, one blue accent), switched on with one stylesheet link.
+- **Two styles, Bold and Clean**: the expressive default and a plain documentation look (hairline borders, semibold Inter, one blue accent). Readers switch with a button on every kit page; authors pick the default.
 - **Seeded on every server** and updated with new releases, without overwriting your own edits.
 
 [See the collection →](docs/reference-collection.md)

@@ -242,7 +242,7 @@ window.TOUR = {
   /* ------------------------------------------------------------------ 7 */
   { id: "collection", title: "The reference collection and themes", roles: ["developer"], thumb: "hub",
     intro: "Every server ships polished examples for the common jobs. Agents copy the closest one and change the content, not the plumbing.",
-    learn: ["Reference artifacts", "Default or Quiet theme"],
+    learn: ["Reference artifacts", "Bold or Clean style"],
     slides: [
       { type: "feature", title: "Finished examples to copy from", shot: "hub",
         lead: "Plans, reviews, reports, live pages and tours, grouped by the phase of work.",
@@ -253,11 +253,11 @@ window.TOUR = {
           ["Pages that save answers are marked", "saves"] ],
         how: ["artifact download ref-implementation-review --out ./login-review", "Change data.js, then artifact publish"],
         why: "Agents produce consistent, polished pages from the first try." },
-      { type: "compare", title: "Default or Quiet", lead: "Every reference works with both themes; one stylesheet link switches.",
-        before: { shot: "theme_default", label: "Default" }, after: { shot: "theme_quiet", label: "Quiet" },
+      { type: "compare", title: "Bold or Clean", lead: "Every kit page comes in both styles; readers switch with one button and the author picks the default.",
+        before: { shot: "theme_default", label: "Bold" }, after: { shot: "theme_clean", label: "Clean" },
         points: [
-          ["The default: bold display type, dashed rules, mono labels", null],
-          ["Quiet: white space, medium weights, faint rings instead of borders", null],
+          ["Bold, the default: heavy display type, dashed rules, mono labels", null],
+          ["Clean: a plain documentation look with hairline borders and semibold Inter", null],
           ["Light and dark mode in both", null] ],
         why: "Pick the look that fits the reader; the content and the saved answers stay the same." },
     ]},

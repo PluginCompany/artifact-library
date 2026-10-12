@@ -4,6 +4,14 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-12
+
+### Added
+- **Bold / Clean style switch on every kit page.** `kit.js` puts a button next to the light/dark toggle; readers switch between Bold (the default) and Clean, and the choice is remembered for every kit page on the server. Fully custom pages without the kit get no button. Pages can place it themselves with `data-style-toggle`, and scripts get `Kit.style.get()`, `Kit.style.set()` and a `kit:style` event; after a switch, charts and measured layouts redraw.
+
+### Changed
+- The themes are now called **Bold** (the kit's own look, still the default) and **Clean** (`kit/themes/clean/clean.css`, formerly Quiet). A page that links Clean defaults to it. `kit/themes/quiet/quiet.css` stays as an alias, so existing pages keep working; `KIT_THEME=clean` replaces `KIT_THEME=quiet` in `publish.sh`.
+
 ## [0.5.1] - 2026-10-12
 
 ### Changed
