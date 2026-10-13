@@ -395,6 +395,10 @@ figure{margin:0}
 .side a.toc-sub{padding:3px 10px 3px 40px;font-size:13px;color:var(--muted)}
 .side a.toc-sub.cur,.side a.toc-sub[aria-current]{color:var(--accent);background:transparent}
 .side .toc-group:has(a.toc-sub.cur)>a:first-child{color:var(--accent);font-weight:600}
+/* Sub-items fold open in the chapter being read (or while the menu has keyboard focus inside the group) */
+.side .toc-group a.toc-sub{display:none}
+.side .toc-group:has(a.cur) a.toc-sub,.side .toc-group:has(a[aria-current]) a.toc-sub,.side .toc-group:focus-within a.toc-sub{display:flex}
+@media print{.side .toc-group a.toc-sub{display:flex}}
 .topnav a.cur,.topnav a[aria-current="location"]{color:var(--ink);background:var(--soft)}
 .topnav [data-toc]{display:contents}
 .topnav a[title]{max-width:24ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

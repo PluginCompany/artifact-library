@@ -46,7 +46,12 @@ const contentChecks = () => {
     findings.push({ severity: 'warning', check: 'missing-description', message: 'No <meta name="description">: add one sentence that says what the reader gets.' });
 
   // Chapters are the visible h2 headings; a deck shows one slide at a time, so hidden slides do not count.
-  const chapters = Array.from(document.querySelectorAll('h2')).filter(shown);
+  // A heading inside a section that sits inside another chapter (a question inside "Decisions") belongs to that
+  // chapter, as does anything marked data-toc-skip: the global menu lists top-level chapters only.
+  const chapterSel = 'section[id], [data-chapter][id]';
+  const isChapterBox = (e: Element) => e.hasAttribute('data-chapter') || Array.from(e.querySelectorAll('h2')).some(x => x.closest(chapterSel) === e);
+  const nestedHeading = (h: Element) => { const own = h.closest(chapterSel); const outer = own?.parentElement?.closest(chapterSel); return Boolean(outer && isChapterBox(outer)); };
+  const chapters = Array.from(document.querySelectorAll('h2')).filter(shown).filter(h => !h.closest('[data-toc-skip]') && !nestedHeading(h));
   const anchorOf = (h: Element) => h.id || h.closest('section[id], article[id], div[id]')?.id || '';
   const navSelector = 'nav, [role="navigation"], .topnav, .side, .toc, [data-toc], header';
   const navs = Array.from(document.querySelectorAll(navSelector)).filter(shown);

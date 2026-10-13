@@ -13,7 +13,8 @@
      .reveal               fades in when scrolled into view
      [data-chart]          renders a chart from JSON in the attribute or from
                            window[data-chart-src] — see Kit.chart below
-     [data-toc]            chapter menu built from every section[id] / [data-chapter][id]
+     [data-toc]            chapter menu built from every top-level section[id] / [data-chapter][id]
+                           (sections inside a chapter are its items; data-toc-skip leaves one out)
                            (a nav.topnav[data-toc] outside the top bar is moved into .topbar)
                            with an h2 (data-toc-label overrides the text). In .topnav: top links
                            plus a Contents button on phones; in .side: numbered list with h3[id]
@@ -586,11 +587,22 @@
   // Chapters: section[id] or [data-chapter][id] with its own h2, in document order.
   function chapters() {
     const sel = "section[id], [data-chapter][id]";
-    return $$(sel).filter((s) => !s.closest("[data-toc], .side, .topnav, .demo, .kit-toc-sheet")).map((s) => {
+    // Only top-level chapters: a section inside another chapter (a question inside "Decisions", a finding
+    // inside "Findings") is an item of that chapter, and data-toc-skip leaves a section out entirely.
+    const nested = (s) => { const outer = s.parentElement && s.parentElement.closest(sel); return Boolean(outer && (outer.hasAttribute("data-chapter") || $$("h2", outer).some((x) => x.closest(sel) === outer))); };
+    return $$(sel).filter((s) => !s.closest("[data-toc], .side, .topnav, .demo, .kit-toc-sheet, [data-toc-skip]") && !nested(s)).map((s) => {
       const h = $$("h2", s).find((x) => x.closest(sel) === s);
       if (!h && !s.dataset.tocLabel) return null;
       const label = (s.dataset.tocLabel || h.textContent).replace(/\s+/g, " ").trim();
-      const subs = $$("h3[id]", s).filter((x) => x.closest(sel) === s).map((x) => ({ id: x.id, label: (x.dataset.tocLabel || x.textContent).replace(/\s+/g, " ").trim() }));
+      // Items of this chapter: its h3[id] headings and the sections nested in it (questions, findings).
+      // The side menu shows them as a sub-menu that folds open in the current chapter; the top bar leaves them out.
+      const items = $$("h3[id], section[id], [data-chapter][id]", s).filter((x) => x !== s && !x.closest("[data-toc-skip]") &&
+        (x.matches("h3") ? x.closest(sel) === s : x.parentElement.closest(sel) === s));
+      const subs = items.map((x) => {
+        const heading = x.matches("h3") ? x : $$("h2, h3", x).find((y) => y.closest(sel) === x);
+        const text = x.dataset.tocLabel || (heading && heading.textContent) || "";
+        return text.trim() ? { id: x.id, label: text.replace(/\s+/g, " ").trim() } : null;
+      }).filter(Boolean);
       return { id: s.id, label, subs };
     }).filter(Boolean);
   }

@@ -4,6 +4,12 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-10-13
+
+### Changed
+- **Chapter menus list main chapters only.** Sections nested inside a chapter (questions inside "Decisions", findings inside "Findings") are items of that chapter: the top bar leaves them out, and a side menu shows them as a sub-menu that folds open while that chapter is being read. `data-toc-skip` leaves any section out. `artifact lint` counts chapters the same way, so it no longer asks for every question in the menu.
+- `ref-decision-questionnaire` wraps its questions in one "Decisions" chapter (`#decisions`), with its own question list for jumping between them.
+
 ## [0.7.1] - 2026-10-13
 
 ### Changed

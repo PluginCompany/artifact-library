@@ -52,6 +52,18 @@ Every chapter is a `<section id="…">` with an `<h2>`. A page with three or mor
 
 Put the `nav` inside the `header.topbar`, never in the hero or the page body: a menu in the body scrolls away after the first screen (`artifact lint` reports `nav-not-sticky`). Keep chapter titles short (two to five words, or `data-toc-label="Risks"` on the section) so the top bar fits; on phones the kit swaps the links for a Contents button.
 
+**Main chapters only.** The menu is a table of contents, not an index: list the 4–9 chapters a reader would name ("Proposal", "Options", "Risks", "Decisions"). Individual questions, findings, work steps or risks are items of one chapter. Nest them inside that chapter's section, and the kit and `artifact lint` treat them as part of it: the top bar lists only the chapter, and a side menu shows the items as a sub-menu that folds open while that chapter is being read:
+
+```html
+<section id="decisions" data-chapter data-toc-label="Decisions">
+  <h2>Decisions</h2>
+  <section id="q-engine"><h2>Which engine should we start with?</h2>…</section>   <!-- an item, not a chapter -->
+  <section id="q-scope"><h2>What should be searchable?</h2>…</section>
+</section>
+```
+
+`ref-decision-questionnaire` already wraps its questions this way (`#decisions`, with its own question list for jumping between them). Use `data-toc-skip` on a section to leave it out of the menu for any other reason.
+
 For long documents (8+ chapters, or chapters with sub-sections) use the sticky side nav instead: `<div class="shell"><nav class="side" data-toc aria-label="Chapters"></nav><main class="main">…</main></div>` plus a `[data-side-toggle]` button for phones. Hand-written menus are fine too: `<a href="#chapter-id">` links in `.topnav` or `.side`; the kit adds scroll-spy to both. Keep chapter titles short (two to five words) so the menu fits.
 
 ## 4. Plain language
