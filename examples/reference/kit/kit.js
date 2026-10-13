@@ -14,6 +14,7 @@
      [data-chart]          renders a chart from JSON in the attribute or from
                            window[data-chart-src] — see Kit.chart below
      [data-toc]            chapter menu built from every section[id] / [data-chapter][id]
+                           (a nav.topnav[data-toc] outside the top bar is moved into .topbar)
                            with an h2 (data-toc-label overrides the text). In .topnav: top links
                            plus a Contents button on phones; in .side: numbered list with h3[id]
                            sub-items; elsewhere: a numbered contents block. Kit.toc(el) re-renders.
@@ -659,7 +660,13 @@
     const bar = $(".topbar"), nav = bar && $(".topnav", bar);
     if (!nav || $(".kit-toc-btn", bar)) return;
     const inPage = () => $$('a[href^="#"]', nav).filter((a) => a.getAttribute("href").length > 1);
-    if (!inPage().length) return;
+    if (!inPage().length) {
+      // Links to other pages: keep them, but fade the edge when they overflow so readers know to scroll.
+      const mark = () => nav.classList.toggle("kit-scrolls", nav.scrollWidth > nav.clientWidth + 2 && nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 2);
+      mark(); addEventListener("resize", mark); nav.addEventListener("scroll", mark, { passive: true });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(mark);
+      return;
+    }
     const btn = document.createElement("button");
     btn.type = "button"; btn.className = "icon-btn kit-toc-btn"; btn.setAttribute("data-kit-made", "");
     btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-controls", "kit-toc-sheet");
@@ -680,9 +687,28 @@
     sheet.addEventListener("click", (e) => { if (e.target.closest("a")) close(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !sheet.hidden) { close(); btn.focus(); } });
     document.addEventListener("click", (e) => { if (!sheet.hidden && !sheet.contains(e.target) && !btn.contains(e.target)) close(); });
-    addEventListener("resize", () => { if (!sheet.hidden && innerWidth > 760) close(); });
+    // When the chapter links do not fit the bar (many or long chapters), use the Contents button on
+    // wide screens too, instead of cutting links off.
+    const fit = () => {
+      bar.classList.remove("kit-nav-overflow");
+      if (innerWidth > 760 && nav.scrollWidth > nav.clientWidth + 2) bar.classList.add("kit-nav-overflow");
+      if (!sheet.hidden && innerWidth > 760 && !bar.classList.contains("kit-nav-overflow")) close();
+    };
+    fit(); addEventListener("resize", fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+    document.addEventListener("kit:style", fit);
   }
-  function wireTocs() { $$("[data-toc]").forEach((el) => { if (!el.dataset.tocWired) toc(el); }); wirePhoneToc(); }
+  // A chapter menu belongs in the sticky top bar. A nav.topnav[data-toc] placed in the page body is
+  // moved into the page's .topbar (after the brand) when the bar has no chapter menu of its own.
+  function placeTopToc() {
+    const bar = $(".topbar"); if (!bar) return;
+    $$(".topnav[data-toc], .topnav:has([data-toc])").forEach((nav) => {
+      if (nav.closest(".topbar") || $(".topnav", bar)) return;
+      const brand = $(".brand", bar);
+      if (brand && brand.parentNode === bar) brand.after(nav); else bar.prepend(nav);
+    });
+  }
+  function wireTocs() { placeTopToc(); $$("[data-toc]").forEach((el) => { if (!el.dataset.tocWired) toc(el); }); wirePhoneToc(); }
 
   // Flow diagram: boxes with arrows; a column on phones or with direction:"column".
   const arrow = '<li class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 12"><path d="M1 6h20m-5-4.5L21 6l-5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></li>';

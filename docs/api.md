@@ -54,6 +54,7 @@ Receipts: `{slug, version, revision, unchanged, url, versionUrl}`. Archive paths
 | error | `missing-file` | Requests for files that are not in the version |
 | error | `horizontal-overflow` | Sideways scrolling at a width, with the element that causes it |
 | error | `no-global-nav` | Three or more chapters (visible `h2`) and no menu linking at least half of them |
+| error | `nav-not-sticky` | The chapters are linked, but only from the page body, so the menu scrolls away: move it into the sticky top bar or a sticky side nav |
 | error | `missing-title` | No `<title>` |
 | warning | `chapters-not-in-nav` | Five or more chapters while the menu only links other pages |
 | warning | `heading-without-id` | Chapter headings that cannot be linked (no id on the heading or a section around it) |

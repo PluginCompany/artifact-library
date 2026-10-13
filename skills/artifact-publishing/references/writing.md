@@ -39,7 +39,7 @@ Lead with the conclusion, then the reasons. Not: background → analysis → fin
 
 ## 3. A global chapter menu (required for 3+ chapters)
 
-Every chapter is a `<section id="…">` with an `<h2>`. A page with three or more chapters gets a global menu that links every chapter and highlights the one being read:
+Every chapter is a `<section id="…">` with an `<h2>`. A page with three or more chapters gets a global menu that links every chapter, highlights the one being read, and **stays on screen while reading**. The default is the sticky top bar, the first element in `<body>`:
 
 ```html
 <header class="topbar">
@@ -50,7 +50,9 @@ Every chapter is a `<section id="…">` with an `<h2>`. A page with three or mor
 </header>
 ```
 
-For long documents use the side nav instead: `<div class="shell"><nav class="side" data-toc aria-label="Chapters"></nav><main class="main">…</main></div>` plus a `[data-side-toggle]` button for phones. Hand-written menus are fine too: `<a href="#chapter-id">` links in `.topnav` or `.side`; the kit adds scroll-spy to both. Keep chapter titles short (two to five words) so the menu fits.
+Put the `nav` inside the `header.topbar`, never in the hero or the page body: a menu in the body scrolls away after the first screen (`artifact lint` reports `nav-not-sticky`). Keep chapter titles short (two to five words, or `data-toc-label="Risks"` on the section) so the top bar fits; on phones the kit swaps the links for a Contents button.
+
+For long documents (8+ chapters, or chapters with sub-sections) use the sticky side nav instead: `<div class="shell"><nav class="side" data-toc aria-label="Chapters"></nav><main class="main">…</main></div>` plus a `[data-side-toggle]` button for phones. Hand-written menus are fine too: `<a href="#chapter-id">` links in `.topnav` or `.side`; the kit adds scroll-spy to both. Keep chapter titles short (two to five words) so the menu fits.
 
 ## 4. Plain language
 

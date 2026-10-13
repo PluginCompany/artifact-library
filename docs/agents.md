@@ -65,7 +65,7 @@ The skill gives agents a numbered bar to meet, so models that follow explicit ru
 1. Copy a reference; use the kit.
 2. Name the reader and what they must do.
 3. The first screen says what this is, the conclusion, and what the reader must do.
-4. Three or more chapters get a global chapter menu (`nav[data-toc]`).
+4. Three or more chapters get a global chapter menu that stays on screen: `nav.topnav[data-toc]` in the sticky top bar, or `nav.side[data-toc]` for long documents; never in the page body.
 5. Plain language, one idea per paragraph, at most about four lines.
 6. Show, don't describe: comparisons as `table.compare`, flows as `[data-flow]` diagrams, numbers as stats or charts, risks as `[data-risks]`, before/after as `.ba`, changes as `.delta`, work plans as `.steps` with files.
 7. Measure instead of estimating; cite files; label estimates and example content.

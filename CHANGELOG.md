@@ -4,6 +4,16 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-13
+
+### Changed
+- **The chapter menu stays on screen.** The skill, the writing guide, the agent guide and the docs now make the sticky top bar (`header.topbar` > `nav.topnav[data-toc]`) the default place for the chapter menu, with a sticky side nav for long documents, and say never to put it in the page body.
+- `artifact lint` reports a new error, `nav-not-sticky`, when the chapters are linked only from a menu that scrolls away; a sticky menu that links a few chapters but not most is a `chapters-not-in-nav` warning.
+
+### Fixed
+- A `nav.topnav[data-toc]` placed in the page body is moved into the page's top bar by the kit.
+- Top bars on wide screens: a long chapter menu no longer squeezes the brand or the controls. When the chapter links do not fit, they fold into the Contents dropdown (as on phones); menus of links to other pages fade at the edge instead of cutting a word off.
+
 ## [0.7.0] - 2026-10-13
 
 ### Added

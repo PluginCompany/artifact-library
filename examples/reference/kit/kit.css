@@ -158,6 +158,14 @@ li+li{margin-top:.25em}
 .brand span{overflow:hidden;text-overflow:ellipsis}
 .brand small{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.06em*var(--label-k));text-transform:var(--label-case);color:var(--muted);margin-left:2px}
 .topnav{display:flex;gap:4px;margin-left:12px;overflow-x:auto;scrollbar-width:none}
+/* Wide screens: a long chapter menu scrolls inside the bar (or folds into Contents); the brand and the
+   controls on the right never shrink. Phones hide the menu and keep the old shrinking behaviour. */
+@media (min-width:761px){
+  .topbar>.topnav{flex:1 1 auto;min-width:0}
+  .topbar>.brand{flex-shrink:0;max-width:min(40%,360px)}
+  .topbar>:not(.topnav):not(.brand):not(.spacer){flex-shrink:0}
+  .topbar>.topnav~.spacer{display:none}
+}
 .topnav::-webkit-scrollbar{display:none}
 .topnav a{flex:none;text-decoration:none;color:var(--muted);font-size:14px;font-weight:600;padding:7px 12px;border-radius:999px}
 .topnav a:hover{color:var(--ink);background:var(--soft)}
@@ -401,9 +409,15 @@ figure{margin:0}
 .kit-toc-btn{display:none}
 .kit-toc-btn span{font-size:13px;font-weight:600}
 @media (max-width:760px){.kit-toc-btn{display:inline-grid}}
+.topbar.kit-nav-overflow>.topnav{display:none}
+.topbar.kit-nav-overflow .kit-toc-btn{display:inline-grid;margin-left:auto}
+.topbar.kit-nav-overflow>.topnav~.spacer{display:none}
 @media (max-width:420px){.kit-toc-btn span{display:none}}
 .kit-toc-sheet{position:fixed;z-index:40;top:calc(var(--bar) + 6px);left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));max-height:min(70vh,560px);overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:12px 10px 10px;animation:kit-sheet .18s var(--ease) both}
 .kit-toc-sheet .kit-toc-title{padding:0 8px}
+@media (min-width:761px){.kit-toc-sheet{left:auto;width:min(420px,calc(100vw - 32px));right:max(16px,env(safe-area-inset-right))}}
+/* Top links that do not fit and cannot fold into Contents (links to other pages) fade at the edge: scroll for more */
+.topnav.kit-scrolls{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
 @keyframes kit-sheet{from{opacity:0;transform:translateY(-6px)}}
 
 /* Flow diagram ([data-flow]) */

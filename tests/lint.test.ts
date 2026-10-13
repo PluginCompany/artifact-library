@@ -37,7 +37,7 @@ test('lint is unavailable without server-side rendering, and not advertised', as
 const clean = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Search plan</title><meta name="description" content="How search will work.">
 <style>body{font:16px/1.5 sans-serif;margin:0;padding:0 16px}nav a{margin-right:12px}</style></head><body>
-<nav><a href="#why">Why</a><a href="#how">How</a><a href="#risks">Risks</a></nav>
+<nav style="position:sticky;top:0;background:#fff"><a href="#why">Why</a><a href="#how">How</a><a href="#risks">Risks</a></nav>
 <section id="why"><h2>Why</h2><p>Search only reads titles today.</p></section>
 <section id="how"><h2>How</h2><table><tr><th>Step</th><th>Files</th></tr><tr><td>Extract text</td><td>src/text.ts</td></tr></table></section>
 <section id="risks"><h2>Risks</h2><ul><li>Memory</li><li>Snippets</li><li>Ranking</li></ul></section></body></html>`;
@@ -48,11 +48,14 @@ const bad = `<!doctype html><html><head><meta name="viewport" content="width=dev
 <h2>Two</h2><div style="width:900px">wide</div><h2>Three</h2><p style="font-size:10px">Tiny text that nobody can read comfortably.</p>
 <img src="missing.png"><script>notDefined()</script></body></html>`;
 
+const scrolling = clean.replace('<nav style="position:sticky;top:0;background:#fff">', '<header style="position:sticky;top:0">Plan</header><nav>');
+
 test('lint renders the page and reports concrete problems', { skip: !browserAvailable && 'Chromium is not installed' }, async t => {
   const app = await server(t, true);
   assert.ok((await app.inject('/api/v1/server')).json().capabilities.includes('lint'));
   await publish(app, 'clean', clean);
   await publish(app, 'bad', bad);
+  await publish(app, 'scrolling', scrolling);
 
   const good = await lint(app, 'clean', { screenshots: true, widths: [1024, 390] });
   assert.equal(good.statusCode, 200, good.body);
@@ -70,6 +73,10 @@ test('lint renders the page and reports concrete problems', { skip: !browserAvai
   const overflow = result.findings.find((f: { check: string }) => f.check === 'horizontal-overflow');
   assert.equal(overflow.width, 390);
   assert.equal(result.screenshots, undefined);
+
+  // The same menu in the page body scrolls away: that is an error, not a pass.
+  const moving = (await lint(app, 'scrolling')).json();
+  assert.deepEqual(moving.findings.filter((f: { severity: string }) => f.severity === 'error').map((f: { check: string }) => f.check), ['nav-not-sticky']);
 });
 
 test('lint validates its options', { skip: !browserAvailable && 'Chromium is not installed' }, async t => {

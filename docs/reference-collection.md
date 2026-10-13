@@ -48,7 +48,7 @@ Higher-level blocks so a page shows its structure instead of describing it. Each
 
 | Block | Markup | Use it for |
 |---|---|---|
-| Chapter menu | `<nav class="topnav" data-toc></nav>` or `<nav class="side" data-toc></nav>` | Every page with 3+ chapters: filled from `section[id]` with an `h2`, with scroll-spy |
+| Chapter menu | `<nav class="topnav" data-toc></nav>` inside the sticky `header.topbar`, or `<nav class="side" data-toc></nav>` in `.shell` | Every page with 3+ chapters: filled from `section[id]` with an `h2`, with scroll-spy; never in the page body |
 | Flow diagram | `<div data-flow='{"steps":[{"title":"…","text":"…","tag":"new","files":["src/x.ts"]}],"caption":"…"}'></div>`, `"direction":"down"`, `"rows":[{"label":"…","steps":[…]}]`, or `Kit.flow(el, spec)` | Processes, pipelines, data flow |
 | Comparison table | `<table class="table compare">` with `<tr class="rec">` on the recommended option | Options compared on the same criteria |
 | Risk table | `<div data-risks='[{"risk":"…","likelihood":"low\|medium\|high","impact":"…","plan":"…"}]'></div>` or `Kit.risks(el, rows)` | Risks with likelihood (word and colour) and what the plan does about each |

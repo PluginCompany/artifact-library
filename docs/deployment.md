@@ -6,8 +6,8 @@ Artifact Library is one container with a data volume. It needs no database and r
 
 | Image | Size | Notes |
 |---|---|---|
-| `ghcr.io/plugincompany/artifact-library:0.7.0` (`:0.7`, `:latest`) | ~1.3 GB | Includes Chromium for server-side preview images |
-| `ghcr.io/plugincompany/artifact-library:0.7.0-slim` (`:slim`) | ~290 MB | No Chromium; previews off, the library shows placeholders |
+| `ghcr.io/plugincompany/artifact-library:0.7.1` (`:0.7`, `:latest`) | ~1.3 GB | Includes Chromium for server-side preview images |
+| `ghcr.io/plugincompany/artifact-library:0.7.1-slim` (`:slim`) | ~290 MB | No Chromium; previews off, the library shows placeholders |
 
 Both are built for `linux/amd64` and `linux/arm64`.
 
@@ -15,7 +15,7 @@ Both are built for `linux/amd64` and `linux/arm64`.
 
 ```bash
 docker run -d --name artifacts -p 3000:3000 -v artifact-data:/data \
-  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.7.0
+  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.7.1
 ```
 
 Open <http://localhost:3000>. A new server seeds the agent guide, the reference collection and the CLI download page on first start.

@@ -27,7 +27,7 @@ window.GUIDE = {
   ],
   checklist: [
     { id: "first", text: "The first screen says what this is, the conclusion, what you need from the reader, and the status." },
-    { id: "toc", text: "Three or more chapters: a chapter menu (`nav[data-toc]`) links every chapter." },
+    { id: "toc", text: "Three or more chapters: a chapter menu that stays on screen — `nav.topnav[data-toc]` in the sticky top bar (or `nav.side[data-toc]` for long documents), never in the page body." },
     { id: "plain", text: "Plain sentences for the named reader; no paragraph longer than about four lines; jargon defined or gone." },
     { id: "visuals", text: "Every comparison is a table, every flow a diagram, every set of numbers a stat or chart; no chapter is a wall of text." },
     { id: "evidence", text: "Numbers are measured (and say how) or labelled as estimates; code claims cite files." },
@@ -49,7 +49,7 @@ window.GUIDE = {
     { dont: "Write engineer shorthand: “Reacquire lock, check existence, requeue stale jobs.”", instead: "Full sentences for the named reader: what happens, why, and what it means for them." },
     { dont: "Describe a process, a comparison or a set of numbers in paragraphs.", instead: "Draw it: `[data-flow]`, `table.compare`, stat tiles or `Kit.chart`." },
     { dont: "Estimate what you could have measured.", instead: "Run it, count it or time it, and say how; label the rest as estimates." },
-    { dont: "A long page without a chapter menu.", instead: "`<nav class=\"topnav\" data-toc>` links every chapter and highlights the current one." },
+    { dont: "A long page without a chapter menu, or a menu in the page body that scrolls away.", instead: "`<nav class=\"topnav\" data-toc>` inside the sticky `header.topbar` links every chapter and highlights the current one." },
     { dont: "Paste a 200-line answer into chat when the user will read it more than once.", instead: "Publish it and send the link with a two-line summary." },
     { dont: "Ask the human to copy answers back into the terminal.", instead: "Save answers on the page; read them with `artifact feedback`." },
     { dont: "Publish a new slug for every revision.", instead: "`artifact update <slug>` keeps the link and the history." },

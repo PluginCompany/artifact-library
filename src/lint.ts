@@ -68,6 +68,21 @@ const contentChecks = () => {
       if ((pageLinks.size >= 2 || scriptNav) && chapters.length < 5) { /* page menu or script-driven chapter nav: fine for a short page */ }
       else if (pageLinks.size >= 2 || scriptNav) findings.push({ severity: 'warning', check: 'chapters-not-in-nav', message: `${chapters.length} chapters on this page but the menu only links pages: add the chapters to a side nav or table of contents.`, count: chapters.length - covered });
       else findings.push({ severity: 'error', check: 'no-global-nav', message: `${chapters.length} chapters but no navigation to them (${covered} linked): add a sticky top bar or side nav with a link to every chapter.`, count: chapters.length - covered });
+    } else {
+      // The chapter menu must stay reachable while reading: some link to a chapter sits in a sticky or fixed bar.
+      const pinned = (e: Element | null) => { for (; e && e !== document.documentElement; e = e.parentElement) { const p = getComputedStyle(e).position; if (p === 'sticky' || p === 'fixed') return true; } return false; };
+      // Which chapter a link points at: the heading itself, an element around it, or one inside its section.
+      const chapterOf = (a: Element) => { const id = decodeURIComponent((a.getAttribute('href') || '').split('#')[1] || ''); const t = id && document.getElementById(id); if (!t) return -1;
+        return chapters.findIndex((h) => t === h || t.contains(h) || h.contains(t) || (t.closest('section, article') !== null && t.closest('section, article') === h.closest('section, article'))); };
+      const chapterLinks = navLinks.filter(a => chapterOf(a) >= 0);
+      // A sticky link covers its chapter and every chapter inside the element it points to (a "Decisions" link covers each decision).
+      const coverage = (links: Element[]) => { const set = new Set<number>(); for (const a of links) {
+        const id = decodeURIComponent((a.getAttribute('href') || '').split('#')[1] || ''); const t = document.getElementById(id);
+        chapters.forEach((h, i) => { if (t && (t === h || t.contains(h) || h.contains(t) || i === chapterOf(a))) set.add(i); }); } return set.size; };
+      const pinnedCount = coverage(chapterLinks.filter(pinned)), loose = coverage(chapterLinks.filter(a => !pinned(a)));
+      if (pinnedCount / chapters.length < 0.75 && pinnedCount > 0 && loose <= pinnedCount)
+        findings.push({ severity: 'warning', check: 'chapters-not-in-nav', message: `The sticky menu links ${pinnedCount} of ${chapters.length} chapters: link the rest too, or group them under a linked section.`, count: chapters.length - pinnedCount });
+      else if (chapterLinks.length && pinnedCount / chapters.length < 0.75) findings.push({ severity: 'error', check: 'nav-not-sticky', message: 'The chapter menu scrolls away with the page: put it in the sticky top bar (header.topbar > nav.topnav[data-toc]) or a sticky side nav (nav.side[data-toc]), not in the page body.', where: snippet(chapterLinks[0].closest('nav, [data-toc], .topnav, .side, .toc') || chapterLinks[0]) });
     }
   }
   const unlinkable = chapters.filter(h => !anchorOf(h));

@@ -13,7 +13,7 @@ Find the closest reference (table in SKILL.md, or `artifact search ref-`), then 
 - `kit.css` — tokens (`--accent`, `--thread`, `--good`, `--warn`, `--bad`, `--s1…--s5` chart series), dark mode, and components: `.topbar`, `.hero`, `.display`, `.stitch` headings, `.card`, `.stat`, `.callout`, `.tag good|warn|bad`, `.steps`, `.timeline`, `.table`, `details.fold`, `pre[data-copy]`, `.shell/.side/.main` for long documents.
 - `kit.js` — theme toggle (`[data-theme-toggle]`), side-nav scroll spy, copy buttons, sortable tables, reveal-on-scroll, and charts: `Kit.chart.line|column|bar|donut|spark(el, spec)` with tooltips, legends and a table view (`.chart-card` + `button.as-table`). Call `Kit.refresh()` after rendering content late.
 - Blocks for explaining (in `kit.js` and `kit.css`; markup examples in `writing.md` §5):
-  - `[data-toc]` on a `nav.topnav` or `nav.side`: filled with a link to every `section[id]` that has an `h2`, with scroll-spy.
+  - `[data-toc]` on a `nav.topnav` inside the sticky `header.topbar` (default) or a `nav.side` in `.shell` (long documents): filled with a link to every `section[id]` that has an `h2`, with scroll-spy and a Contents button on phones. Never in the page body.
   - `[data-flow]` with JSON `{steps:[{title, text, tag?, files?}], caption?, direction?: "right"|"down", rows?:[{label, steps}]}`, or `Kit.flow(el, spec)`: a flow diagram that stacks vertically on phones.
   - `table.table.compare` with `tr.rec` on the recommended row: options compared on the same criteria.
   - `[data-risks]` with JSON `[{risk, likelihood: "low"|"medium"|"high", impact?, plan}]`, or `Kit.risks(el, rows)`: a risk table with likelihood as word and colour.
@@ -53,7 +53,7 @@ Store human-readable labels next to ids so `artifact feedback` output makes sens
 
 1. Title says what it is; description says what the reader gets (both are shown in the library).
 2. The first screen answers "what is this, what do you conclude or propose, and what do you need from me?".
-3. Three or more chapters → a global chapter menu (`nav[data-toc]`) linking every chapter.
+3. Three or more chapters → a global chapter menu that stays on screen: `nav.topnav[data-toc]` in the sticky top bar, or `nav.side[data-toc]` for long documents.
 4. Plain language; no paragraph longer than about four lines; every major chapter has a table, diagram, chart, figure or structured list.
 5. `artifact lint <slug>` passes without errors; you looked at its screenshots.
 6. Example or invented content is labelled "Example content".
@@ -70,7 +70,7 @@ Store human-readable labels next to ids so `artifact feedback` output makes sens
 - Engineer shorthand ("Reacquire lock, check existence, requeue") — write full sentences for the named reader.
 - A process or comparison described in paragraphs — draw it with `[data-flow]` or `table.compare`.
 - Estimates where a measurement was possible — run it, count it, time it, and say how.
-- A long page without a chapter menu — add `nav[data-toc]`.
+- A long page without a chapter menu, or with the menu in the page body where it scrolls away — put `nav.topnav[data-toc]` in the sticky top bar.
 - Colour as the only signal, dual-axis charts, a number on every data point.
 - Saving state in `localStorage` when the agent needs to read it — use `Kit.data`.
 - Re-publishing to update live progress — write `state.*` with `artifact data set` instead.
