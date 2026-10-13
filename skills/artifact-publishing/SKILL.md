@@ -10,15 +10,24 @@ An Artifact Library server hosts folders of HTML as versioned artifacts with a s
 
 Use `artifact --help` for syntax and `--json` for machine-readable output. Run `artifact doctor --json` first: it shows the selected server, API compatibility and whether you can publish (some servers require a write token). Ask the user for the server only if none is configured.
 
-This file works on its own. Two optional references sit beside it: `references/building-artifacts.md` (kit, saving conventions, checklist) and `references/deployment.md` (install, deploy, upgrade). If the `references/` folder is missing, the same guidance is published on the server at `<server>/artifacts/agent-guide/`, and `artifact skill install --agent <agent> --overwrite` restores the files.
+This file works on its own. Three optional references sit beside it: `references/writing.md` (the rules below explained, with before/after examples and block markup), `references/building-artifacts.md` (kit, saving conventions) and `references/deployment.md` (install, deploy, upgrade). If the `references/` folder is missing, the same guidance is published on the server at `<server>/artifacts/agent-guide/`, and `artifact skill install --agent <agent> --overwrite` restores the files.
 
-## Core rules for a good artifact
+## The bar every artifact meets
 
-1. **Copy a reference, don't start blank.** Download the closest reference artifact (table below) and change its content; keep its plumbing and the shared `kit/`.
-2. **Use the kit.** Colours come from kit tokens (light and dark mode work automatically), status always carries a word, charts use `Kit.chart` with a table view. Kit pages come in two styles readers can switch between (Bold, the default, and Clean); to make Clean, the plain documentation look, a page's default, link `kit/themes/clean/clean.css` after the page's other stylesheets.
-3. **Let readers answer on the page** with `kit/kit-data.js` (`Kit.data`, `Kit.comments`) instead of asking them to paste text back. Store readable labels next to ids.
-4. **Verify before sharing:** look at screenshots at 1440 px and 390 px, light and dark; no horizontal scroll, no console errors; label invented content "Example content".
-5. **Publish with a title that says what it is and a description that says what the reader gets**, share the stable `url`, and revise with `artifact update` so the link and history stay.
+Follow every rule. They are what separates a page people act on from a page they skim and close.
+
+1. **Copy a reference, don't start blank.** Download the closest reference (table below), keep its plumbing and `kit/`, replace the content. Use kit tokens and components; never hard-code colours or load fonts and scripts from the internet.
+2. **Name the reader and the job.** Before writing, decide who opens the link and what they must do with it (approve, choose, verify, follow along). Cut what does not serve that.
+3. **The first screen says what, why and what you need.** Kind of page, the conclusion or proposal in one or two sentences, what the reader must do and where, and status (author, date, draft/awaiting approval/done). Conclusion first, reasons after.
+4. **A global chapter menu.** Every chapter is a `<section id="…">` with an `<h2>`. With 3 or more chapters, add a top or side menu that links every chapter: `<nav class="topnav" data-toc></nav>` in the top bar (or `<nav class="side" data-toc></nav>` for long documents); the kit fills it and highlights the chapter being read.
+5. **Plain language, short paragraphs.** Full sentences, one idea per paragraph, at most about four lines (~70 words). Name things the way the reader knows them; define or drop jargon. Say what changes and what stays the same. Not "Reacquire lock, check existence, requeue stale jobs" but "Before writing, the job checks that nobody published a newer version; if someone did, it starts again for that version."
+6. **Show, don't describe.** Comparison → `table.compare` with the recommended `tr.rec`. Process or data flow → `[data-flow]` diagram. Numbers → stat tiles or a `Kit.chart` with a table view. Risks → `[data-risks]`. Before/after → `.ba`. Changes vs unchanged → `.delta`. Work plan → `.steps` with `p.files`. A chapter over ~300 words without a visual needs one.
+7. **Measure, cite, label.** If you can count, time or run it, do, and say how. Cite files and lines (`src/catalog.ts:42`). Label estimates as estimates and invented content as "Example content". Never fabricate numbers, screenshots or test results.
+8. **Decisions are answered on the page.** Open questions become options with trade-offs and a recommended default (copy `ref-decision-questionnaire`), plus an overall verdict when approval is needed. Tell the reader their answers are saved and reach you; read them with `artifact feedback`.
+9. **Review before you share.** Publish, run `artifact lint <slug>` (renders the page at 1440 and 390 px; `--screenshots <dir>` saves images), fix every error and the warnings that apply, look at the screenshots in light and dark, then `artifact update`. Check the rubric in `references/writing.md` §8.
+10. **Name it and keep the link.** A title that is a name (2–6 words), a one-sentence description of what the reader gets; share the stable `url`; revise with `artifact update`.
+
+Kit pages come in two styles readers switch between with a button (Bold, the default, and Clean). To make Clean, the plain documentation look, a page's default, link `kit/themes/clean/clean.css` after the page's other stylesheets. Readers answer on the page through `kit/kit-data.js` (`Kit.data`, `Kit.comments`); store readable labels next to ids.
 
 ## Start from a reference
 
@@ -78,6 +87,15 @@ artifact publish ./output --slug migration-plan \
 ```
 
 Keep `slug`, `version`, `revision`, `url` and `versionUrl` from the result. Share `url` (always the latest); `versionUrl` is a fixed snapshot. Previews are made by the server — don't generate your own.
+
+Then review it before sending the link:
+
+```bash
+artifact lint migration-plan                         # errors (non-zero exit) and warnings: console errors, overflow, chapter menu, walls of text, links
+artifact lint migration-plan --screenshots ./shots   # also saves 1440 and 390 px screenshots; look at them
+```
+
+Fix and `artifact update`. On servers without a browser (slim image) `lint` reports that it cannot render; screenshot with a local browser instead.
 
 Servers may limit uploads (default 500 MB and 10,000 files; `doctor` shows `limits`). The CLI checks before uploading and fails with `UPLOAD_TOO_LARGE` or `TOO_MANY_FILES`; compress images (WebP) or split the artifact.
 

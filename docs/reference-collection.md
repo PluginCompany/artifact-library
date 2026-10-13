@@ -42,6 +42,22 @@ ref-implementation-review/
 
 `kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme toggle, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md)) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
 
+### Blocks for explaining
+
+Higher-level blocks so a page shows its structure instead of describing it. Each works in both styles and in light and dark mode.
+
+| Block | Markup | Use it for |
+|---|---|---|
+| Chapter menu | `<nav class="topnav" data-toc></nav>` or `<nav class="side" data-toc></nav>` | Every page with 3+ chapters: filled from `section[id]` with an `h2`, with scroll-spy |
+| Flow diagram | `<div data-flow='{"steps":[{"title":"…","text":"…","tag":"new","files":["src/x.ts"]}],"caption":"…"}'></div>`, `"direction":"down"`, `"rows":[{"label":"…","steps":[…]}]`, or `Kit.flow(el, spec)` | Processes, pipelines, data flow |
+| Comparison table | `<table class="table compare">` with `<tr class="rec">` on the recommended option | Options compared on the same criteria |
+| Risk table | `<div data-risks='[{"risk":"…","likelihood":"low\|medium\|high","impact":"…","plan":"…"}]'></div>` or `Kit.risks(el, rows)` | Risks with likelihood (word and colour) and what the plan does about each |
+| Before/after | `<div class="ba"><figure class="before">…</figure><figure class="after">…</figure></div>` | Screens, output or numbers before and after a change |
+| Changes and what stays | `<div class="delta"><div class="changes">…</div><div class="stays">…</div></div>` | Reassuring readers about what does not change |
+| Steps with files | `<ol class="steps">` with `<p class="files"><code>src/x.ts</code></p>` in a step | Work plans that say which files each step touches |
+
+The style guide (`kit.html` on the reference collection) shows every component with copyable HTML.
+
 ## Themes: Bold and Clean
 
 Every kit page comes in two styles that share the same markup, scripts and saved data; light and dark mode work in both.

@@ -13,6 +13,16 @@
      .reveal               fades in when scrolled into view
      [data-chart]          renders a chart from JSON in the attribute or from
                            window[data-chart-src] — see Kit.chart below
+     [data-toc]            chapter menu built from every section[id] / [data-chapter][id]
+                           with an h2 (data-toc-label overrides the text). In .topnav: top links
+                           plus a Contents button on phones; in .side: numbered list with h3[id]
+                           sub-items; elsewhere: a numbered contents block. Kit.toc(el) re-renders.
+     [data-flow]           flow diagram from JSON in the attribute or window[data-flow-src]:
+                           {steps:[{title, text, tag, files:[...]}], caption, direction:"row"|"column"}
+                           or {rows:[{label, steps:[...]}]} — Kit.flow(el, spec)
+     [data-risks]          risk table from JSON in the attribute or window[data-risks-src]:
+                           [{risk, likelihood:"low"|"medium"|"high", impact, plan}] — Kit.risks(el, list)
+     table.compare         comparison table; tr.rec is the recommended row (gets a Recommended tag)
 
    Charts (all theme-aware, hover tooltips, legend for ≥2 series,
    and a table view when wrapped in .chart-card with a .as-table button):
@@ -560,8 +570,162 @@
     });
   }
   Kit.wireCharts = wireCharts;
-  // Call after rendering content late (from data.js etc.) to wire sort, copy, reveal and [data-chart].
-  Kit.refresh = () => { wireSide(); wireCopy(); wireSort(); wireReveal(); wireCharts(); };
+
+  /* ---------- Blocks: chapter menu, flow, risks, compare ---------- */
+  const ex = (v) => esc(v == null ? "" : v);
+  const specOf = (el, attr) => {
+    const src = el.getAttribute(attr + "-src");
+    if (src) return src.split(".").reduce((o, k) => (o ? o[k] : undefined), window);
+    const raw = el.getAttribute(attr);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { console.warn("Bad " + attr + " JSON", el); return null; }
+  };
+  const pad = (n) => String(n).padStart(2, "0");
+
+  // Chapters: section[id] or [data-chapter][id] with its own h2, in document order.
+  function chapters() {
+    const sel = "section[id], [data-chapter][id]";
+    return $$(sel).filter((s) => !s.closest("[data-toc], .side, .topnav, .demo, .kit-toc-sheet")).map((s) => {
+      const h = $$("h2", s).find((x) => x.closest(sel) === s);
+      if (!h && !s.dataset.tocLabel) return null;
+      const label = (s.dataset.tocLabel || h.textContent).replace(/\s+/g, " ").trim();
+      const subs = $$("h3[id]", s).filter((x) => x.closest(sel) === s).map((x) => ({ id: x.id, label: (x.dataset.tocLabel || x.textContent).replace(/\s+/g, " ").trim() }));
+      return { id: s.id, label, subs };
+    }).filter(Boolean);
+  }
+  Kit.chapters = chapters;
+  function toc(el) {
+    const list = chapters();
+    const top = el.closest(".topnav") || el.classList.contains("topnav");
+    const side = el.closest(".side") || el.classList.contains("side");
+    const title = el.dataset.tocTitle;
+    if (top) {
+      el.innerHTML = list.map((c) => `<a href="#${ex(c.id)}" title="${ex(c.label)}">${ex(c.label)}</a>`).join("");
+    } else if (side) {
+      el.innerHTML = (title ? `<h5>${ex(title)}</h5>` : "") + list.map((c, i) => `<div class="toc-group"><a href="#${ex(c.id)}"><b>${pad(i + 1)}</b>${ex(c.label)}</a>` +
+        c.subs.map((x) => `<a class="toc-sub" href="#${ex(x.id)}">${ex(x.label)}</a>`).join("") + "</div>").join("");
+    } else {
+      el.classList.add("kit-toc");
+      el.innerHTML = `<p class="kit-toc-title">${ex(title || "Contents")}</p><ol>` + list.map((c, i) => `<li><a href="#${ex(c.id)}"><b>${pad(i + 1)}</b><span>${ex(c.label)}</span></a></li>`).join("") + "</ol>";
+    }
+    el.dataset.tocWired = "1";
+    wireTopSpy(); wirePhoneToc();
+  }
+  Kit.toc = toc;
+
+  // Scroll-spy for top-nav chapter links the kit generated ([data-toc] inside .topnav).
+  let topSpy = false, spyNow = null;
+  function wireTopSpy() {
+    if (topSpy || !$(".topnav [data-toc], .topnav[data-toc], .kit-toc")) return;
+    topSpy = true;
+    let frame = 0, pinned = null, pinTimer = null;
+    const links = () => $$(".topnav [data-toc] a, .topnav[data-toc] a, .kit-toc a, .kit-toc-sheet a");
+    const update = () => {
+      frame = 0;
+      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar")) || 60;
+      const line = bar + Math.min(innerHeight * 0.25, 220);
+      const ids = chapters().map((c) => c.id);
+      let current = pinned;
+      if (!current) {
+        for (const id of ids) { const t = document.getElementById(id); if (t && t.getClientRects().length && t.getBoundingClientRect().top <= line) current = id; }
+        if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) {
+          const vis = ids.filter((id) => { const t = document.getElementById(id); return t && t.getBoundingClientRect().top < innerHeight; });
+          if (vis.length) current = vis[vis.length - 1];
+        }
+        if (!current) current = ids[0];
+      }
+      links().forEach((a) => {
+        const on = a.getAttribute("href") === "#" + current;
+        a.classList.toggle("cur", on);
+        if (on) { a.setAttribute("aria-current", "location"); const nav = a.closest(".topnav"); if (nav && nav.scrollWidth > nav.clientWidth) { const r = a.getBoundingClientRect(), nr = nav.getBoundingClientRect(); if (r.left < nr.left || r.right > nr.right) nav.scrollLeft += r.left - nr.left - 24; } }
+        else if (a.getAttribute("aria-current") === "location") a.removeAttribute("aria-current");
+      });
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    spyNow = update;
+    addEventListener("scroll", schedule, { passive: true });
+    addEventListener("resize", schedule);
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest('.topnav a[href^="#"], .kit-toc a[href^="#"], .kit-toc-sheet a[href^="#"]');
+      if (!a) return;
+      pinned = a.getAttribute("href").slice(1); schedule(); clearTimeout(pinTimer);
+      pinTimer = setTimeout(() => { pinned = null; schedule(); }, 900);
+    });
+    schedule();
+  }
+
+  // Phones hide .topnav; a Contents button in the top bar opens the same chapter links.
+  function wirePhoneToc() {
+    const bar = $(".topbar"), nav = bar && $(".topnav", bar);
+    if (!nav || $(".kit-toc-btn", bar)) return;
+    const inPage = () => $$('a[href^="#"]', nav).filter((a) => a.getAttribute("href").length > 1);
+    if (!inPage().length) return;
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "icon-btn kit-toc-btn"; btn.setAttribute("data-kit-made", "");
+    btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-controls", "kit-toc-sheet");
+    btn.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg><span>Contents</span>';
+    nav.insertAdjacentElement("afterend", btn);
+    const sheet = document.createElement("nav");
+    sheet.className = "kit-toc-sheet"; sheet.id = "kit-toc-sheet"; sheet.hidden = true; sheet.setAttribute("aria-label", "Contents"); sheet.setAttribute("data-kit-made", "");
+    document.body.appendChild(sheet);
+    const close = () => { sheet.hidden = true; btn.setAttribute("aria-expanded", "false"); };
+    btn.addEventListener("click", () => {
+      if (!sheet.hidden) return close();
+      const cur = $('a[aria-current]', nav) ;
+      sheet.innerHTML = '<p class="kit-toc-title">Contents</p><ol>' + inPage().map((a, i) => `<li><a href="${ex(a.getAttribute("href"))}"${a === cur || a.classList.contains("cur") ? ' aria-current="location" class="cur"' : ""}><b>${pad(i + 1)}</b><span>${ex(a.getAttribute("title") || a.textContent.trim())}</span></a></li>`).join("") + "</ol>";
+      sheet.hidden = false; btn.setAttribute("aria-expanded", "true");
+      if (spyNow && $("[data-toc]", bar)) spyNow();
+      const first = $(".cur", sheet) || $("a", sheet); if (first) first.focus({ preventScroll: true });
+    });
+    sheet.addEventListener("click", (e) => { if (e.target.closest("a")) close(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !sheet.hidden) { close(); btn.focus(); } });
+    document.addEventListener("click", (e) => { if (!sheet.hidden && !sheet.contains(e.target) && !btn.contains(e.target)) close(); });
+    addEventListener("resize", () => { if (!sheet.hidden && innerWidth > 760) close(); });
+  }
+  function wireTocs() { $$("[data-toc]").forEach((el) => { if (!el.dataset.tocWired) toc(el); }); wirePhoneToc(); }
+
+  // Flow diagram: boxes with arrows; a column on phones or with direction:"column".
+  const arrow = '<li class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 12"><path d="M1 6h20m-5-4.5L21 6l-5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></li>';
+  function flow(el, spec) {
+    if (!spec) return;
+    const rows = spec.rows || [{ label: spec.label, steps: spec.steps || [] }];
+    const step = (st, i) => `<li class="flow-step${st.highlight ? " on" : ""}"><span class="flow-n">${pad(i + 1)}</span>` +
+      `<b>${ex(st.title)}</b>${st.text ? `<p>${ex(st.text)}</p>` : ""}` +
+      (st.tag ? `<span class="tag ${ex(st.tagTone || "outline")}">${ex(st.tag)}</span>` : "") +
+      (st.files && st.files.length ? `<p class="files">${st.files.map((f) => `<code>${ex(f)}</code>`).join(" ")}</p>` : "") + "</li>";
+    el.classList.add("kit-flow");
+    el.classList.toggle("col", spec.direction === "column");
+    el.innerHTML = rows.map((r) => `<div class="flow-row">${r.label ? `<p class="flow-label">${ex(r.label)}</p>` : ""}` +
+      `<ol class="flow-steps"${r.label ? ` aria-label="${ex(r.label)}"` : ""}>${r.steps.map((st, i) => (i ? arrow : "") + step(st, i)).join("")}</ol></div>`).join("") +
+      (spec.caption ? `<p class="flow-caption">${ex(spec.caption)}</p>` : "");
+    el.dataset.wired = "1";
+  }
+  Kit.flow = flow;
+
+  // Risk table with worded likelihood (and impact) tags.
+  const LEVEL = { low: ["good", "Low"], medium: ["warn", "Medium"], high: ["bad", "High"] };
+  const level = (v) => { const k = String(v || "").toLowerCase(); return LEVEL[k] ? `<span class="tag ${LEVEL[k][0]} dot">${LEVEL[k][1]}</span>` : ex(v); };
+  function risks(el, list) {
+    if (!Array.isArray(list)) return;
+    const impact = list.some((r) => r.impact);
+    el.innerHTML = `<div class="table-wrap"><table class="table kit-risks"><thead><tr><th>Risk</th><th>Likelihood</th>${impact ? "<th>Impact</th>" : ""}<th>How the plan handles it</th></tr></thead><tbody>` +
+      list.map((r) => `<tr><td>${ex(r.risk)}</td><td>${level(r.likelihood)}</td>${impact ? `<td>${level(r.impact)}</td>` : ""}<td>${ex(r.plan)}</td></tr>`).join("") + "</tbody></table></div>";
+    el.dataset.wired = "1";
+  }
+  Kit.risks = risks;
+
+  function wireBlocks() {
+    $$("[data-flow]").forEach((el) => { if (!el.dataset.wired) flow(el, specOf(el, "data-flow")); });
+    $$("[data-risks]").forEach((el) => { if (!el.dataset.wired) risks(el, specOf(el, "data-risks")); });
+    $$("table.compare tr.rec").forEach((tr) => {
+      const cell = tr.querySelector("th, td");
+      if (cell && !cell.querySelector(".tag.rec")) cell.insertAdjacentHTML("beforeend", ' <span class="tag accent rec">Recommended</span>');
+    });
+  }
+  Kit.wireBlocks = wireBlocks;
+
+  // Call after rendering content late (from data.js etc.) to wire menus, blocks, sort, copy, reveal and charts.
+  Kit.refresh = () => { $$("[data-toc]").forEach((el) => toc(el)); wirePhoneToc(); wireBlocks(); wireSide(); wireCopy(); wireSort(); wireReveal(); wireCharts(); };
 
   let started = false;
   function init() {
@@ -570,6 +734,7 @@
     applyTheme(store.get(THEME_KEY));
     $$("[data-theme-toggle]").forEach((b) => b.addEventListener("click", () => Kit.theme.cycle()));
     wireStyleToggle();
+    wireTocs(); wireBlocks();
     wireSide(); wireCopy(); wireSort(); wireReveal(); wireCharts();
     document.dispatchEvent(new CustomEvent("kit:ready"));
   }

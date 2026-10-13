@@ -89,6 +89,17 @@ artifact purge q3-report --yes # deletes every version, preview and saved commen
 
 Archived artifacts refuse new versions and reader writes until restored. Seeding never recreates an archived or purged default artifact.
 
+## Check a published page
+
+```bash
+artifact lint fts-plan                         # latest version at 1440 and 390 px
+artifact lint fts-plan --version 2 --width 1024 --width 390
+artifact lint fts-plan --screenshots ./shots   # also save full-page screenshots (and dark mode)
+artifact lint fts-plan --json
+```
+
+The server renders the page in its headless browser and reports errors (script errors, missing files, sideways scrolling, chapters without navigation, no title) and warnings (walls of text, long chapters with nothing visual, unlinkable headings, tiny text, images without alt, no description), each with where it happens, plus page statistics. Exit code 3 when there are errors. It needs a server with previews on; see [api.md](api.md#lint) for every check. Agents run it after each publish and fix what it finds.
+
 ## Saved data and feedback
 
 Pages built with the kit's `kit-data.js` save answers, comments, review verdicts and live state beside the artifact. Read and answer them:
@@ -131,6 +142,7 @@ Checks Docker Compose and the port, detects Tailscale, and writes `compose.yaml`
 | 0 | Success (or current, for `check`) |
 | 1 | Error, including `AUTH_REQUIRED` / `AUTH_INVALID` |
 | 2 | Conflict (`REVISION_CONFLICT`, `DATA_CONFLICT`, existing slug) |
+| 3 | `lint` found errors on the page |
 | 10 | `check` found a newer remote version |
 
 Errors print `CODE: message`; with `--json` they are `{"error":{"code","message"}}` on stderr.

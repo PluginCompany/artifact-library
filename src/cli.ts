@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command, CommanderError } from 'commander';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createTwoFilesPatch } from 'diff';
 import { randomUUID } from 'node:crypto';
@@ -9,6 +9,7 @@ import { localManifest } from './archive.js';
 import { APP_VERSION, API_VERSION, ArtifactError, compareFiles, resolveFile, type Artifact, type Publication, type Version } from './shared.js';
 import { AGENTS, agentSkillPath, installSkill, openBrowser, serverInit, type Agent } from './cli-tools.js';
 import { dataPath, feedback, feedbackText, json, purgeArtifact, searchArtifacts, setArchived, since, trackingOf, updateDirectory, type DataDoc } from './operations.js';
+import type { LintResult } from './lint.js';
 import { addProfile, listProfiles, useProfile, removeProfile, resolveServer } from './profiles.js';
 
 const program = new Command().name('artifact').description('Artifact Library: publish, discover, version and review HTML artifacts').version(APP_VERSION)
@@ -148,6 +149,34 @@ metadata.command('set').argument('<slug>').option('--title <title>').option('--d
   });
 program.command('preview').description('Server-side preview tools').command('refresh').argument('<slug>')
   .action(async (slug,_options,command)=>{const api=await client(command);await api.info(slug);output(await api.request(`/api/v1/artifacts/${slug}/preview`,{method:'POST'}),command);});
+program.command('lint').argument('<slug>').description('Render an artifact on the server and report layout, navigation and readability problems (exit 3 on errors)')
+  .option('--version <version>', 'Version to check (default: latest)').option('--width <px>', 'Viewport width to render (repeatable; default 1440 and 390)', (v: string, a: string[]) => [...a, v], [])
+  .option('--screenshots <directory>', 'Save full-page screenshots (each width, plus dark mode at the narrowest) to this folder')
+  .action(async (slug, options, command) => {
+    const api = await client(command);
+    const body = { version: options.version !== undefined ? Number(options.version) : undefined, widths: options.width.length ? options.width.map(Number) : undefined, screenshots: Boolean(options.screenshots) };
+    const result = await api.request<LintResult>(`/api/v1/artifacts/${encodeURIComponent(slug)}/lint`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const saved: string[] = [];
+    if (options.screenshots && result.screenshots) {
+      await mkdir(options.screenshots, { recursive: true });
+      for (const shot of result.screenshots) {
+        const file = path.join(options.screenshots, `${result.slug}-v${result.version}-${shot.width}-${shot.theme}.jpg`);
+        await writeFile(file, Buffer.from(shot.data, 'base64')); saved.push(file);
+      }
+    }
+    const report = { ...result, screenshots: saved.length ? saved : undefined };
+    output(report, command, lintText(result, saved));
+    if (result.findings.some(f => f.severity === 'error')) process.exitCode = 3;
+  });
+function lintText(result: LintResult, saved: string[]) {
+  const errors = result.findings.filter(f => f.severity === 'error'), warnings = result.findings.filter(f => f.severity === 'warning');
+  const line = (f: LintResult['findings'][number]) => `  ${f.check}${f.width ? ` (${f.width} px)` : ''}${f.count && f.count > 1 ? ` ×${f.count}` : ''}: ${f.message}${f.where ? `\n      at: ${f.where}` : ''}`;
+  const s = result.stats;
+  return [`Lint ${result.slug} v${result.version} at ${result.widths.join(' and ')} px: ${errors.length} error${errors.length === 1 ? '' : 's'}, ${warnings.length} warning${warnings.length === 1 ? '' : 's'}`,
+    ...(errors.length ? ['', 'Errors', ...errors.map(line)] : []), ...(warnings.length ? ['', 'Warnings', ...warnings.map(line)] : []),
+    '', `Page: ${s.words} words, ${s.chapters} chapters, ${s.paragraphs} paragraphs (longest ${s.longestParagraphWords} words), ${s.visuals} visuals (${s.tables} tables, ${s.diagrams} diagrams/charts, ${s.images} images), ${s.navLinks} navigation links`,
+    ...(saved.length ? ['', 'Screenshots:', ...saved.map(f => '  ' + f)] : [])].join('\n');
+}
 program.command('skill').description('Install the bundled agent skill').command('install')
   .option('--agent <agents>', `Install into the agent's skills folder: ${AGENTS.join(', ')} (comma-separated for several)`).option('--path <directory>', 'Install into this directory instead').option('--overwrite', 'Replace an existing installation')
   .action(async(options,command)=>{

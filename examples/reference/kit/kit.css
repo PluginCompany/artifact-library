@@ -382,6 +382,104 @@ figure{margin:0}
 /* Footer */
 .foot-note{color:var(--muted);font-size:13px;padding-block:28px 56px;border-top:1px solid var(--line);margin-top:48px}
 
+/* 4b. Blocks: chapter menu, flow, compare, risks, before/after, changes ------ */
+/* Chapter menu ([data-toc]): side sub-items, a contents block, and the phone sheet */
+.side a.toc-sub{padding:3px 10px 3px 40px;font-size:13px;color:var(--muted)}
+.side a.toc-sub.cur,.side a.toc-sub[aria-current]{color:var(--accent);background:transparent}
+.side .toc-group:has(a.toc-sub.cur)>a:first-child{color:var(--accent);font-weight:600}
+.topnav a.cur,.topnav a[aria-current="location"]{color:var(--ink);background:var(--soft)}
+.topnav [data-toc]{display:contents}
+.topnav a[title]{max-width:24ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kit-toc{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:14px 16px}
+.kit-toc-title{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);color:var(--muted);margin:0 0 6px}
+.kit-toc ol,.kit-toc-sheet ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.kit-toc li,.kit-toc-sheet li{margin:0}
+.kit-toc a,.kit-toc-sheet a{display:flex;gap:10px;align-items:baseline;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink);font-size:14.5px;line-height:1.35}
+.kit-toc a b,.kit-toc-sheet a b{font:500 11.5px var(--mono);color:var(--thread);min-width:1.8em}
+.kit-toc a:hover,.kit-toc-sheet a:hover{background:var(--soft)}
+.kit-toc a.cur,.kit-toc-sheet a.cur{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.kit-toc-btn{display:none}
+.kit-toc-btn span{font-size:13px;font-weight:600}
+@media (max-width:760px){.kit-toc-btn{display:inline-grid}}
+@media (max-width:420px){.kit-toc-btn span{display:none}}
+.kit-toc-sheet{position:fixed;z-index:40;top:calc(var(--bar) + 6px);left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));max-height:min(70vh,560px);overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:12px 10px 10px;animation:kit-sheet .18s var(--ease) both}
+.kit-toc-sheet .kit-toc-title{padding:0 8px}
+@keyframes kit-sheet{from{opacity:0;transform:translateY(-6px)}}
+
+/* Flow diagram ([data-flow]) */
+.kit-flow{display:grid;gap:14px}
+.flow-row{display:grid;gap:8px;min-width:0}
+.flow-label{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);color:var(--muted);margin:0}
+.flow-steps{list-style:none;margin:0;padding:0 0 2px;display:flex;align-items:stretch;overflow-x:auto}
+.flow-step{flex:1 1 0;min-width:140px;margin:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.flow-step.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.flow-n{font:500 11.5px var(--mono);color:var(--thread)}
+.flow-step>b{font:var(--w-heavy) 15px/1.25 var(--display);letter-spacing:-.005em}
+.flow-step>p{margin:0;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.flow-step>.tag{margin-top:auto}
+.flow-arrow{flex:0 0 26px;margin:0;display:grid;place-items:center;color:var(--line-strong)}
+.flow-arrow svg{width:22px;height:12px}
+.flow-caption{font-size:13px;color:var(--muted);margin:0}
+.kit-flow.col .flow-steps{flex-direction:column;overflow:visible}
+.kit-flow.col .flow-step{min-width:0}
+.kit-flow.col .flow-arrow{flex-basis:22px}
+.kit-flow.col .flow-arrow svg{transform:rotate(90deg)}
+@media (max-width:700px){
+  .flow-steps{flex-direction:column;overflow:visible}
+  .flow-step{min-width:0}
+  .flow-arrow{flex-basis:22px}
+  .flow-arrow svg{transform:rotate(90deg)}
+}
+
+/* Files touched by a step (also inside flow steps) */
+.files{display:flex;flex-wrap:wrap;gap:4px 6px;margin:6px 0 0;font-size:12px;line-height:1.5}
+.files code{font-size:11.5px;color:var(--muted)}
+.steps .files{margin-top:8px}
+
+/* Comparison table (table.compare) */
+.table.compare tbody th,.table.compare tbody td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+.table.compare tr.rec>*{background:color-mix(in srgb,var(--accent-soft) 70%,var(--panel))}
+.table.compare tr.rec>:first-child{box-shadow:inset calc(3px*var(--strip)) 0 0 var(--accent)}
+.table.compare .tag.rec{margin-left:6px;vertical-align:1px}
+@media (max-width:760px){
+  .table-wrap .table.compare{min-width:600px}
+  .table-wrap .table.compare tr>:first-child{position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 0 var(--line);white-space:normal;min-width:120px;max-width:38vw}
+  .table.compare .tag.rec{display:table;margin:4px 0 0}
+  .table-wrap .table.compare thead tr>:first-child{background:var(--soft);z-index:2}
+  .table-wrap .table.compare tr.rec>:first-child{background:color-mix(in srgb,var(--accent-soft) 70%,var(--panel));box-shadow:1px 0 0 var(--line),inset calc(3px*var(--strip)) 0 0 var(--accent)}
+}
+
+/* Risk table ([data-risks]) */
+.kit-risks td:nth-child(2),.kit-risks td:nth-child(3):not(:last-child){white-space:nowrap}
+.kit-risks td:first-child{font-weight:600;color:var(--ink)}
+
+/* Before / after (.ba) */
+.ba{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ba>figure{position:relative;margin:0;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:38px 14px 14px;display:grid;gap:8px;align-content:start}
+.ba>figure::before{position:absolute;top:10px;left:12px;font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.08em*var(--label-k));text-transform:var(--label-case);border-radius:999px;padding:1px 9px;background:var(--soft);color:var(--muted)}
+.ba>.before::before{content:"Before"}
+.ba>.after::before{content:"After";background:var(--accent-soft);color:var(--accent)}
+.ba>figure[data-label]::before{content:attr(data-label)}
+.ba>.after{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.ba img{display:block;width:100%;height:auto;border-radius:calc(var(--radius) - 4px);border:1px solid var(--line)}
+.ba pre{margin:0}
+.ba figcaption{font-size:13px;color:var(--muted)}
+@media (max-width:700px){.ba{grid-template-columns:minmax(0,1fr)}}
+
+/* What changes / what stays the same (.delta with .changes and .stays) */
+.delta:has(>.changes,>.stays){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.delta>.changes,.delta>.stays{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:14px 16px}
+.delta>.changes h4,.delta>.stays h4{font:var(--w-heavy) 15.5px var(--display);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.delta>.changes h4::before,.delta>.stays h4::before{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font:700 13px/1 var(--mono)}
+.delta>.changes h4::before{content:"+";background:var(--good-soft);color:var(--good)}
+.delta>.stays h4::before{content:"=";background:var(--soft);color:var(--muted)}
+.delta>.changes ul,.delta>.stays ul{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.delta>.changes li,.delta>.stays li{position:relative;padding-left:20px;margin:0;font-size:14.5px}
+.delta>.changes li::before,.delta>.stays li::before{position:absolute;left:2px;top:0;font:600 13px/1.55 var(--mono)}
+.delta>.changes li::before{content:"+";color:var(--good)}
+.delta>.stays li::before{content:"=";color:var(--faint)}
+@media (max-width:700px){.delta:has(>.changes,>.stays){grid-template-columns:minmax(0,1fr)}}
+
 /* 5. Charts ---------------------------------------------------------------- */
 .chart{position:relative}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
@@ -469,7 +567,9 @@ figure{margin:0}
   @page{margin:14mm}
   :root{color-scheme:light}
   body{background:#fff;font-size:11pt}
-  .topbar,.side,.no-print,.pager,.chart-tip,pre .copy,.thread-form,.thread-items .resolve{display:none!important}
+  .topbar,.side,.no-print,.pager,.chart-tip,pre .copy,.thread-form,.thread-items .resolve,.kit-toc-sheet,.kit-toc-btn{display:none!important}
+  .flow-steps{overflow:visible;flex-wrap:wrap}
+  .flow-step,.ba>figure,.delta>*{break-inside:avoid}
   .shell{display:block}
   .main{padding:0}
   .card,.panel,.stat,.chart-card,.frame,.steps>li,.timeline>li,figure{break-inside:avoid;box-shadow:none}

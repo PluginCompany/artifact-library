@@ -5,13 +5,14 @@ import path from 'node:path';
 import { z } from 'zod';
 import { APP_VERSION, ArtifactError } from './shared.js';
 import type { Client } from './client.js';
+import type { LintResult } from './lint.js';
 import { bundledSkill } from './bundled-skill.js';
 import { dataPath, feedback, feedbackText, json, searchArtifacts, setArchived, updateDirectory, type DataDoc } from './operations.js';
 
 /* `artifact mcp`: the CLI's core operations as MCP tools on stdio, bound to the server and token the CLI selected. */
 
 const INSTRUCTIONS = `Artifact Library publishes folders of HTML as versioned pages with stable links, and stores what readers answer, comment and approve on them.
-Workflow: search before creating; copy a reference (create_from_reference, e.g. ref-implementation-review, ref-decision-questionnaire, ref-live-run-log) instead of starting from scratch; edit content, not plumbing (each index.html starts with an EDITING GUIDE); publish with a clear title and description; share the url; when the user says they answered or commented, read feedback and reply in the same thread with data_append; publish changes with update so the link and history stay.
+Workflow: search before creating; copy a reference (create_from_reference, e.g. ref-implementation-review, ref-decision-questionnaire, ref-live-run-log) instead of starting from scratch; edit content, not plumbing (each index.html starts with an EDITING GUIDE); after publishing, run lint and fix its errors and warnings before sharing the link; publish with a clear title and description; share the url; when the user says they answered or commented, read feedback and reply in the same thread with data_append; publish changes with update so the link and history stay.
 Saved-data keys: comments.<anchor> (thread with value.items), answer.<question> ({choice, note}), review.<item> ({verdict, note}), state.<name> (live state, e.g. state.run for run logs).`;
 
 type Result = { content: { type: 'text'; text: string }[]; isError?: boolean };
@@ -76,6 +77,20 @@ export function createMcpServer(api: Client) {
       try { guide = /EDITING GUIDE[\s\S]*?(?=-->)/.exec(await readFile(path.join(result.directory, 'index.html'), 'utf8'))?.[0] ?? ''; } catch {}
       return { ...result, next: `Edit the files in ${result.directory}, then call publish with a new slug, a title and a description.`, editingGuide: guide.trim() || undefined };
     });
+  server.registerTool('lint', {
+    description: 'Check a published artifact the way a reader sees it: the server renders it (desktop and phone width) and reports errors (script errors, missing files, sideways scrolling on phones, chapters without navigation, no title) and warnings (walls of text, long chapters with nothing visual, unlinkable headings, tiny text, images without alt). Run it after every publish or update and fix what it finds. Set screenshots to true to see the rendered pages.',
+    inputSchema: { slug, version: z.number().int().min(1).optional().describe('Default: latest'), widths: z.array(z.number().int().min(320).max(2560)).max(4).optional().describe('Viewport widths, default [1440, 390]'), screenshots: z.boolean().optional().describe('Also return full-page screenshots (each width, plus dark mode at the narrowest)') },
+    annotations: { readOnlyHint: true, openWorldHint: false }
+  }, (async (a: { slug: string; version?: number; widths?: number[]; screenshots?: boolean }) => {
+    try {
+      const result = await api.request<LintResult>(`/api/v1/artifacts/${encodeURIComponent(a.slug)}/lint`, json('POST', { version: a.version, widths: a.widths, screenshots: a.screenshots === true }));
+      const { screenshots, ...report } = result;
+      const images = (screenshots ?? []).map(shot => ({ type: 'image' as const, data: shot.data, mimeType: 'image/jpeg' }));
+      return { content: [{ type: 'text' as const, text: JSON.stringify(report, null, 2) }, ...images], isError: false };
+    } catch (error) {
+      return { ...text(error instanceof ArtifactError ? `${error.code}: ${error.message}` : `ERROR: ${(error as Error).message}`), isError: true };
+    }
+  }) as never);
   tool('archive', 'Hide an artifact from the library and stop serving it (reversible). Set restore to true to publish it again. Requires the write token if the server has one.',
     { slug, restore: z.boolean().optional() },
     async a => setArchived(api, a.slug, !a.restore));

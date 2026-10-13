@@ -14,7 +14,7 @@ artifact skill install --agent claude,codex --overwrite
 artifact skill install --path ./skills/artifact-publishing
 ```
 
-The skill is bundled in the CLI, so it always matches your CLI version. `SKILL.md` works on its own; two optional references sit beside it (`references/building-artifacts.md`, `references/deployment.md`). It is also attached to every release as `artifact-skill.tar.gz`. Agent folders respect `CLAUDE_CONFIG_DIR`, `XDG_CONFIG_HOME` and `CODEX_HOME`.
+The skill is bundled in the CLI, so it always matches your CLI version. `SKILL.md` works on its own; three optional references sit beside it (`references/writing.md`, `references/building-artifacts.md`, `references/deployment.md`). It is also attached to every release as `artifact-skill.tar.gz`. Agent folders respect `CLAUDE_CONFIG_DIR`, `XDG_CONFIG_HOME` and `CODEX_HOME`.
 
 ## The MCP server
 
@@ -53,10 +53,27 @@ Resources: the bundled skill (`artifact://skill/SKILL.md`, …) and the server's
 1. **Find first.** `artifact search` — maybe there is already a page to update.
 2. **Start from a reference.** Every server ships a [reference collection](reference-collection.md); download the closest one instead of starting blank.
 3. **Change the content, keep the plumbing.** Each `index.html` starts with an EDITING GUIDE; data lives in `data.js`, the design system in `kit/`.
-4. **Check it** at 1440 px and 390 px, light and dark, with no console errors.
-5. **Publish** with a title that says what it is and a description that says what the reader gets. Share the stable `url`.
+4. **Publish** with a title that says what it is and a description that says what the reader gets.
+5. **Check it**: `artifact lint <slug>` renders the published page at 1440 and 390 px and reports console errors, overflow, a missing chapter menu, walls of text and broken links (`--screenshots <dir>` saves images to look at). Fix, `artifact update`, then share the stable `url`.
 6. **Ask the reader to answer on the page**, then read it: `artifact feedback <slug>`.
 7. **Reply where they asked** (`artifact data append … comments.<anchor>`), do the work, and `artifact update` at the same link.
+
+## What the skill asks of every artifact
+
+The skill gives agents a numbered bar to meet, so models that follow explicit rules well produce pages as useful as the best ones:
+
+1. Copy a reference; use the kit.
+2. Name the reader and what they must do.
+3. The first screen says what this is, the conclusion, and what the reader must do.
+4. Three or more chapters get a global chapter menu (`nav[data-toc]`).
+5. Plain language, one idea per paragraph, at most about four lines.
+6. Show, don't describe: comparisons as `table.compare`, flows as `[data-flow]` diagrams, numbers as stats or charts, risks as `[data-risks]`, before/after as `.ba`, changes as `.delta`, work plans as `.steps` with files.
+7. Measure instead of estimating; cite files; label estimates and example content.
+8. Open decisions are answered on the page, with a recommended default and a verdict.
+9. Review with `artifact lint` and the screenshots before sharing.
+10. A name-like title, a one-sentence description, the stable link.
+
+The reasons and examples are in the skill's `references/writing.md` and in the server's agent guide.
 
 For long tasks, publish a run log once and keep it live with `artifact data set <slug> state.run --file run.json`; no new versions needed.
 

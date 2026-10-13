@@ -13,7 +13,23 @@ export class Previews {
   private task?: Promise<void>;
   private origin = '';
   private stopped = false;
+  private launching?: Promise<Browser>;
   constructor(private storage: Storage, private enabled: boolean) {}
+  /** Origin the server renders its own pages from (set once it listens); empty before that. */
+  get renderOrigin() { return this.origin; }
+  get available() { return this.enabled && !this.stopped && Boolean(this.origin); }
+  /** The shared headless browser (also used by lint), launched on first use. */
+  async launch(): Promise<Browser> {
+    if (this.browser?.isConnected()) return this.browser;
+    if (this.stopped) throw new Error('The server is shutting down');
+    this.launching ??= chromium.launch({ headless: true, timeout: 15000, args: ['--no-sandbox'] })
+      .then(async browser => {
+        if (this.stopped) { await browser.close(); throw new Error('The server is shutting down'); }
+        this.browser = browser; return browser;
+      })
+      .finally(() => { this.launching = undefined; });
+    return this.launching;
+  }
   directory(slug: string, version: number) { return path.join(this.storage.root, 'previews', validateSlug(slug), String(version)); }
   async status(slug: string, version: number): Promise<PreviewStatus> {
     try { return await readJson(path.join(this.directory(slug, version), 'status.json')); }
@@ -57,8 +73,8 @@ export class Previews {
       const directory = this.directory(job.slug, job.version);
       const temp = path.join(directory, 'preview.tmp.png');
       try {
-        if (!this.browser?.isConnected()) this.browser = await chromium.launch({ headless: true, timeout: 15000, args: ['--no-sandbox'] });
-        const context = await this.browser.newContext({ viewport: { width: 960, height: 600 }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block', extraHTTPHeaders: { 'X-Artifact-Render-Mode': 'preview' } });
+        const browser = await this.launch();
+        const context = await browser.newContext({ viewport: { width: 960, height: 600 }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block', extraHTTPHeaders: { 'X-Artifact-Render-Mode': 'preview' } });
         const page = await context.newPage();
         const deadline = setTimeout(() => { void context.close().catch(() => {}); }, 30000).unref();
         try {
@@ -90,5 +106,5 @@ export class Previews {
     for (const key of [...this.queue.keys()]) if (key.startsWith(slug + '/')) this.queue.delete(key);
     await rm(path.join(this.storage.root, 'previews', validateSlug(slug)), { recursive: true, force: true });
   }
-  async close() { this.stopped = true; await this.browser?.close(); await this.task?.catch(() => {}); }
+  async close() { this.stopped = true; await this.launching?.catch(() => {}); await this.browser?.close(); await this.task?.catch(() => {}); }
 }

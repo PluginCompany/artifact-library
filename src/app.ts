@@ -11,6 +11,7 @@ import { libraryHtml, libraryCss, libraryScript } from './library.js';
 import { libraryListLayoutCss } from './library-list-layout.js';
 import { queryCatalog, type CatalogQuery } from './catalog.js';
 import { Previews } from './previews.js';
+import { Linter, type LintOptions } from './lint.js';
 import { APP_VERSION, API_VERSION } from './shared.js';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
@@ -58,6 +59,7 @@ export async function buildApp(options: AppOptions) {
   const storage = new Storage(path.resolve(options.dataDir), publicUrl.origin, limits);
   await storage.initialize();
   const previews = new Previews(storage, options.previews ?? false);
+  const linter = new Linter(storage, previews);
   const data = new ArtifactData(storage);
   if (options.seedDir) {
     for (const result of await seedArtifacts(storage, options.seedDir)) {
@@ -111,7 +113,7 @@ export async function buildApp(options: AppOptions) {
   app.get('/_artifact/library.js', (_request, reply) => reply.type('application/javascript').header('Cache-Control', 'no-cache').send(libraryScript));
   app.get('/api/v1/server', () => ({
     version: APP_VERSION, apiVersion: API_VERSION,
-    capabilities: ['catalog', 'metadata', 'version-toolbar', 'previews', 'data', 'archive', ...(tokenDigest ? ['auth'] : [])],
+    capabilities: ['catalog', 'metadata', 'version-toolbar', 'previews', 'data', 'archive', ...(options.previews ? ['lint'] : []), ...(tokenDigest ? ['auth'] : [])],
     previewsEnabled: options.previews ?? false, auth: tokenDigest ? 'token' : 'none', limits
   }));
   app.get('/api/v1/auth', (request, reply) => reply.header('Cache-Control', 'no-store').send({ required: Boolean(tokenDigest), authenticated: tokenDigest ? authenticated(request) : true }));
@@ -174,6 +176,16 @@ export async function buildApp(options: AppOptions) {
     if (!options.previews) throw new ArtifactError('PREVIEWS_DISABLED', 'Server-side previews are disabled', 503);
     await previews.enqueue(artifact.slug, artifact.latestVersion, true);
     return reply.code(202).send({ slug: artifact.slug, version: artifact.latestVersion, preview: await previews.status(artifact.slug, artifact.latestVersion) });
+  });
+  // Lint: render a version in the server's browser and report layout, navigation and readability problems.
+  // Read-only, so no token; one job at a time with a short waiting list.
+  app.post<{ Params: { slug: string }; Body: LintOptions | undefined }>('/api/v1/artifacts/:slug/lint', async (request, reply) => {
+    const input = request.body ?? {};
+    if (typeof input !== 'object' || Array.isArray(input)) throw new ArtifactError('INVALID_LINT_OPTIONS', 'Send a JSON object: {version?, widths?, screenshots?}');
+    if (input.version !== undefined && !(Number.isSafeInteger(input.version) && input.version > 0)) throw new ArtifactError('INVALID_VERSION', 'Version must be a positive integer');
+    if (input.widths !== undefined && !Array.isArray(input.widths)) throw new ArtifactError('INVALID_LINT_OPTIONS', 'widths must be an array of numbers');
+    validateSlug(request.params.slug);
+    return reply.header('Cache-Control', 'no-store').send(await linter.lint(request.params.slug, { version: input.version, widths: input.widths, screenshots: input.screenshots === true }));
   });
   app.get<{ Params: { slug: string; version: string } }>('/api/v1/artifacts/:slug/versions/:version/preview', async (request, reply) => {
     const version = versionNumber(request.params.version);

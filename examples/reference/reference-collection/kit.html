@@ -72,6 +72,13 @@
     <h5>Data</h5>
     <a href="#charts"><b>13</b>Charts</a>
     <a href="#saving"><b>14</b>Saving &amp; comments</a>
+    <h5>Blocks</h5>
+    <a href="#toc"><b>15</b>Chapter menu</a>
+    <a href="#flow"><b>16</b>Flow diagram</a>
+    <a href="#compare"><b>17</b>Comparison table</a>
+    <a href="#risks"><b>18</b>Risk table</a>
+    <a href="#ba"><b>19</b>Before &amp; after</a>
+    <a href="#delta"><b>20</b>What changes</a>
   </nav>
 
   <main class="main sg" id="main">
@@ -207,6 +214,10 @@
         <li><div><h4>Download the closest reference</h4><p>Numbers come from a CSS counter; just add list items.</p></div></li>
         <li><div><h4>Change the content</h4><p>The dashed thread rail connects the steps.</p></div></li>
       </ol></div></div>
+      <div class="demo-block"><header><b>Steps with the files they touch</b></header><div class="demo"><ol class="steps">
+        <li><div><h4>Text extraction</h4><p>Pull visible text from every HTML file at publish time.</p><p class="files"><code>src/text.ts</code> <code>tests/text.test.ts</code></p></div></li>
+        <li><div><h4>Content index</h4><p>Keep extracted text next to each version and load it at start-up.</p><p class="files"><code>src/search.ts</code> <code>src/storage.ts</code></p></div></li>
+      </ol></div></div>
       <div class="demo-block"><header><b>Timeline</b></header><div class="demo"><ul class="timeline">
         <li class="key"><time>09:12</time><span class="pt"></span><div><h4>Key event</h4><p>Filled thread marker.</p></div></li>
         <li><time>09:25</time><span class="pt"></span><div><h4>Regular event</h4><p>Hollow marker.</p></div></li>
@@ -276,6 +287,90 @@ const stop = Kit.data.watch("state.", docs =&gt; render(docs));   // live update
           </tbody></table></div>
         </div>
       </div>
+    </section>
+
+    <section id="toc">
+      <h2 class="stitch">Chapter menu</h2>
+      <p class="muted">Every page with three or more chapters needs a global menu. Put <code>data-toc</code> on an empty element and kit.js fills it with every <code>section[id]</code> (or <code>[data-chapter][id]</code>) that has an <code>h2</code>, in page order; <code>data-toc-label</code> on the section gives a shorter name. Inside <code>.topnav</code> it renders top links with scroll-spy, and on phones a <i>Contents</i> button in the top bar opens the same list. Inside <code>.side</code> it renders the numbered side list, with <code>h3[id]</code> as sub-items. Anywhere else it renders the contents block below. After rendering content late, call <code>Kit.toc(el)</code> or <code>Kit.refresh()</code>.</p>
+      <div class="demo-block"><header><b>Contents block (this page's chapters)</b></header><div class="demo">
+        <nav data-toc data-toc-title="On this page" style="max-width:420px"></nav>
+      </div></div>
+      <div class="demo-block"><header><b>In the top bar or the side nav</b></header><div class="demo">
+        <pre data-copy>&lt;!-- top links, plus a Contents button on phones --&gt;
+&lt;header class="topbar"&gt;
+  &lt;a class="brand" href="#top"&gt;&lt;i&gt;P&lt;/i&gt;&lt;span&gt;Search plan&lt;/span&gt;&lt;/a&gt;
+  &lt;nav class="topnav" aria-label="Chapters" data-toc&gt;&lt;/nav&gt;
+  &lt;span class="spacer"&gt;&lt;/span&gt;
+  &lt;button class="icon-btn" type="button" data-theme-toggle&gt;&lt;/button&gt;
+&lt;/header&gt;
+
+&lt;!-- or a numbered side list with h3[id] sub-items --&gt;
+&lt;nav class="side" aria-label="Chapters" data-toc data-toc-title="Plan"&gt;&lt;/nav&gt;
+
+&lt;!-- chapters: any section with an id and an h2 --&gt;
+&lt;section id="approach" data-toc-label="Approach"&gt;&lt;h2&gt;Extract once per version, search in memory&lt;/h2&gt;…&lt;/section&gt;</pre>
+      </div></div>
+    </section>
+
+    <section id="flow">
+      <h2 class="stitch">Flow diagram</h2>
+      <p class="muted">Show how something moves through a system instead of describing it. Put the spec as JSON in <code>data-flow</code> (or point <code>data-flow-src</code> at a global such as <code>PLAN.flow</code>), or call <code>Kit.flow(el, spec)</code>. Steps: <code>{title, text, tag, tagTone, files, highlight}</code>; <code>rows</code> stacks labelled flows; <code>direction: "column"</code> draws it top to bottom. Phones always get the column.</p>
+      <div class="demo-block"><header><b>One flow</b></header><div class="demo">
+        <div data-flow='{"steps":[{"title":"Publish","text":"The agent publishes a folder; the version is stored as today."},{"title":"Extract text","text":"Visible text of every HTML file, scripts and styles skipped.","files":["src/text.ts"]},{"title":"Rendered text","text":"The preview worker adds text drawn by JavaScript.","tag":"Optional"},{"title":"Index","text":"The latest version replaces the old one in memory.","highlight":true}],"caption":"Text is derived data, like previews: it can always be rebuilt."}'></div>
+      </div></div>
+      <div class="demo-block"><header><b>Two labelled rows</b></header><div class="demo">
+        <div data-flow='{"rows":[{"label":"When a version is published","steps":[{"title":"Commit"},{"title":"Extract"},{"title":"Index"}]},{"label":"When someone searches","steps":[{"title":"Match metadata"},{"title":"Match content"},{"title":"Snippet","tag":"New","tagTone":"accent"}]}]}'></div>
+      </div></div>
+    </section>
+
+    <section id="compare">
+      <h2 class="stitch">Comparison table</h2>
+      <p class="muted">Every comparison of options is a table, not paragraphs. Add <code>class="compare"</code>: the first column names the option, and <code>tr.rec</code> marks the recommended row (kit.js adds the <i>Recommended</i> tag). On phones the first column stays put while the rest scrolls.</p>
+      <div class="demo-block"><header><b>Options compared</b></header><div class="demo"><div class="table-wrap"><table class="table compare">
+        <thead><tr><th>Engine</th><th>Query rule</th><th>Measured</th><th>New moving parts</th></tr></thead>
+        <tbody>
+          <tr class="rec"><td>In-memory substring</td><td>Every word must appear</td><td>21–38 ms over 60 MB of text</td><td>None</td></tr>
+          <tr><td>SQLite FTS5</td><td>Whole words or prefixes</td><td>3.6 s to index · 121 MB file</td><td>A database file</td></tr>
+          <tr><td>External engine</td><td>Words with typo tolerance</td><td>Not measured</td><td>A second container</td></tr>
+        </tbody></table></div></div></div>
+    </section>
+
+    <section id="risks">
+      <h2 class="stitch">Risk table</h2>
+      <p class="muted">Risks with a worded likelihood, never colour alone. JSON in <code>data-risks</code> (or <code>data-risks-src</code>), or <code>Kit.risks(el, list)</code>: <code>[{risk, likelihood: "low"|"medium"|"high", impact, plan}]</code>. The impact column appears when any risk has one.</p>
+      <div class="demo-block"><header><b>Risks and what the plan does about them</b></header><div class="demo">
+        <div data-risks='[{"risk":"Memory grows with large libraries","likelihood":"medium","impact":"high","plan":"Cap text at 1 MiB per version and report the index size in /api/v1/server."},{"risk":"Snippets inject markup","likelihood":"medium","impact":"high","plan":"The API returns plain text with match offsets; the library renders text nodes."},{"risk":"A crash leaves a version without text","likelihood":"low","impact":"low","plan":"Text is derived; the start-up backfill recreates it."}]'></div>
+      </div></div>
+    </section>
+
+    <section id="ba">
+      <h2 class="stitch">Before &amp; after</h2>
+      <p class="muted">Two figures side by side, stacked on phones. Works with screenshots, code or text; <code>data-label</code> replaces the <i>Before</i> / <i>After</i> labels.</p>
+      <div class="demo-block"><header><b>Code before and after</b></header><div class="demo">
+        <div class="ba">
+          <figure class="before"><pre>GET /api/v1/artifacts?q=torque
+→ matches slug, title, description</pre><figcaption>Today: metadata only.</figcaption></figure>
+          <figure class="after"><pre>GET /api/v1/artifacts?q=torque
+→ also page text, with a snippet</pre><figcaption>After the change: page text too.</figcaption></figure>
+        </div>
+      </div></div>
+      <div class="demo-block"><header><b>Custom labels</b></header><div class="demo">
+        <div class="ba">
+          <figure class="before" data-label="Version 3"><p>The toolbar wraps to two rows at 390 px and covers the page.</p></figure>
+          <figure class="after" data-label="Version 4"><p>One row on phones; the menu stays at the right edge.</p></figure>
+        </div>
+      </div></div>
+    </section>
+
+    <section id="delta">
+      <h2 class="stitch">What changes</h2>
+      <p class="muted">Tell the reader what a change means for them and what it leaves alone. A <code>.delta</code> block with <code>.changes</code> and <code>.stays</code>.</p>
+      <div class="demo-block"><header><b>Changes and what stays the same</b></header><div class="demo">
+        <div class="delta">
+          <div class="changes"><h4>What changes for readers</h4><ul><li>The search box says "Search titles, descriptions and page text".</li><li>Cards that matched inside the page show the matching line.</li></ul></div>
+          <div class="stays"><h4>What stays the same</h4><ul><li>No new dependency, database or container.</li><li>Publishing, versions and saved answers are untouched.</li></ul></div>
+        </div>
+      </div></div>
     </section>
   </main>
 </div>

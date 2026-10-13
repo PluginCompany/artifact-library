@@ -15,10 +15,8 @@
 <body>
 <header class="topbar">
   <a class="brand" href="./"><i>E</i><span>Example artifact</span><small>Reference</small></a>
-  <nav class="topnav" aria-label="Sections">
-    <a href="#overview" aria-current="page">Overview</a>
-    <a href="#details">Details</a>
-  </nav>
+  <!-- Chapter menu: kit.js fills it from every section[id] with an h2 (Contents button on phones). -->
+  <nav class="topnav" aria-label="Chapters" data-toc></nav>
   <span class="spacer"></span>
   <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
   <button class="icon-btn" type="button" data-theme-toggle></button>
@@ -32,9 +30,15 @@
   </div>
 </section>
 
-<main class="wrap section" id="overview">
-  <h2 class="h2 stitch">Section heading</h2>
-  <p class="muted" style="margin-top:6px">Every section opens with a stitched heading and a one-line summary.</p>
+<main>
+  <section class="wrap section" id="overview" data-toc-label="Overview">
+    <h2 class="h2 stitch">Section heading</h2>
+    <p class="muted" style="margin-top:6px">Every section opens with a stitched heading and a one-line summary.</p>
+  </section>
+  <section class="wrap section" id="details" data-toc-label="Details">
+    <h2 class="h2 stitch">Second section</h2>
+    <p class="muted" style="margin-top:6px">Give each chapter an id; data-toc-label keeps the menu entry short.</p>
+  </section>
 </main>
 
 <footer class="wrap foot-note">Source: examples/reference/&lt;slug&gt; · Built with the reference kit.</footer>

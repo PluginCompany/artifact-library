@@ -1,6 +1,6 @@
 {
   "name": "@plugincompany/artifact-library",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Self-hosted library for HTML artifacts made by people and AI agents: stable links, immutable versions, server-side previews and on-page feedback agents can read.",
   "keywords": [
     "artifacts",

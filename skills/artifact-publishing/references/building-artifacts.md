@@ -1,6 +1,6 @@
 # Building artifacts people want to open
 
-The full guide with live examples is the `agent-guide` artifact on the server; this file is the offline summary.
+The full guide with live examples is the `agent-guide` artifact on the server; this file is the offline summary. How to write and structure the content (reader, first screen, chapter menu, plain language, visuals, evidence, self-review) is in `writing.md`.
 
 ## Choose the job, then copy its reference
 
@@ -12,6 +12,14 @@ Find the closest reference (table in SKILL.md, or `artifact search ref-`), then 
 
 - `kit.css` — tokens (`--accent`, `--thread`, `--good`, `--warn`, `--bad`, `--s1…--s5` chart series), dark mode, and components: `.topbar`, `.hero`, `.display`, `.stitch` headings, `.card`, `.stat`, `.callout`, `.tag good|warn|bad`, `.steps`, `.timeline`, `.table`, `details.fold`, `pre[data-copy]`, `.shell/.side/.main` for long documents.
 - `kit.js` — theme toggle (`[data-theme-toggle]`), side-nav scroll spy, copy buttons, sortable tables, reveal-on-scroll, and charts: `Kit.chart.line|column|bar|donut|spark(el, spec)` with tooltips, legends and a table view (`.chart-card` + `button.as-table`). Call `Kit.refresh()` after rendering content late.
+- Blocks for explaining (in `kit.js` and `kit.css`; markup examples in `writing.md` §5):
+  - `[data-toc]` on a `nav.topnav` or `nav.side`: filled with a link to every `section[id]` that has an `h2`, with scroll-spy.
+  - `[data-flow]` with JSON `{steps:[{title, text, tag?, files?}], caption?, direction?: "right"|"down", rows?:[{label, steps}]}`, or `Kit.flow(el, spec)`: a flow diagram that stacks vertically on phones.
+  - `table.table.compare` with `tr.rec` on the recommended row: options compared on the same criteria.
+  - `[data-risks]` with JSON `[{risk, likelihood: "low"|"medium"|"high", impact?, plan}]`, or `Kit.risks(el, rows)`: a risk table with likelihood as word and colour.
+  - `.ba` with `figure.before` and `figure.after`: before/after side by side.
+  - `.delta` with `.changes` and `.stays`: what changes and what stays the same.
+  - `.steps` with `p.files` inside a step: the files each step touches.
 - `kit-data.js` — saving (below).
 - `fonts/` — self-hosted; pages work without internet.
 - `themes/clean/` — the Clean style: plain, professional documentation look (flat white page, hairline borders, small radii, semibold Inter headings, one blue accent). Readers switch between Bold (the default) and Clean with a button kit.js adds next to the light/dark toggle; make Clean a page's default with one line after every other stylesheet: `<link rel="stylesheet" href="kit/themes/clean/clean.css">`. Good for plans, specs, reviews and reports that should read like product docs.
@@ -44,18 +52,25 @@ Store human-readable labels next to ids so `artifact feedback` output makes sens
 ## Quality checklist before you share the link
 
 1. Title says what it is; description says what the reader gets (both are shown in the library).
-2. The first screen answers "what is this and what do you need from me?".
-3. Example or invented content is labelled "Example content".
-4. Real evidence over claims: screenshots, numbers, commands that were actually run. Never fabricate test results.
-5. Checked at 1440 px and 375–390 px, light and dark, with no horizontal scroll and no console errors (screenshot it with Playwright and look at the images).
-6. Prints sensibly; respects reduced motion; keyboard reachable.
-7. No external requests except the same server; fonts and libraries come from `kit/` or are inlined.
-8. Reasonable size: compress screenshots (WebP), keep the whole artifact well under 20 MB.
-9. Publish with `--title` and `--description`; share the stable `url`; update at the same slug.
+2. The first screen answers "what is this, what do you conclude or propose, and what do you need from me?".
+3. Three or more chapters → a global chapter menu (`nav[data-toc]`) linking every chapter.
+4. Plain language; no paragraph longer than about four lines; every major chapter has a table, diagram, chart, figure or structured list.
+5. `artifact lint <slug>` passes without errors; you looked at its screenshots.
+6. Example or invented content is labelled "Example content".
+7. Real evidence over claims: screenshots, numbers, commands that were actually run. Never fabricate test results.
+8. Checked at 1440 px and 375–390 px, light and dark, with no horizontal scroll and no console errors (screenshot it with Playwright and look at the images).
+9. Prints sensibly; respects reduced motion; keyboard reachable.
+10. No external requests except the same server; fonts and libraries come from `kit/` or are inlined.
+11. Reasonable size: compress screenshots (WebP), keep the whole artifact well under 20 MB.
+12. Publish with `--title` and `--description`; share the stable `url`; update at the same slug.
 
 ## Anti-patterns
 
-- A wall of markdown pasted into HTML — use structure: hero, stats, stitched sections, cards.
+- A wall of markdown pasted into HTML — use structure: hero, stats, sections, cards.
+- Engineer shorthand ("Reacquire lock, check existence, requeue") — write full sentences for the named reader.
+- A process or comparison described in paragraphs — draw it with `[data-flow]` or `table.compare`.
+- Estimates where a measurement was possible — run it, count it, time it, and say how.
+- A long page without a chapter menu — add `nav[data-toc]`.
 - Colour as the only signal, dual-axis charts, a number on every data point.
 - Saving state in `localStorage` when the agent needs to read it — use `Kit.data`.
 - Re-publishing to update live progress — write `state.*` with `artifact data set` instead.

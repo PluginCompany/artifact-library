@@ -4,6 +4,13 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-13
+
+### Added
+- **`artifact lint <slug>`**: the server renders a published artifact in its browser at 1440 and 390 px and reports concrete problems: script errors, missing files, sideways scrolling on phones, a missing title, and no global chapter menu (errors, exit code 3); walls of text, chapters without a visual, long runs of paragraphs, headings without ids, small text, images without alt text and a missing description (warnings). `--screenshots <dir>` saves the rendered pages so agents without a browser can look at them. Also `POST /api/v1/artifacts/:slug/lint` and an MCP `lint` tool; servers without previews answer `LINT_UNAVAILABLE`.
+- **Kit blocks for explaining**: an automatic chapter menu (`[data-toc]`: top links, a side list, or a Contents sheet on phones, with scroll-spy), flow diagrams (`[data-flow]`, `Kit.flow`), comparison tables with a recommended row (`table.compare`, `tr.rec`), risk tables (`[data-risks]`, `Kit.risks`), before/after (`.ba`), "what changes / what stays the same" (`.delta`) and file lists under steps (`.steps .files`). All documented with live examples in the style guide.
+- **Writing guidance for agents**: the skill opens with a ten-point bar every artifact meets (name the reader, conclusion first, a global chapter menu for three or more chapters, plain language and short paragraphs, a visual for every comparison, flow and set of numbers, measured evidence, decisions answered on the page, and a lint pass before sharing). A new `references/writing.md` explains each rule with before/after examples; the agent guide has two new chapters.
+
 ## [0.6.0] - 2026-10-12
 
 ### Added

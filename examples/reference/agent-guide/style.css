@@ -125,3 +125,18 @@
 .dots li,.checks li{display:block;position:relative;padding-left:26px}
 .dots li::before{position:absolute;left:2px;top:.62em;margin:0}
 .checks li::before{position:absolute;left:0;top:.15em;margin:0}
+/* Write for the reader · Show, don't describe */
+.write-rules{margin-top:18px}
+.write-rules .panel{display:grid;gap:6px;align-content:start}
+.write-rules .panel p{font-size:14.5px;color:var(--muted)}
+#write .anti{margin-top:0}
+#write .callout{margin-top:16px}
+.show-table{margin-top:4px}
+.show-table td:first-child{font-weight:600}
+.show-table code{white-space:normal}
+#show .table-wrap{margin-top:18px}
+.show-code{margin-top:20px;--gap:20px}
+.show-code pre{font-size:12px}
+.show-code .h3{margin-bottom:8px}
+.show-code p{margin-top:8px}
+.verify-grid details.fold{margin-top:12px}

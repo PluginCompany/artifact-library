@@ -361,7 +361,7 @@ test('MCP server exposes search, feedback, replies and publishing over stdio', a
   await client.connect(transport);
   t.after(() => client.close());
   const tools = (await client.listTools()).tools.map(tool => tool.name).sort();
-  for (const name of ['archive', 'create_from_reference', 'data_append', 'data_get', 'data_set', 'data_update_item', 'download', 'feedback', 'info', 'publish', 'recent', 'search', 'update', 'versions']) assert.ok(tools.includes(name), name);
+  for (const name of ['archive', 'create_from_reference', 'data_append', 'data_get', 'data_set', 'data_update_item', 'download', 'feedback', 'info', 'lint', 'publish', 'recent', 'search', 'update', 'versions']) assert.ok(tools.includes(name), name);
   const call = async (name: string, args: Record<string, unknown>) => {
     const result = await client.callTool({ name, arguments: args }) as { content: { text: string }[]; isError?: boolean };
     return { text: result.content[0].text, isError: Boolean(result.isError) };

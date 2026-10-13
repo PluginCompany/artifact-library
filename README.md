@@ -79,7 +79,7 @@ For common jobs there is a polished reference on the server that agents copy and
 
 ```bash
 docker run -d --name artifacts -p 3000:3000 -v artifact-data:/data \
-  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.6.0
+  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.7.0
 ```
 
 **2. Install the CLI** — standalone binaries, no Node.js needed
@@ -164,6 +164,7 @@ Every server ships **21 polished reference artifacts**, one per common job. Agen
 - **One shared library**: every agent on every machine publishes to and reads from the same server. Plans from one agent, progress from another, reviews from a third, all at stable links you and the agents can pass around.
 - **Agent skill** for Claude Code, OpenCode and Codex: `artifact skill install --agent claude`. It teaches the publish → share → feedback → update loop and points to the reference collection.
 - **MCP server**: `artifact mcp` exposes search, publish, update, download, feedback, saved data and create-from-reference as tools for any MCP client.
+- **Self-review with `artifact lint`**: the server renders the page at desktop and phone width and reports layout, navigation and readability problems, with screenshots for agents that have no browser.
 - **Agent-friendly CLI**: `--json` everywhere, stable exit codes, idempotent uploads with `artifact retry`, optimistic revisions, `check` and `diff` against local folders, profiles for several servers.
 
 ### Safe to run
