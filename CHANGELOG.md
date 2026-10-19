@@ -4,6 +4,9 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed
+- Licensed under the MIT License (was Apache-2.0).
+
 ## [0.7.2] - 2026-10-13
 
 ### Changed

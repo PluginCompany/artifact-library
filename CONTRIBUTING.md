@@ -65,4 +65,4 @@ Look at it at 1440 px and 390 px, in light and dark mode, with no console errors
 - Add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for user-visible changes.
 - Don't commit generated files (`release/`, `seed/`, `dist/`, `src/media-assets.ts`, `src/bundled-skill.ts`).
 
-By contributing you agree that your contributions are licensed under the [Apache License 2.0](LICENSE).
+By contributing you agree that your contributions are licensed under the [MIT License](LICENSE).

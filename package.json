@@ -23,7 +23,7 @@
     "type": "git",
     "url": "git+https://github.com/plugincompany/artifact-library.git"
   },
-  "license": "Apache-2.0",
+  "license": "MIT",
   "author": "Plugin Company",
   "type": "module",
   "engines": {

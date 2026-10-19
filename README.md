@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/plugincompany/artifact-library/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/plugincompany/artifact-library/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/plugincompany/artifact-library/releases"><img alt="Release" src="https://img.shields.io/github/v/release/plugincompany/artifact-library"></a>
-  <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
+  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
   <a href="https://github.com/plugincompany/artifact-library/pkgs/container/artifact-library"><img alt="Container" src="https://img.shields.io/badge/ghcr.io-artifact--library-2a78d6"></a>
 </p>
 
@@ -250,4 +250,4 @@ npm run dev               # server on http://localhost:3000
 
 ## License
 
-[Apache License 2.0](LICENSE). The name "Artifact Library" and its logo are trademarks of Plugin Company; forks are welcome under a different name (see [NOTICE](NOTICE)).
+[MIT License](LICENSE). The name "Artifact Library" and its logo are trademarks of Plugin Company; forks are welcome under a different name (see [NOTICE](NOTICE)).
