@@ -74,14 +74,18 @@ Small JSON documents beside an artifact (never inside its versions). Open to rea
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/v1/artifacts/:slug/data?prefix=&since=` | List documents |
-| GET | `/api/v1/artifacts/:slug/data/:key` | One document `{key, value, revision, createdAt, updatedAt, author, role}` |
+| GET | `/api/v1/artifacts/:slug/data?prefix=&since=&role=&wait=` | List documents; `role=human` or `agent` filters by the last writer; `wait=<seconds>` (with `since`, at most 25) long-polls |
+| GET | `/api/v1/artifacts/:slug/data/:key` | One document `{key, value, revision, createdAt, updatedAt, author, role, held?}` |
 | PUT | `/api/v1/artifacts/:slug/data/:key` | Replace: `{value, expectedRevision?, author?, role?}` (`expectedRevision: 0` = must not exist) |
 | DELETE | `/api/v1/artifacts/:slug/data/:key?expectedRevision=` | Delete |
 | POST | `/api/v1/artifacts/:slug/data/:key/items` | Append to `value.items`: `{item, author?, role?}` (atomic) |
 | PATCH | `/api/v1/artifacts/:slug/data/:key/items/:id` | Merge `{changes}` into one item |
 
-Errors: `INVALID_DATA_KEY`, `INVALID_DATA`, `DATA_NOT_FOUND` (404), `DATA_CONFLICT` (409), `DATA_TOO_LARGE` (413), `CROSS_ARTIFACT_WRITE` (403, a page of one artifact writing another's data), 410 for archived artifacts.
+With `wait`, a list that finds nothing changed after `since` holds the request until a matching document is written (same artifact, prefix and role), then answers with it and anything written in the next 300 ms; after `wait` seconds it answers with an empty list. Use the newest `updatedAt` as the next `since`.
+
+A write from a browser carrying the cookie `artifact_sync=hold` (the reader turned instant sync off in the toolbar) stores `held: true` on the document; any later write without it clears it. Writes by agents and to `state.sent` or `state.submitted` (which send held changes) are never held. Servers that support it list `data-wait` in `/api/v1/server` capabilities.
+
+Errors: `INVALID_DATA_KEY`, `INVALID_DATA`, `INVALID_WAIT`, `DATA_NOT_FOUND` (404), `DATA_CONFLICT` (409), `DATA_TOO_LARGE` (413), `CROSS_ARTIFACT_WRITE` (403, a page of one artifact writing another's data), 410 for archived artifacts.
 
 ## Pages
 

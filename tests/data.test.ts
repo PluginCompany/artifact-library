@@ -143,3 +143,73 @@ test('a page of one artifact cannot change another artifact\'s data', async t =>
   assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/two/data/a', payload: { value: 2 } })).statusCode, 200);
   assert.equal((await app.inject({ method: 'GET', url: '/api/v1/artifacts/two/data/a', headers: { referer: 'https://artifacts.test/artifacts/one/' } })).statusCode, 200);
 });
+
+test('data lists long-poll: wait answers on the first matching write, ignores other writes, and times out', async t => {
+  const { app, root } = await fixture(t);
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await publish(app, 'plan');
+  await publish(app, 'other');
+  assert.ok((await app.inject('/api/v1/server')).json().capabilities.includes('data-wait'));
+  const start = new Date().toISOString();
+  await new Promise(resolve => setTimeout(resolve, 5));
+  const url = `/api/v1/artifacts/plan/data?since=${encodeURIComponent(start)}&role=human&wait=5`;
+  const began = Date.now();
+  const pending = app.inject(url);
+  await new Promise(resolve => setTimeout(resolve, 150));
+  // An agent's reply, a write to another artifact and a non-matching prefix do not end the wait.
+  await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/state.run', payload: { value: { step: 1 }, role: 'agent' } });
+  await app.inject({ method: 'PUT', url: '/api/v1/artifacts/other/data/answer.q1', payload: { value: 1 } });
+  await new Promise(resolve => setTimeout(resolve, 150));
+  await app.inject({ method: 'POST', url: '/api/v1/artifacts/plan/data/comments.general/items', payload: { item: { text: 'Looks good' }, author: 'Milan' } });
+  await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/answer.q1', payload: { value: { choice: 'b' } } });
+  const answered = (await pending).json();
+  assert.ok(Date.now() - began < 3000);
+  // Writes that land together come back together.
+  assert.deepEqual(answered.documents.map((d: { key: string }) => d.key), ['answer.q1', 'comments.general']);
+  // Something already matching answers at once; role filters the plain list too.
+  const quick = Date.now();
+  assert.equal((await app.inject(url)).json().documents.length, 2);
+  assert.ok(Date.now() - quick < 1000);
+  assert.deepEqual((await app.inject('/api/v1/artifacts/plan/data?role=agent')).json().documents.map((d: { key: string }) => d.key), ['state.run']);
+  // Nothing new: an empty answer after the wait.
+  const later = `/api/v1/artifacts/plan/data?since=${encodeURIComponent(answered.updatedAt)}&role=human&wait=1`;
+  const idle = Date.now();
+  assert.equal((await app.inject(later)).json().documents.length, 0);
+  assert.ok(Date.now() - idle >= 900);
+  assert.equal((await app.inject(`/api/v1/artifacts/plan/data?since=${encodeURIComponent(start)}&wait=soon`)).json().error.code, 'INVALID_WAIT');
+  assert.equal((await app.inject('/api/v1/artifacts/plan/data?role=admin')).json().error.code, 'INVALID_DATA');
+});
+
+test('a waiting data list answers when the server closes', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'artifact-data-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const app = await buildApp({ dataDir: root, publicUrl: 'https://artifacts.test' });
+  await publish(app, 'plan');
+  await app.listen({ host: '127.0.0.1', port: 0 });
+  const address = app.server.address();
+  assert.ok(address && typeof address !== 'string');
+  const pending = fetch(`http://127.0.0.1:${address.port}/api/v1/artifacts/plan/data?since=${encodeURIComponent(new Date().toISOString())}&wait=25`);
+  await new Promise(resolve => setTimeout(resolve, 200));
+  const began = Date.now();
+  await app.close();
+  assert.ok(Date.now() - began < 5000);
+  assert.deepEqual((await (await pending).json() as { documents: unknown[] }).documents, []);
+});
+
+test('a reader with instant sync off saves held changes; sends and agent writes are never held', async t => {
+  const { app, root } = await fixture(t);
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await publish(app, 'plan');
+  const cookie = { cookie: 'kit-theme=x; artifact_sync=hold' };
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/answer.q1', headers: cookie, payload: { value: 1 } })).json().held, true);
+  const appended = (await app.inject({ method: 'POST', url: '/api/v1/artifacts/plan/data/comments.a/items', headers: cookie, payload: { item: { text: 'draft' } } })).json();
+  assert.equal(appended.document.held, true);
+  // The same reader saving with instant sync on releases that document.
+  const id = appended.item.id;
+  assert.equal((await app.inject({ method: 'PATCH', url: `/api/v1/artifacts/plan/data/comments.a/items/${id}`, payload: { changes: { text: 'final' } } })).json().document.held, undefined);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/state.sent', headers: cookie, payload: { value: { changes: 1 } } })).json().held, undefined);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/state.run', headers: cookie, payload: { value: 1, role: 'agent' } })).json().held, undefined);
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/answer.q2', headers: { cookie: 'artifact_sync=instant' }, payload: { value: 1 } })).json().held, undefined);
+  // A body cannot claim to be held; only the reader's cookie can.
+  assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/answer.q3', payload: { value: 1, hold: true } })).json().held, undefined);
+});

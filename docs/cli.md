@@ -107,6 +107,8 @@ Pages built with the kit's `kit-data.js` save answers, comments, review verdicts
 ```bash
 artifact feedback q3-review                 # readable digest of everything saved
 artifact feedback q3-review --since 2h --prefix answer.
+artifact wait q3-review                     # block until a reader sends something, then print it
+artifact wait q3-review --until submitted --timeout 4h
 artifact data list q3-review [--prefix comments.] [--since 1h]
 artifact data get q3-review answer.toolbar
 artifact data append q3-review comments.finding-F2 --item '{"text":"Fixed in v4"}' --author "Claude Code"
@@ -114,6 +116,8 @@ artifact data update-item q3-review comments.finding-F2 <id> --changes '{"resolv
 artifact data set release-run state.run --file run.json [--expected-revision 3]
 artifact data delete release-run state.run
 ```
+
+`artifact wait <slug>` returns as soon as readers send an answer, comment or verdict saved after `--since` (an ISO date, the cursor printed by `feedback` or a previous `wait`, or a duration; default: when the latest version was published). A reader with instant sync on (the default) sends every save; with it off (the toolbar's ⋯ menu, one setting for their whole browser) saves are held until they press **Send to agent** or a page's "I'm done". The wait then returns everything readers saved since the start. `--until submitted` waits only for such an explicit send; `--until any` returns at every save, held or not. Changes written by agents never end a wait. It prints the feedback and the `--since` cursor for the next wait; exit code 4 means `--timeout` (default `24h`) passed with nothing new. Network errors and server restarts are retried. Agents run it as a background command so they are told when people respond.
 
 `--file -` reads JSON from stdin. Agent writes are marked `role: "agent"`. See [saved-data.md](saved-data.md) for the conventions.
 

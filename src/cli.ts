@@ -8,7 +8,7 @@ import { Client, configuration, maskToken, readTracking, resolveToken, retryOper
 import { localManifest } from './archive.js';
 import { APP_VERSION, API_VERSION, ArtifactError, compareFiles, resolveFile, type Artifact, type Publication, type Version } from './shared.js';
 import { AGENTS, agentSkillPath, installSkill, openBrowser, serverInit, type Agent } from './cli-tools.js';
-import { dataPath, feedback, feedbackText, json, purgeArtifact, searchArtifacts, setArchived, since, trackingOf, updateDirectory, type DataDoc } from './operations.js';
+import { dataPath, duration, feedback, feedbackText, json, purgeArtifact, searchArtifacts, setArchived, since, trackingOf, updateDirectory, waitForFeedback, type DataDoc } from './operations.js';
 import type { LintResult } from './lint.js';
 import { addProfile, listProfiles, useProfile, removeProfile, resolveServer } from './profiles.js';
 
@@ -308,7 +308,26 @@ program.command('feedback').argument('<slug>').description('Show everything read
   .option('--since <date>', 'Only changes since ISO date or duration such as 2h').option('--prefix <prefix>', 'Only keys starting with this prefix')
   .action(async (slug, options, command) => {
     const result = await feedback(await client(command), slug, { since: options.since, prefix: options.prefix });
-    output(result, command, feedbackText(slug, result.documents));
+    output(result, command, feedbackText(slug, result.documents, result.sentAt) + (result.updatedAt ? `\n\nWait for what readers save next: artifact wait ${slug} --since ${result.updatedAt}` : ''));
+  });
+
+program.command('wait').argument('<slug>').description('Wait until readers send their answers, comments or verdicts, then show them (exit 4 on timeout). Run it in the background to be told when people respond.')
+  .option('--since <date>', 'Only changes after this ISO date (a cursor printed by feedback or wait) or duration; default: when the latest version was published')
+  .option('--until <event>', 'sent: each save of readers with instant sync on, or their "Send to agent"; submitted: only "Send to agent" or a page\'s "I\'m done"; any: every save, even held ones', 'sent')
+  .option('--prefix <prefix>', 'Only keys starting with this prefix')
+  .option('--timeout <duration>', 'Give up after this long, e.g. 9m, 4h, 1d', '24h')
+  .action(async (slug, options, command) => {
+    const api = await client(command);
+    const json = command.optsWithGlobals().json;
+    if (!json) console.error(`Waiting for ${options.until === 'submitted' ? 'readers to press Send' : 'feedback'} on ${slug} (up to ${options.timeout})…`);
+    const result = await waitForFeedback(api, slug, { since: options.since, prefix: options.prefix, until: options.until, timeoutMs: duration(options.timeout) });
+    const again = `artifact wait ${slug} --since ${result.cursor}${options.until !== 'sent' ? ' --until ' + options.until : ''}`;
+    if (result.status === 'timeout') {
+      output(result, command, `No new feedback on ${slug} since ${result.since} (waited ${options.timeout}).\nKeep waiting: ${again}`);
+      process.exitCode = 4;
+      return;
+    }
+    output(result, command, `${feedbackText(slug, result.documents)}\n\nReply where each person wrote (artifact data append), then wait for more: ${again}`);
   });
 
 function globalOptions(parent: Command) {

@@ -16,7 +16,7 @@ import { APP_VERSION, API_VERSION } from './shared.js';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { missing } from './fs.js';
-import { ArtifactData, type Writer } from './data.js';
+import { ArtifactData, DATA_WAIT, type ListOptions, type Writer } from './data.js';
 import { markPurged, seedArtifacts } from './seed.js';
 import { media } from './media-assets.js';
 
@@ -72,7 +72,9 @@ export async function buildApp(options: AppOptions) {
     const address = app.server.address();
     if (address && typeof address !== 'string') await previews.start(`http://127.0.0.1:${address.port}`);
   });
-  app.addHook('preClose', async () => previews.close());
+  // Long-polling data lists answer at once when the server shuts down instead of holding it open.
+  const closing = new AbortController();
+  app.addHook('preClose', async () => { closing.abort(); await previews.close(); });
   app.decorate('storage', storage);
   app.addContentTypeParser('application/gzip', (_request, payload, done) => done(null, payload));
   app.setErrorHandler((error, request, reply) => {
@@ -113,7 +115,7 @@ export async function buildApp(options: AppOptions) {
   app.get('/_artifact/library.js', (_request, reply) => reply.type('application/javascript').header('Cache-Control', 'no-cache').send(libraryScript));
   app.get('/api/v1/server', () => ({
     version: APP_VERSION, apiVersion: API_VERSION,
-    capabilities: ['catalog', 'metadata', 'version-toolbar', 'previews', 'data', 'archive', ...(options.previews ? ['lint'] : []), ...(tokenDigest ? ['auth'] : [])],
+    capabilities: ['catalog', 'metadata', 'version-toolbar', 'previews', 'data', 'data-wait', 'archive', ...(options.previews ? ['lint'] : []), ...(tokenDigest ? ['auth'] : [])],
     previewsEnabled: options.previews ?? false, auth: tokenDigest ? 'token' : 'none', limits
   }));
   app.get('/api/v1/auth', (request, reply) => reply.header('Cache-Control', 'no-store').send({ required: Boolean(tokenDigest), authenticated: tokenDigest ? authenticated(request) : true }));
@@ -205,6 +207,9 @@ export async function buildApp(options: AppOptions) {
     if (!request.body || typeof request.body !== 'object' || Array.isArray(request.body)) throw new ArtifactError('INVALID_DATA', 'Send a JSON object');
     return request.body as DataBody;
   };
+  // The reader's instant-sync choice is a cookie for the whole server, set by the toolbar, so it covers every artifact
+  // and every page (old kits included) in that browser. artifact_sync=hold marks their changes held until they send.
+  const hold = (request: FastifyRequest) => /(?:^|;\s*)artifact_sync=hold(?:;|$)/.test(request.headers.cookie ?? '');
   const noStore = <T>(reply: import('fastify').FastifyReply, value: T) => reply.header('Cache-Control', 'no-store').send(value);
   // Guard against accidents, not attackers (the service is unauthenticated by design): a page served from
   // one artifact may not change another artifact's data. The CLI sends no Referer and is unaffected.
@@ -223,12 +228,21 @@ export async function buildApp(options: AppOptions) {
     const match = /^\/api\/v1\/artifacts\/([^/?]+)\/data(?:\/|$|\?)/.exec(request.url);
     if (match) { try { validateSlug(decodeURIComponent(match[1])); } catch { return; } await visible(decodeURIComponent(match[1])).catch(error => { if (error.code === 'ARTIFACT_ARCHIVED') throw error; }); }
   });
-  app.get<{ Params: { slug: string }; Querystring: { prefix?: string; since?: string } }>('/api/v1/artifacts/:slug/data', async (request, reply) =>
-    noStore(reply, await data.list(request.params.slug, { prefix: request.query.prefix, since: request.query.since })));
+  // wait=<seconds> (with since) long-polls: when nothing changed after since, the answer waits up to 25 s for a write.
+  app.get<{ Params: { slug: string }; Querystring: { prefix?: string; since?: string; role?: string; wait?: string } }>('/api/v1/artifacts/:slug/data', async (request, reply) => {
+    const { prefix, since, role, wait } = request.query;
+    const options: ListOptions = { prefix, since, role: role as ListOptions['role'] };
+    if (wait === undefined || !since) return noStore(reply, await data.list(request.params.slug, options));
+    const seconds = Number(wait);
+    if (!/^\d+(\.\d+)?$/.test(wait) || !Number.isFinite(seconds)) throw new ArtifactError('INVALID_WAIT', `wait must be a number of seconds (at most ${DATA_WAIT.maxSeconds})`);
+    const gone = new AbortController();
+    reply.raw.once('close', () => gone.abort());
+    return noStore(reply, await data.wait(request.params.slug, options, Math.min(seconds, DATA_WAIT.maxSeconds) * 1000, AbortSignal.any([gone.signal, closing.signal])));
+  });
   app.get<{ Params: DataParams }>('/api/v1/artifacts/:slug/data/:key', async (request, reply) => noStore(reply, await data.get(request.params.slug, request.params.key)));
   app.put<{ Params: DataParams }>('/api/v1/artifacts/:slug/data/:key', dataLimit, async (request, reply) => {
     const input = body(request);
-    return noStore(reply, await data.put(request.params.slug, request.params.key, input.value, { expectedRevision: input.expectedRevision, author: input.author, role: input.role }));
+    return noStore(reply, await data.put(request.params.slug, request.params.key, input.value, { expectedRevision: input.expectedRevision, author: input.author, role: input.role, hold: hold(request) }));
   });
   app.delete<{ Params: DataParams; Querystring: { expectedRevision?: string } }>('/api/v1/artifacts/:slug/data/:key', async (request, reply) => {
     const expected = request.query.expectedRevision === undefined ? undefined : Number(request.query.expectedRevision);
@@ -236,11 +250,11 @@ export async function buildApp(options: AppOptions) {
   });
   app.post<{ Params: DataParams }>('/api/v1/artifacts/:slug/data/:key/items', dataLimit, async (request, reply) => {
     const input = body(request);
-    return reply.code(201).header('Cache-Control', 'no-store').send(await data.append(request.params.slug, request.params.key, input.item, input));
+    return reply.code(201).header('Cache-Control', 'no-store').send(await data.append(request.params.slug, request.params.key, input.item, { author: input.author, role: input.role, hold: hold(request) }));
   });
   app.patch<{ Params: DataParams & { id: string } }>('/api/v1/artifacts/:slug/data/:key/items/:id', dataLimit, async (request, reply) => {
     const input = body(request);
-    return noStore(reply, await data.updateItem(request.params.slug, request.params.key, request.params.id, input.changes, input));
+    return noStore(reply, await data.updateItem(request.params.slug, request.params.key, request.params.id, input.changes, { author: input.author, role: input.role, hold: hold(request) }));
   });
   app.get<{ Params: { slug: string; version: string } }>('/api/v1/artifacts/:slug/versions/:version', async request => storage.version(request.params.slug, versionNumber(request.params.version)));
   app.get<{ Params: { slug: string; version: string } }>('/api/v1/artifacts/:slug/versions/:version/download', async (request, reply) => {

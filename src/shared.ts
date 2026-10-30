@@ -32,7 +32,10 @@ export interface Artifact {
   archivedAt?: string;
 }
 
-export const APP_VERSION = '0.7.2';
+/** Saved-data keys that send everything a reader saved to waiting agents: the toolbar's "Send to agent" and a page's "I'm done". */
+export const SEND_KEYS = ['state.sent', 'state.submitted'];
+
+export const APP_VERSION = '0.8.0';
 export const API_VERSION = 1;
 
 export function metadataText(value: unknown, field: string, required = false): string {

@@ -37,7 +37,7 @@ Coding agents produce plans, progress updates, reviews and reports, and then los
 - **Publish:** the agent publishes a folder of HTML with one command and shares a stable link.
 - **Read:** you open it in the browser, with every version kept.
 - **Answer on the page:** pick an option, comment on a finding, approve a change.
-- **Read back:** the agent picks up your answers with `artifact feedback` and replies in the same thread.
+- **Read back:** the agent waits for your answers with `artifact wait` (or picks them up with `artifact feedback`) and replies in the same thread.
 
 **One library for every agent.** Claude Code writes the plan, Codex builds it and reports progress on a live page, OpenCode reviews the result. They all publish to, search and read the same library through the same CLI, skill or MCP server, so an answer you give on one agent's page is there for the next agent to pick up.
 
@@ -79,7 +79,7 @@ For common jobs there is a polished reference on the server that agents copy and
 
 ```bash
 docker run -d --name artifacts -p 3000:3000 -v artifact-data:/data \
-  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.7.2
+  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.8.0
 ```
 
 **2. Install the CLI** — standalone binaries, no Node.js needed
@@ -126,7 +126,7 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 </table>
 
 - Answers, comments, verdicts and live state are **saved beside the artifact**, not inside it, so they survive new versions.
-- Agents read everything with `artifact feedback <slug>` and **reply in the same thread** with `artifact data append`; resolved threads show up as resolved on the page.
+- Agents hear about it as soon as you save, with `artifact wait <slug>` running in the background, read everything with `artifact feedback <slug>` and **reply in the same thread** with `artifact data append`; resolved threads show up as resolved on the page.
 - **Live pages**: a run log the agent updates with `artifact data set` — no new versions, readers see progress within seconds.
 
 <img src="docs/media/feedback.webp" alt="artifact feedback in a terminal showing a reader's answers and comments" width="100%">
@@ -206,7 +206,8 @@ artifact download ref-implementation-review --out ./toolbar-review      # start 
 artifact publish ./toolbar-review --slug toolbar-review \
   --title "Library and toolbar review" --description "Criteria, annotated screenshots and findings."
 
-# you answer on the page, then tell the agent "check the artifact"
+# the agent waits in the background; you answer on the page and it hears back
+artifact wait toolbar-review
 artifact feedback toolbar-review
 artifact data append toolbar-review comments.finding-F1 --author "Claude Code" \
   --item '{"text":"Yes: version 2 starts collapsed below 600 px and the pill shows the version."}'

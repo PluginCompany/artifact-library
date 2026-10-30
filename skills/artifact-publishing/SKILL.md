@@ -23,7 +23,7 @@ Follow every rule. They are what separates a page people act on from a page they
 5. **Plain language, short paragraphs.** Full sentences, one idea per paragraph, at most about four lines (~70 words). Name things the way the reader knows them; define or drop jargon. Say what changes and what stays the same. Not "Reacquire lock, check existence, requeue stale jobs" but "Before writing, the job checks that nobody published a newer version; if someone did, it starts again for that version."
 6. **Show, don't describe.** Comparison → `table.compare` with the recommended `tr.rec`. Process or data flow → `[data-flow]` diagram. Numbers → stat tiles or a `Kit.chart` with a table view. Risks → `[data-risks]`. Before/after → `.ba`. Changes vs unchanged → `.delta`. Work plan → `.steps` with `p.files`. A chapter over ~300 words without a visual needs one.
 7. **Measure, cite, label.** If you can count, time or run it, do, and say how. Cite files and lines (`src/catalog.ts:42`). Label estimates as estimates and invented content as "Example content". Never fabricate numbers, screenshots or test results.
-8. **Decisions are answered on the page.** Open questions become options with trade-offs and a recommended default (copy `ref-decision-questionnaire`), plus an overall verdict when approval is needed. Tell the reader their answers are saved and reach you; read them with `artifact feedback`.
+8. **Decisions are answered on the page.** Open questions become options with trade-offs and a recommended default (copy `ref-decision-questionnaire`), plus an overall verdict when approval is needed. Tell the reader their answers are saved and reach you; wait for them with `artifact wait` and read them with `artifact feedback`.
 9. **Review before you share.** Publish, run `artifact lint <slug>` (renders the page at 1440 and 390 px; `--screenshots <dir>` saves images), fix every error and the warnings that apply, look at the screenshots in light and dark, then `artifact update`. Check the rubric in `references/writing.md` §8.
 10. **Name it and keep the link.** A title that is a name (2–6 words), a one-sentence description of what the reader gets; share the stable `url`; revise with `artifact update`.
 
@@ -109,9 +109,26 @@ artifact update migration-plan ./output --message "Added rollout checklist" --js
 
 Each update is a complete snapshot; identical content creates no version. A directory remembers the revision it was published or downloaded at. From an untracked folder, read the current state first and pass `--expected-revision`. On `REVISION_CONFLICT` (exit 2) inspect the newer version and reconcile — never just bump the revision and overwrite unseen work. `revision` also changes for metadata edits, archive and restore; `version` only for content.
 
+## Wait for feedback
+
+After sharing a link that asks for answers, comments or a review, start waiting for them instead of asking the user to come back and tell you:
+
+```bash
+artifact wait login-review                     # returns when a reader sends something; agent writes don't count
+artifact wait login-review --until submitted   # only an explicit "Send to agent" or a questionnaire's "I'm done"
+```
+
+Readers decide when their answers reach you. In the toolbar on every artifact (⋯ → **Instant sync to agent**, one setting for every artifact in their browser) instant sync is on by default and each save is sent at once. With it off, their saves are held until they press **Send to agent** in the toolbar (`state.sent`) or a page's "I'm done" (`state.submitted`), and a plain wait waits for that. When it returns you get everything readers saved since the start, held or not.
+
+- **Claude Code**: run `artifact wait <slug>` as a background command (Bash with `run_in_background`). You are told when it exits, so you can keep working or end your turn; then read its output and act on it.
+- **Other agents that run commands in the background** do the same. Without background commands, run it in the foreground only when the user is about to answer, with `--timeout` below your shell tool's limit (e.g. `--timeout 9m`), or skip it and ask the user to say when they are done.
+- **MCP**: call `wait_for_feedback` (it waits up to 50 s); while it answers `waiting`, call it again with `since` set to the cursor it returns.
+
+Without `--since`, the wait starts at the latest version's publish time, so nothing saved since then is missed. It prints the new feedback and a `--since <cursor>` to wait for the next round; exit code 4 means it timed out (default `--timeout 24h`) and prints the command to keep waiting. With instant sync on, a wait returns at the first save, which may be one comment of several: answer what came in, then wait again from the cursor while the reader is still going. Tell the user you are waiting, and that they can turn instant sync off and press Send to agent when they are done. `artifact feedback` shows everything, and marks held changes **not sent yet**: those are drafts, so don't act on them unless the user asks.
+
 ## Read feedback and answer it
 
-When the user says they answered, commented or reviewed, read what was saved:
+When a wait returns, or the user says they answered, commented or reviewed, read what was saved:
 
 ```bash
 artifact feedback login-review              # readable digest of everything saved

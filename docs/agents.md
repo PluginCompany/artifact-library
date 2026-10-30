@@ -43,6 +43,7 @@ args = ["mcp"]
 | `publish`, `update` | Publish a folder, or a new version at the same link |
 | `download` | Fetch the original files of any version |
 | `feedback` | Everything readers saved: answers, comments, verdicts |
+| `wait_for_feedback` | Wait up to 50 s for a reader to save something; call again with the returned cursor while it says `waiting` |
 | `data_get`, `data_set`, `data_append`, `data_update_item` | Read saved documents, update live state, reply in a thread, resolve a comment |
 | `archive` | Archive or restore an artifact |
 
@@ -55,7 +56,7 @@ Resources: the bundled skill (`artifact://skill/SKILL.md`, …) and the server's
 3. **Change the content, keep the plumbing.** Each `index.html` starts with an EDITING GUIDE; data lives in `data.js`, the design system in `kit/`.
 4. **Publish** with a title that says what it is and a description that says what the reader gets.
 5. **Check it**: `artifact lint <slug>` renders the published page at 1440 and 390 px and reports console errors, overflow, a missing chapter menu, walls of text and broken links (`--screenshots <dir>` saves images to look at). Fix, `artifact update`, then share the stable `url`.
-6. **Ask the reader to answer on the page**, then read it: `artifact feedback <slug>`.
+6. **Ask the reader to answer on the page, and wait for it**: `artifact wait <slug>` returns when they save something (run it as a background command; in Claude Code, Bash with `run_in_background` tells the agent when it exits). `artifact feedback <slug>` reads everything at any time.
 7. **Reply where they asked** (`artifact data append … comments.<anchor>`), do the work, and `artifact update` at the same link.
 
 ## What the skill asks of every artifact

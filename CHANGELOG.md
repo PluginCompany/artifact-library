@@ -4,6 +4,15 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-30
+
+### Added
+- **`artifact wait <slug>`**: waits until readers send an answer, comment or verdict, then prints it with a cursor for the next wait; agents run it in the background (in Claude Code, Bash with `run_in_background`) and hear back as soon as people respond, instead of the user having to tell them. changes by agents never end a wait; exit code 4 on `--timeout` (default 24h); network errors and server restarts are retried.
+- **Readers decide when answers reach the agent.** The toolbar on every artifact has an **Instant sync to agent** switch (⋯ menu). It is on by default; it is one setting per browser for every artifact on the server. With it off, saves are held and the toolbar shows "N changes not sent" with a **Send to agent** button (`state.sent`). `artifact wait` honours it: it returns on a sent save, a Send or a page's "I'm done" (`state.submitted`), with everything saved since the start. `--until submitted` waits only for an explicit send, `--until any` for every save. `artifact feedback` marks held changes "not sent yet".
+- MCP tool `wait_for_feedback`: the same wait in steps of up to 50 s, returning a cursor to continue from.
+- Data documents saved by a reader holding changes carry `held: true`. The data list (`GET /api/v1/artifacts/:slug/data`) takes `role=human|agent` and `wait=<seconds>` (long-poll, at most 25 s, with `since`); servers advertise it as the `data-wait` capability. The CLI polls older servers every 5 s instead.
+- The skill and the docs tell agents to start a wait after sharing a link that asks for answers.
+
 ### Changed
 - Licensed under the MIT License (was Apache-2.0).
 

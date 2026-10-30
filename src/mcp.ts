@@ -7,12 +7,12 @@ import { APP_VERSION, ArtifactError } from './shared.js';
 import type { Client } from './client.js';
 import type { LintResult } from './lint.js';
 import { bundledSkill } from './bundled-skill.js';
-import { dataPath, feedback, feedbackText, json, searchArtifacts, setArchived, updateDirectory, type DataDoc } from './operations.js';
+import { dataPath, feedback, feedbackText, json, searchArtifacts, setArchived, updateDirectory, waitForFeedback, type DataDoc } from './operations.js';
 
 /* `artifact mcp`: the CLI's core operations as MCP tools on stdio, bound to the server and token the CLI selected. */
 
 const INSTRUCTIONS = `Artifact Library publishes folders of HTML as versioned pages with stable links, and stores what readers answer, comment and approve on them.
-Workflow: search before creating; copy a reference (create_from_reference, e.g. ref-implementation-review, ref-decision-questionnaire, ref-live-run-log) instead of starting from scratch; edit content, not plumbing (each index.html starts with an EDITING GUIDE); after publishing, run lint and fix its errors and warnings before sharing the link; publish with a clear title and description; share the url; when the user says they answered or commented, read feedback and reply in the same thread with data_append; publish changes with update so the link and history stay.
+Workflow: search before creating; copy a reference (create_from_reference, e.g. ref-implementation-review, ref-decision-questionnaire, ref-live-run-log) instead of starting from scratch; edit content, not plumbing (each index.html starts with an EDITING GUIDE); after publishing, run lint and fix its errors and warnings before sharing the link; publish with a clear title and description; share the url; after sharing a link that asks for answers or review, call wait_for_feedback (again with since=cursor while it says waiting) or, if you have a shell that runs commands in the background, run artifact wait <slug> there; when the user says they answered or commented, read feedback (documents marked not sent yet are drafts a reader is holding until they press Send to agent: don't act on them unless asked); reply in the same thread with data_append; publish changes with update so the link and history stay.
 Saved-data keys: comments.<anchor> (thread with value.items), answer.<question> ({choice, note}), review.<item> ({verdict, note}), state.<name> (live state, e.g. state.run for run logs).`;
 
 type Result = { content: { type: 'text'; text: string }[]; isError?: boolean };
@@ -45,7 +45,14 @@ export function createMcpServer(api: Client) {
     async a => api.request(`/api/v1/artifacts/${encodeURIComponent(a.slug)}/versions`), true);
   tool('feedback', 'Everything readers saved on an artifact — answers to questions, comment threads, review verdicts, live state — as a readable digest followed by the raw documents. Read this when the user says they answered, commented or reviewed.',
     { slug, since: z.string().optional().describe('Only changes since: ISO date or duration such as 2h'), prefix: z.string().optional().describe('Only keys starting with this, e.g. answer. or comments.') },
-    async a => { const result = await feedback(api, a.slug, { since: a.since, prefix: a.prefix }); return feedbackText(a.slug, result.documents) + '\n---\n' + JSON.stringify(result, null, 2); }, true);
+    async a => { const result = await feedback(api, a.slug, { since: a.since, prefix: a.prefix }); return feedbackText(a.slug, result.documents, result.sentAt) + '\n---\n' + JSON.stringify(result, null, 2); }, true);
+  tool('wait_for_feedback', 'Wait until readers send something new on an artifact (answers, comments, verdicts; readers with instant sync off send with "Send to agent"; changes by agents do not count), for at most `seconds`. Returns the new documents as a digest with a cursor, or status "waiting" with a cursor: call it again with since=cursor to keep waiting.',
+    { slug, since: z.string().optional().describe('Only changes after this cursor (ISO date from feedback or a previous wait); default: when the latest version was published'), until: z.enum(['sent', 'submitted', 'any']).optional().describe('sent (default): what readers send, instantly or with "Send to agent"; submitted: only "Send to agent" or a page\'s "I\'m done"; any: every save, even held drafts'), prefix: z.string().optional().describe('Only keys starting with this'), seconds: z.number().int().min(1).max(50).optional().describe('Longest to wait in this call (default 45)') },
+    async a => {
+      const result = await waitForFeedback(api, a.slug, { since: a.since, until: a.until, prefix: a.prefix, timeoutMs: (a.seconds ?? 45) * 1000 });
+      if (result.status === 'timeout') return { status: 'waiting', slug: a.slug, cursor: result.cursor, next: `Nothing new yet. Call wait_for_feedback again with since=${result.cursor}${a.until ? ` and until=${a.until}` : ''} to keep waiting, or stop and tell the user to say when they are done.` };
+      return `${feedbackText(a.slug, result.documents)}\nCursor: ${result.cursor} (pass it as since to wait for more)\n---\n${JSON.stringify(result, null, 2)}`;
+    }, true);
   tool('data_get', 'Read one saved data document (value, revision, author).', { slug, key },
     async a => api.request<DataDoc>(dataPath(a.slug, a.key)), true);
   tool('data_set', 'Replace a saved data document, e.g. live state a page renders (state.run for a run log). Use expected_revision when someone else may be editing it (0 = must not exist yet).',

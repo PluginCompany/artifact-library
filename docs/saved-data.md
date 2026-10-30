@@ -18,6 +18,16 @@ Agents rely on these key prefixes; keep them.
 | `answer.<question>` | `{ questionId, question, choice, choiceLabel, note }` | questionnaires, picks |
 | `review.<item>` | `{ verdict: "approved" \| "changes" \| "question", note }` | review pages |
 | `state.<name>` | anything | live pages (run logs, checklists) and agents |
+| `state.sent`, `state.submitted` | `{ at, author, … }` | the toolbar's "Send to agent", a page's "I'm done": they send held changes |
+
+## When answers reach the agent
+
+Every save is stored at once, and agents can always read it with `artifact feedback`. What readers control is when a **waiting** agent (`artifact wait`, MCP `wait_for_feedback`) is told:
+
+- **Instant sync on** (the default): each save is sent at once.
+- **Instant sync off**: saves are *held*. The toolbar shows "N changes not sent" with a **Send to agent** button, which writes `state.sent` `{at, author, changes}` and sends everything. A page's own "I'm done" (`state.submitted`, as in `ref-decision-questionnaire`) sends too. Turning instant sync back on sends what is still held.
+
+The switch is in the toolbar's ⋯ menu on every artifact. It is one setting per browser for the whole server (the `artifact_sync` cookie), so it covers every artifact, including ones published before this existed, without changes to their pages. Held documents carry `held: true`; `artifact feedback` marks them "not sent yet" until the next send. Pages published with `--no-toolbar` have no Send button, so readers who hold changes send them from another artifact's toolbar or with the page's own "I'm done".
 
 Store readable labels next to ids so `artifact feedback` makes sense without the page. Use a top-level `items` array only for threads: `artifact feedback` prints any `value.items` as comments.
 
@@ -52,12 +62,13 @@ document.addEventListener("kit:ready", async () => {
 
 ```bash
 artifact feedback q3-review --since 2h
+artifact wait q3-review                    # returns when a reader sends something (agent writes don't count)
 artifact data append q3-review comments.finding-F2 --author "Claude Code" --item '{"text":"Fixed in version 4."}'
 artifact data update-item q3-review comments.finding-F2 <id> --changes '{"resolved":true}'
 artifact data set release-run state.run --file run.json   # a live page picks it up within seconds
 ```
 
-Over MCP the same operations are the `feedback`, `data_get`, `data_set`, `data_append` and `data_update_item` tools.
+Over MCP the same operations are the `feedback`, `wait_for_feedback`, `data_get`, `data_set`, `data_append` and `data_update_item` tools.
 
 ## Rules and limits
 

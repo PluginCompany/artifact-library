@@ -1,4 +1,4 @@
-import { ArtifactError, type Artifact, type Publication } from './shared.js';
+import { ArtifactError, SEND_KEYS, type Artifact, type Publication } from './shared.js';
 import { readTracking, type Client, type Tracking } from './client.js';
 
 /* Operations shared by the CLI and the MCP server. */
@@ -54,7 +54,7 @@ export async function updateDirectory(api: Client, slug: string, directory: stri
 }
 
 /* Saved data beside an artifact. */
-export interface DataDoc { key: string; value: unknown; revision: number; updatedAt: string; author?: string; role?: string }
+export interface DataDoc { key: string; value: unknown; revision: number; updatedAt: string; author?: string; role?: string; held?: boolean }
 export const dataPath = (slug: string, key?: string) => `/api/v1/artifacts/${encodeURIComponent(slug)}/data${key ? '/' + encodeURIComponent(key) : ''}`;
 export const json = (method: string, payload: unknown): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
@@ -64,17 +64,87 @@ export async function feedback(api: Client, slug: string, options: { since?: str
   if (options.since) query.set('since', since(options.since));
   if (options.prefix) query.set('prefix', options.prefix);
   const result = await api.request<{ documents: DataDoc[]; updatedAt: string | null }>(dataPath(slug) + (query.size ? '?' + query : ''));
-  return { slug, url: (artifact as { url?: string }).url, version: artifact.latestVersion, ...result };
+  // Held changes are drafts until their reader sends them; a --since or --prefix list may not include the latest send.
+  const sentAt = result.documents.some(d => d.held) ? lastSent((await api.request<{ documents: DataDoc[] }>(dataPath(slug) + '?prefix=state.s')).documents) : undefined;
+  return { slug, url: (artifact as { url?: string }).url, version: artifact.latestVersion, ...result, ...(sentAt !== undefined ? { sentAt } : {}) };
 }
 
+/** A timeout such as 90s, 30m, 4h or 1d (plain numbers are seconds). */
+export function duration(value: string): number {
+  const match = /^(\d+(?:\.\d+)?)([smhd]?)$/.exec(value.trim());
+  if (!match) throw new ArtifactError('INVALID_DURATION', 'Use a duration such as 90s, 30m, 4h or 1d');
+  return Number(match[1]) * ({ '': 1000, s: 1000, m: 60000, h: 3600000, d: 86400000 }[match[2]]!);
+}
+
+export interface WaitOptions {
+  /** Start after this ISO date or duration; default: when the latest version was published. */
+  since?: string; prefix?: string;
+  /** sent (default): what readers send, instantly or with "Send to agent". submitted: only an explicit send ("Send to agent", "I'm done"). any: every save, even held ones. */
+  until?: 'sent' | 'submitted' | 'any';
+  timeoutMs: number;
+}
+export interface WaitResult { slug: string; url?: string; version: number; status: 'ready' | 'timeout'; since: string; cursor: string; documents: DataDoc[]; updatedAt: string | null }
+const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const transient = (error: unknown) => !(error instanceof ArtifactError) || error.status >= 500 || error.status === 429;
+const newest = (documents: DataDoc[]) => documents.reduce<string | null>((latest, d) => (!latest || d.updatedAt > latest ? d.updatedAt : latest), null);
+
+/* Wait until readers send what they saved on an artifact. Readers with instant sync on (the default) send every save;
+   with it off their saves are held until they press "Send to agent" (state.sent) or a page's "I'm done" (state.submitted).
+   It then returns everything readers saved since the start, held or not. Changes by agents never end the wait.
+   Servers with the data-wait capability hold each request up to 25 s; older servers are polled every 5 s.
+   Network errors and server restarts are retried until the timeout. */
+export async function waitForFeedback(api: Client, slug: string, options: WaitOptions): Promise<WaitResult> {
+  const until = options.until ?? 'sent';
+  if (!['sent', 'submitted', 'any'].includes(until)) throw new ArtifactError('INVALID_ARGUMENTS', 'until must be sent, submitted or any');
+  const deadline = Date.now() + options.timeoutMs;
+  const artifact = await api.info(slug);
+  const start = options.since ? since(options.since) : (await api.version(slug, artifact.latestVersion)).createdAt;
+  const longPoll = (await api.serverInfo().catch(() => undefined))?.capabilities.includes('data-wait') ?? false;
+  const result = (documents: DataDoc[], status: WaitResult['status']): WaitResult => {
+    const updatedAt = newest(documents);
+    return { slug, url: artifact.url, version: artifact.latestVersion, status, since: start, cursor: updatedAt ?? start, documents, updatedAt };
+  };
+  const list = async (after: string, wait: number, prefix?: string) => {
+    const query = new URLSearchParams({ since: after, role: 'human' });
+    if (prefix) query.set('prefix', prefix);
+    if (wait) query.set('wait', String(wait));
+    const page = await api.request<{ documents: DataDoc[] }>(dataPath(slug) + '?' + query, { signal: AbortSignal.timeout((wait + 30) * 1000) });
+    return page.documents.filter(d => d.role !== 'agent');
+  };
+  const sends = (d: DataDoc) => SEND_KEYS.includes(d.key);
+  const matches = (d: DataDoc) => !options.prefix || d.key.startsWith(options.prefix) || sends(d);
+  const wakes = (d: DataDoc) => until === 'any' ? matches(d) : sends(d) || (until === 'sent' && !d.held && matches(d));
+  // `seen` moves past held changes so the next long-poll waits for something newer; the result still starts at `start`.
+  let seen = start;
+  for (let failures = 0; ;) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return result([], 'timeout');
+    const wait = longPoll ? Math.max(1, Math.min(25, Math.floor(remaining / 1000))) : 0;
+    let found: DataDoc[];
+    try { found = await list(seen, wait, until === 'any' ? options.prefix : undefined); failures = 0; }
+    catch (error) {
+      if (!transient(error)) throw error;
+      await pause(Math.min(deadline - Date.now(), 1000 * 2 ** Math.min(failures++, 5)));
+      continue;
+    }
+    if (found.some(wakes)) return result((await list(start, 0)).filter(matches), 'ready');
+    seen = newest(found) ?? seen;
+    if (!longPoll) await pause(Math.min(deadline - Date.now(), 5000));
+  }
+}
+
+/** When a reader last pressed "Send to agent" or "I'm done", or null. */
+export const lastSent = (documents: DataDoc[]) => newest(documents.filter(d => SEND_KEYS.includes(d.key)));
+
 /* Human-readable digest of everything readers saved, grouped by convention. */
-export function feedbackText(slug: string, documents: DataDoc[]) {
+export function feedbackText(slug: string, documents: DataDoc[], sentAt: string | null = lastSent(documents)) {
   const when = (iso?: string) => (iso ? iso.replace('T', ' ').slice(0, 16) : '');
   const lines: string[] = [];
   for (const d of documents) {
     const value = d.value as Record<string, unknown> | null;
     const items = value && typeof value === 'object' && Array.isArray(value.items) ? value.items as Record<string, unknown>[] : undefined;
-    lines.push(`## ${d.key}  (rev ${d.revision}, ${when(d.updatedAt)}${d.author ? ', ' + d.author : ''})`);
+    const draft = d.held && (!sentAt || d.updatedAt > sentAt);
+    lines.push(`## ${d.key}  (rev ${d.revision}, ${when(d.updatedAt)}${d.author ? ', ' + d.author : ''}${draft ? ', not sent yet: the reader is still working on it' : ''})`);
     if (items) {
       for (const item of items) {
         const head = `[${item.role ?? 'human'}${item.author ? ' · ' + item.author : ''} · ${when(item.createdAt as string)}${item.resolved ? ' · resolved' : ''}] id=${item.id}`;

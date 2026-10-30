@@ -2,7 +2,7 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { atomicJson, missing, readJson } from './fs.js';
-import { ArtifactError } from './shared.js';
+import { ArtifactError, SEND_KEYS } from './shared.js';
 import type { Storage } from './storage.js';
 
 /* Artifact data: small JSON documents that live beside an artifact, outside its
@@ -11,20 +11,26 @@ import type { Storage } from './storage.js';
    Conventional key prefixes (not enforced): comments.*, answer.*, review.*, state.* */
 
 export interface DataItem { id: string; author?: string; role: 'human' | 'agent'; createdAt: string; updatedAt?: string; [field: string]: unknown }
-export interface DataDocument { key: string; value: unknown; revision: number; createdAt: string; updatedAt: string; author?: string; role: 'human' | 'agent' }
-export interface Writer { author?: string; role?: string }
+export interface DataDocument { key: string; value: unknown; revision: number; createdAt: string; updatedAt: string; author?: string; role: 'human' | 'agent'; held?: true }
+/** hold: the reader turned instant sync off, so this change waits for their "Send to agent". */
+export interface Writer { author?: string; role?: string; hold?: boolean }
+export interface ListOptions { prefix?: string; since?: string; role?: 'human' | 'agent' }
+type Change = { slug: string; key: string; role: 'human' | 'agent' };
 
 export const DATA_LIMITS = { documentBytes: 256 * 1024, documents: 500, items: 1000 };
+/** Longest a list request may wait for a change, and how long a woken wait lets a burst of writes settle. */
+export const DATA_WAIT = { maxSeconds: 25, settleMs: 300 };
 const KEY = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 
 export function validateKey(key: string): string {
   if (typeof key !== 'string' || !KEY.test(key)) throw new ArtifactError('INVALID_DATA_KEY', 'Data keys are 1–128 letters, numbers, dots, underscores or hyphens, starting with a letter or number');
   return key;
 }
-function writer(input: Writer) {
+function writer(input: Writer, key: string) {
   const author = input.author === undefined ? undefined : String(input.author).trim().slice(0, 80) || undefined;
   if (input.role !== undefined && input.role !== 'human' && input.role !== 'agent') throw new ArtifactError('INVALID_DATA', 'role must be human or agent');
-  return { author, role: (input.role ?? 'human') as 'human' | 'agent' };
+  const role = (input.role ?? 'human') as 'human' | 'agent';
+  return { author, role, ...(input.hold && role === 'human' && !SEND_KEYS.includes(key) ? { held: true as const } : {}) };
 }
 function plainObject(value: unknown, field: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ArtifactError('INVALID_DATA', `${field} must be a JSON object`);
@@ -36,6 +42,7 @@ function checkSize(value: unknown) {
 }
 
 export class ArtifactData {
+  private listeners = new Set<(change: Change) => void>();
   constructor(private storage: Storage) {}
   private dir(slug: string) { return path.join(this.storage.artifactDir(slug), 'data'); }
   private file(slug: string, key: string) { return path.join(this.dir(slug), validateKey(key) + '.json'); }
@@ -45,10 +52,11 @@ export class ArtifactData {
     catch (error) { if (missing(error)) return undefined; throw error; }
   }
 
-  async list(slug: string, options: { prefix?: string; since?: string } = {}) {
+  async list(slug: string, options: ListOptions = {}) {
     await this.storage.get(slug);
     const since = options.since ? Date.parse(options.since) : undefined;
     if (options.since && !Number.isFinite(since)) throw new ArtifactError('INVALID_DATE', 'since must be an ISO date');
+    if (options.role !== undefined && options.role !== 'human' && options.role !== 'agent') throw new ArtifactError('INVALID_DATA', 'role must be human or agent');
     let names: string[] = [];
     try { names = await readdir(this.dir(slug)); }
     catch (error) { if (!missing(error)) throw error; }
@@ -57,10 +65,36 @@ export class ArtifactData {
       const key = name.slice(0, -5);
       if (!KEY.test(key) || (options.prefix && !key.startsWith(options.prefix))) continue;
       const document = await this.read(slug, key);
-      if (document && (since === undefined || Date.parse(document.updatedAt) > since)) documents.push(document);
+      if (document && (since === undefined || Date.parse(document.updatedAt) > since) && (!options.role || document.role === options.role)) documents.push(document);
     }
     const updatedAt = documents.reduce<string | null>((latest, d) => (!latest || d.updatedAt > latest ? d.updatedAt : latest), null);
     return { slug, documents, updatedAt };
+  }
+
+  /** Like list, but when nothing matches yet, wait up to `ms` for a matching write (long-poll), then list again. */
+  async wait(slug: string, options: ListOptions, ms: number, signal?: AbortSignal) {
+    let wake!: () => void;
+    const woken = new Promise<void>(resolve => { wake = resolve; });
+    const listener = (change: Change) => {
+      if (change.slug === slug && (!options.prefix || change.key.startsWith(options.prefix)) && (!options.role || change.role === options.role)) wake();
+    };
+    this.listeners.add(listener);
+    const timer = setTimeout(wake, ms);
+    signal?.addEventListener('abort', wake, { once: true });
+    try {
+      const first = await this.list(slug, options);
+      if (first.documents.length || ms <= 0 || signal?.aborted) return first;
+      await woken;
+      if (signal?.aborted) return first;
+      // A reader often saves several documents at once (answers, then state.submitted): return them together.
+      await new Promise(resolve => setTimeout(resolve, DATA_WAIT.settleMs));
+      return await this.list(slug, options);
+    } finally {
+      this.listeners.delete(listener); clearTimeout(timer); signal?.removeEventListener('abort', wake);
+    }
+  }
+  private changed(slug: string, document: DataDocument) {
+    for (const listener of this.listeners) listener({ slug, key: document.key, role: document.role });
   }
 
   async get(slug: string, key: string): Promise<DataDocument> {
@@ -73,7 +107,7 @@ export class ArtifactData {
   /** Replace a document. expectedRevision 0 means "must not exist yet". */
   async put(slug: string, key: string, value: unknown, options: Writer & { expectedRevision?: number } = {}): Promise<DataDocument> {
     validateKey(key); checkSize(value);
-    const who = writer(options);
+    const who = writer(options, key);
     return this.storage.locked(`data:${slug}:${key}`, async () => {
       await this.storage.get(slug);
       const current = await this.read(slug, key);
@@ -83,6 +117,7 @@ export class ArtifactData {
       const document: DataDocument = { key, value, revision: (current?.revision ?? 0) + 1, createdAt: current?.createdAt ?? now, updatedAt: now, ...who };
       await mkdir(this.dir(slug), { recursive: true });
       await atomicJson(this.file(slug, key), document);
+      this.changed(slug, document);
       return document;
     });
   }
@@ -103,7 +138,7 @@ export class ArtifactData {
   async append(slug: string, key: string, item: unknown, options: Writer = {}) {
     validateKey(key);
     const fields = plainObject(item, 'item');
-    const who = writer(options);
+    const who = writer(options, key);
     return this.storage.locked(`data:${slug}:${key}`, async () => {
       await this.storage.get(slug);
       const current = await this.read(slug, key);
@@ -119,6 +154,7 @@ export class ArtifactData {
       const document: DataDocument = { key, value: next, revision: (current?.revision ?? 0) + 1, createdAt: current?.createdAt ?? now, updatedAt: now, ...who };
       await mkdir(this.dir(slug), { recursive: true });
       await atomicJson(this.file(slug, key), document);
+      this.changed(slug, document);
       return { document, item: added };
     });
   }
@@ -127,7 +163,7 @@ export class ArtifactData {
   async updateItem(slug: string, key: string, id: string, changes: unknown, options: Writer = {}) {
     validateKey(key);
     const fields = plainObject(changes, 'changes');
-    const who = writer(options);
+    const who = writer(options, key);
     return this.storage.locked(`data:${slug}:${key}`, async () => {
       await this.storage.get(slug);
       const current = await this.read(slug, key);
@@ -139,8 +175,10 @@ export class ArtifactData {
       const updated = { ...items[index], ...rest, updatedAt: now };
       const next = { ...(current.value as object), items: items.map((item, i) => (i === index ? updated : item)) };
       checkSize(next);
-      const document: DataDocument = { ...current, value: next, revision: current.revision + 1, updatedAt: now, ...who };
+      const { held: _held, ...kept } = current;
+      const document: DataDocument = { ...kept, value: next, revision: current.revision + 1, updatedAt: now, ...who };
       await atomicJson(this.file(slug, key), document);
+      this.changed(slug, document);
       return { document, item: updated };
     });
   }

@@ -145,6 +145,60 @@ test('CLI data and feedback commands read and answer what readers saved', async 
   assert.equal((await run(['data', 'list', 'questions', '--since', '1h'])).documents.length, 2);
 });
 
+test('CLI wait returns when a reader saves something, ignores agent writes, times out, and waits for submit', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'artifact-cli-wait-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const server = await listening(t, root, 'server');
+  const env = { ...process.env, ARTIFACT_CONFIG_DIR: path.join(root, 'config'), ARTIFACT_STATE_DIR: path.join(root, 'state'), ARTIFACT_SERVER_URL: server };
+  const run = runner(env);
+  const save = (key: string, body: unknown, items = false) => fetch(`${server}/api/v1/artifacts/questions/data/${key}${items ? '/items' : ''}`, { method: items ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const site = path.join(root, 'site'); await mkdir(site);
+  await writeFile(path.join(site, 'index.html'), '<title>Questions</title><body>q</body>');
+  await run(['publish', site, '--slug', 'questions']);
+  // Started before anyone answers; the agent's own reply does not end it.
+  const waiting = run(['wait', 'questions', '--timeout', '30s']);
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  await run(['data', 'set', 'questions', 'state.run', '--value', '{"step":1}']);
+  await save('comments.general', { item: { text: 'Please add a summary' }, author: 'Milan' }, true);
+  const first = await waiting;
+  assert.equal(first.status, 'ready');
+  assert.deepEqual(first.documents.map((d: { key: string }) => d.key), ['comments.general']);
+  assert.equal(first.cursor, first.documents[0].updatedAt);
+  // Nothing after the cursor: exit 4 with the same cursor to continue from.
+  const idle = await run(['wait', 'questions', '--since', first.cursor, '--timeout', '1s'], 4);
+  assert.equal(idle.status, 'timeout'); assert.equal(idle.cursor, first.cursor);
+  // Without --since it starts at the latest version, so feedback saved before the wait began is not missed.
+  assert.equal((await run(['wait', 'questions', '--timeout', '5s'])).documents.length, 1);
+  // --until submitted keeps waiting through single answers and returns the whole round on "I'm done".
+  const submitted = run(['wait', 'questions', '--since', first.cursor, '--until', 'submitted', '--timeout', '30s']);
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  await save('answer.toolbar', { value: { choice: 'collapsed' }, author: 'Milan' });
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  await save('state.submitted', { value: { answered: 1, total: 1 }, author: 'Milan' });
+  const round = await submitted;
+  assert.deepEqual(round.documents.map((d: { key: string }) => d.key), ['answer.toolbar', 'state.submitted']);
+  const text = await run(['wait', 'questions', '--since', first.cursor, '--timeout', '5s'], 0, {}, false);
+  assert.match(text, /answer\.toolbar/); assert.match(text, /artifact wait questions --since /);
+  await run(['wait', 'questions', '--timeout', 'soon'], 1);
+  // A reader with instant sync off: held saves do not end the wait; their "Send to agent" returns everything.
+  const sentRound = run(['wait', 'questions', '--since', round.cursor, '--timeout', '30s']);
+  const held = (key: string, body: unknown) => fetch(`${server}/api/v1/artifacts/questions/data/${key}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: 'artifact_sync=hold' }, body: JSON.stringify(body) });
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  await held('answer.layout', { value: { choice: 'grid' }, author: 'Milan' });
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  const draft = await run(['feedback', 'questions', '--since', round.cursor], 0, {}, false);
+  assert.match(draft, /answer\.layout .*not sent yet/);
+  await held('state.sent', { value: { changes: 1 }, author: 'Milan' });
+  const sent = await sentRound;
+  assert.deepEqual(sent.documents.map((d: { key: string }) => d.key), ['answer.layout', 'state.sent']);
+  assert.doesNotMatch(await run(['feedback', 'questions'], 0, {}, false), /not sent yet/);
+  // --until any ignores the reader's choice.
+  const anyRound = run(['wait', 'questions', '--since', sent.cursor, '--until', 'any', '--timeout', '30s']);
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  await held('answer.layout', { value: { choice: 'list' }, author: 'Milan' });
+  assert.equal((await anyRound).documents[0].held, true);
+});
+
 test('CLI profiles isolate servers, preserve legacy config, and pin upload retries', async t => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'artifact-profiles-'));
   const a = await buildApp({ dataDir: path.join(root, 'business'), publicUrl: 'http://business.test' });
@@ -361,7 +415,7 @@ test('MCP server exposes search, feedback, replies and publishing over stdio', a
   await client.connect(transport);
   t.after(() => client.close());
   const tools = (await client.listTools()).tools.map(tool => tool.name).sort();
-  for (const name of ['archive', 'create_from_reference', 'data_append', 'data_get', 'data_set', 'data_update_item', 'download', 'feedback', 'info', 'lint', 'publish', 'recent', 'search', 'update', 'versions']) assert.ok(tools.includes(name), name);
+  for (const name of ['archive', 'create_from_reference', 'data_append', 'data_get', 'data_set', 'data_update_item', 'download', 'feedback', 'info', 'lint', 'publish', 'recent', 'search', 'update', 'versions', 'wait_for_feedback']) assert.ok(tools.includes(name), name);
   const call = async (name: string, args: Record<string, unknown>) => {
     const result = await client.callTool({ name, arguments: args }) as { content: { text: string }[]; isError?: boolean };
     return { text: result.content[0].text, isError: Boolean(result.isError) };
@@ -370,6 +424,11 @@ test('MCP server exposes search, feedback, replies and publishing over stdio', a
   assert.equal(found.artifacts[0].slug, 'ref-review');
   const digest = await call('feedback', { slug: 'ref-review' });
   assert.match(digest.text, /Please add a summary/); assert.match(digest.text, /Milan/);
+  const ready = await call('wait_for_feedback', { slug: 'ref-review', seconds: 5 });
+  assert.match(ready.text, /Please add a summary/);
+  const cursor = /Cursor: (\S+)/.exec(ready.text)![1];
+  const waiting = JSON.parse((await call('wait_for_feedback', { slug: 'ref-review', since: cursor, seconds: 1 })).text);
+  assert.equal(waiting.status, 'waiting'); assert.equal(waiting.cursor, cursor);
   const reply = JSON.parse((await call('data_append', { slug: 'ref-review', key: 'comments.general', text: 'Added in version 2' })).text);
   assert.equal(reply.item.role, 'agent'); assert.equal(reply.item.author, 'test-agent');
   const copy = path.join(root, 'my-review');

@@ -47,7 +47,7 @@ Conventions agents rely on:
 | `review.<item>` | `{ verdict: "approved" \| "changes" \| "question", note }` |
 | `state.<name>` | anything the page or the agent keeps live (run logs, checklists, selections) |
 
-Store human-readable labels next to ids so `artifact feedback` output makes sense without the page. Then tell the user: "Answer on the page; tell me when you're done." Read with `artifact feedback <slug>`, reply with `artifact data append`, resolve with `artifact data update-item`.
+Store human-readable labels next to ids so `artifact feedback` output makes sense without the page. Then tell the user: "Answer on the page; I'll see it when you save." and run `artifact wait <slug>` in the background (`--until submitted` for a questionnaire's "I'm done"); without background commands, ask them to tell you when they're done. Read with `artifact feedback <slug>`, reply with `artifact data append`, resolve with `artifact data update-item`.
 
 ## Quality checklist before you share the link
 
