@@ -76,7 +76,10 @@ actual="$(digest "$tmp/$asset")"
 
 mkdir -p "$DEST"
 chmod 755 "$tmp/$asset"
-mv "$tmp/$asset" "$DEST/artifact"
+# Copy next to the target, then rename: the rename is atomic on one filesystem, so a process that starts
+# `artifact` during an upgrade gets the old or the new binary, never a half-written one.
+cp "$tmp/$asset" "$DEST/.artifact.new.$$" || fail "could not write to $DEST"
+mv -f "$DEST/.artifact.new.$$" "$DEST/artifact" || { rm -f "$DEST/.artifact.new.$$"; fail "could not replace $DEST/artifact"; }
 say "Installed artifact $("$DEST/artifact" --version 2>/dev/null || true) to $DEST/artifact (checksum verified)."
 
 case ":$PATH:" in

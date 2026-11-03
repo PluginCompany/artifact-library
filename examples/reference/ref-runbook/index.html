@@ -4,11 +4,17 @@
   =======================================================================
   Files
     data.js    ALL steps in window.RUNBOOK: phases[] → steps[] { id, title, why,
-               commands[], expect, fail[] }, plus seeding, rollback and facts.
-    app.js     Renders data.js and syncs progress. Change only to add a new
-               kind of block.
+               commands[], expect, fail[], owner, due, link, updates[] }, plus seeding,
+               rollback and facts.
+    app.js     The page around the steps: header, facts, seeding note, rollback.
     style.css  Styles for this artifact only (kit tokens only).
-    kit/       Shared kit, copied in by ../publish.sh. Never edit the copy.
+    kit/       Shared kit, copied in by ../publish.sh. Never edit the copy. The steps
+               themselves (progress bar, ticks, notes, side menu ticks, runs) are the
+               kit's steps block, Kit.steps in kit/kit-data.js: fixes reach every page.
+    A to-do list for the reader inside any page: <div data-steps-src="PLAN.todo"></div>
+               with kit/kit-data.js loaded; no app.js needed.
+    Notes from the agent on a step, live: artifact data append <slug> comments.s-<id>
+               --item '{"text":"…"}' --author "Claude Code"
 
   Common edits
     Add a step       Add { id, title, why, commands, expect, fail } to a phase.
@@ -55,7 +61,7 @@
 </header>
 
 <div class="shell">
-  <nav class="side" aria-label="Steps" id="side"></nav>
+  <nav class="side" aria-label="Steps" id="side"><div id="side-steps"></div><h5>Reference</h5><a href="#rollback"><b>↺</b>Rollback</a><a href="#history"><b>≡</b>Previous runs</a></nav>
 
   <main class="main" id="main">
     <header class="rb-head">
@@ -65,20 +71,8 @@
       <dl class="facts rise" style="--i:3" id="rb-facts"></dl>
     </header>
 
-    <section class="run-bar" id="run-bar" aria-live="polite">
-      <div class="run-top">
-        <div class="run-id"><span class="eyebrow">Current run</span><b id="run-title">—</b><span id="run-meta" class="muted"></span></div>
-        <div class="run-count"><b id="run-done">0</b><span>/ <span id="run-total">0</span> done</span></div>
-        <div class="row run-actions" style="--gap:8px">
-          <button class="btn" type="button" id="next-btn">Jump to next step</button>
-          <button class="btn ghost" type="button" id="new-run">Start a new run</button>
-        </div>
-      </div>
-      <div class="run-progress" id="run-progress" role="img"></div>
-      <p class="run-last mono" id="run-last"></p>
-    </section>
-
-    <div id="phases"></div>
+    <!-- The kit's steps block: progress bar, phases and steps with shared ticks and notes (Kit.steps in app.js). -->
+    <div id="steps"></div>
 
     <section class="rb-sec" id="seeding">
       <div class="callout note"><b>Default artifacts are seeded on start</b><span id="seeding-text"></span></div>

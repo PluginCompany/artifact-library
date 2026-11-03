@@ -15,7 +15,7 @@ them on first start.
 | `ref-decision-record` | Plan | Options, adjustable weighted scoring, readers record their position |
 | `ref-live-run-log` | Build | Page driven by `artifact data set`; blockers answered on the page |
 | `ref-debug-notebook` | Build | Bug investigation: hypotheses with evidence, root cause, fix |
-| `ref-runbook` | Build | Operational procedure with shared ticks and rollback |
+| `ref-runbook` | Build | Operational procedure with shared ticks and rollback, on the kit's steps block |
 | `ref-code-review` | Review | A change explained for review: reasoning, screenshots with notes, short diffs, decisions to confirm, verdicts |
 | `ref-implementation-review` | Review | Screenshot evidence for finished work: criteria, annotated shots, findings, verdict |
 | `ref-code-walkthrough` | Review | A whole diff read by purpose, with verdicts and threads per chapter |
@@ -54,6 +54,7 @@ browser storage and say so in `[data-save-status]`.
 | `comments.<anchor>` | `{ items: [{ id, author, role, createdAt, text, resolved }] }` | `Kit.comments(el, {key})`, `artifact data append` |
 | `answer.<question>` | `{ questionId, question, choice, choiceLabel, recommended, followsRecommendation, note }` | the kit's questions block (`[data-questions]`), picks |
 | `review.<item>` | `{ verdict: "approved" \| "changes" \| "question", note }` | review pages |
+| `state.checklist` | `{ runId, title, startedAt, startedBy, steps: { <id>: { done, by, at, note, noteBy, noteAt } } }`; archived runs in `state.checklist.<runId>` | the kit's steps block (`[data-steps]`), ticks and notes |
 | `state.<name>` | anything | pages or agents (`artifact data set`) for live state |
 
 Agents read everything with `artifact feedback <slug>` and reply in a thread with
@@ -84,6 +85,9 @@ that opens in Bold.
 - **Decisions:** a `[data-questions]` block (`Kit.questions`, in `kit-data.js`), on its own
   page or in a chapter of another; never a copied renderer. Agents reply on a question with
   `artifact data append <slug> comments.q-<id>`.
+- **Steps and to-dos:** a `[data-steps]` block (`Kit.steps`, in `kit-data.js`) for steps the
+  reader takes or a procedure run together, on its own page or in a chapter; never a copied
+  renderer. Agents reply on a step with `artifact data append <slug> comments.s-<id>`.
 - **Status always has a word.** `tag good|warn|bad` carries a label; never colour alone.
 - **Charts:** `Kit.chart.line|column|bar|donut|spark`. Series colours are fixed slots
   `--s1…--s5`; every chart card offers a table view. Never dual axes.

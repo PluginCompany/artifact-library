@@ -150,6 +150,7 @@ Every server ships **22 polished reference artifacts**, one per common job. Agen
 - **Two styles, Clean and Bold**: a plain documentation look (hairline borders, semibold Inter, one blue accent), the default, and an expressive one. Readers switch with a button on every kit page; authors can open a page in Bold.
 - **Images, galleries and diffs built in**: lazy screenshots with a full-size viewer, galleries in six layouts with notes on the image, code diffs in unified, split or result view, and syntax colouring.
 - **Questions built in**: a `[data-questions]` block turns open decisions into option cards with trade-offs and a recommended default, on their own page or inside a plan or review; answers are saved for the agent, and the agent can reply on each question.
+- **Checklists built in**: a `[data-steps]` block turns a runbook or the to-dos the agent hands you into a shared checklist, with who ticked what and when, a note per step and archived runs; the agent can reply on each step.
 - **Seeded on every server** and updated with new releases, without overwriting your own edits.
 
 [See the collection →](docs/reference-collection.md)

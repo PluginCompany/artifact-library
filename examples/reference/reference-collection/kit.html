@@ -85,6 +85,7 @@
     <a href="#gallery"><b>22</b>Gallery</a>
     <a href="#diff"><b>23</b>Code diff</a>
     <a href="#questions"><b>24</b>Questions</a>
+    <a href="#steps-block"><b>25</b>Steps &amp; to-dos</a>
   </nav>
 
   <main class="main sg" id="main">
@@ -515,6 +516,25 @@ diff --git a/src/catalog.ts b/src/catalog.ts
       </table></div>
       <div class="demo-block"><header><b>Two decisions with a summary</b></header><div class="demo">
         <div data-questions='{"questions":[{"id":"sg-search","title":"How should search match words?","context":"Readers search titles, descriptions and page text. Plurals and typos currently miss.","recommended":"prefix","options":[{"id":"exact","label":"Exact words","summary":"Every word must appear as typed.","pros":["Predictable"],"cons":["Misses plurals"],"effort":"S","then":"Keep today&#39;s matching and document it.","code":"q=torque → torque","lang":"text"},{"id":"prefix","label":"Word starts","summary":"Words match from their start, so repair finds repairs.","pros":["Finds plurals","Still fast in memory"],"cons":["No typo tolerance"],"effort":"S","then":"Match word prefixes and add tests for plurals.","code":"q=repair → repair, repairs, repaired","lang":"text"},{"id":"fuzzy","label":"Typo tolerant","summary":"Close spellings match too.","pros":["Forgiving"],"cons":["Surprising matches","Needs an index"],"effort":"L","then":"Add an index with edit-distance matching.","code":"q=torqe → torque","lang":"text"}]},{"id":"sg-shots","title":"Where should screenshots go in a review?","recommended":"gallery","options":[{"id":"gallery","label":"One gallery near the top","summary":"Readers see the result before the code.","image":{"src":"shots/library.webp","w":1600,"h":844,"alt":"A gallery of library screenshots"},"then":"Use a sidebar gallery in the Screenshots chapter."},{"id":"inline","label":"Next to each change","summary":"Every change shows its own screen.","image":{"src":"shots/questionnaire.webp","w":1600,"h":996,"alt":"A single screenshot next to a change"},"then":"Put one image under each change card."}]}]}'></div>
+      </div></div>
+    </section>
+
+    <section id="steps-block">
+      <h2 class="stitch">Steps &amp; to-dos</h2>
+      <p class="muted">A checklist people work through together: a runbook with commands, or a to-do list the agent hands to the reader. Everyone sees the same ticks, who ticked what and when, and a note per step; a bar keeps progress and the next step in view, and <i>Start a new run</i> archives the run. Saved as <code>state.checklist</code> (archived runs as <code>state.checklist.&lt;runId&gt;</code>), the same format as <code>ref-runbook</code>. Needs <code>kit/kit-data.js</code>. Put the steps in <code>data-steps</code> as JSON, point <code>data-steps-src</code> at a global, or call <code>Kit.steps(el, spec)</code>.</p>
+      <div class="table-wrap" style="margin-top:14px"><table class="table compact">
+        <thead><tr><th>Field</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>steps</code> or <code>phases</code></td><td><code>[{id, title, why, owner, due, link: {href, label}, commands, expect, fail, updates}]</code>, or phases <code>[{id, title, summary, steps}]</code> that become chapters. Progress is saved per id, so keep ids stable.</td></tr>
+          <tr><td><code>owner</code>, <code>due</code>, <code>link</code></td><td>For to-dos: who does it (<i>You</i>, <i>Agent</i>, a name), by when, and where to do it</td></tr>
+          <tr><td><code>commands</code>, <code>expect</code>, <code>fail</code></td><td>For runbooks: copyable commands (<code>lang</code> colours them), the output to expect, what to do when it fails</td></tr>
+          <tr><td><code>updates</code></td><td>Notes from the agent on a step; live without republishing: <code>artifact data append &lt;slug&gt; comments.s-&lt;id&gt; --item '{"text":"…"}' --author "Claude Code"</code></td></tr>
+          <tr><td><code>bar</code>, <code>runs</code>, <code>side</code>, <code>history</code></td><td>The progress bar; <i>Start a new run</i>; ticks in a side menu (<code>"#selector"</code>); the list of archived runs (<code>"#selector"</code>)</td></tr>
+          <tr><td><code>key</code>, <code>title</code>, <code>heading</code></td><td>Where progress is saved (<code>state.checklist</code>; give a second list its own key); the run's name; heading level</td></tr>
+        </tbody>
+      </table></div>
+      <div class="demo-block"><header><b>To-dos for the reader</b></header><div class="demo">
+        <div data-steps='{"key":"state.todo-demo","title":"Before the backup goes live","runs":false,"steps":[{"id":"sg-box","title":"Order the Storage Box","owner":"You","due":"Fri 7 Nov","why":"The backups need somewhere outside the servers to go; BX11 (1 TB) is enough for a year.","link":{"href":"https://example.com/storage","label":"Open the order page"}},{"id":"sg-key","title":"Add the agent key to the box","owner":"You","why":"So the backup job can log in without a password.","commands":["cat ~/.ssh/backup.pub"],"lang":"sh","updates":[{"author":"Claude Code","at":"2026-11-03","text":"The key is ready on the server; paste it under SSH keys in the box settings."}]},{"id":"sg-run","title":"Run the first backup","owner":"Agent","why":"I run it once by hand and check that a restore works before the timer takes over."}]}'></div>
       </div></div>
     </section>
   </main>

@@ -1483,6 +1483,7 @@
     });
   }
   Kit.wireBlocks = wireBlocks;
+  Kit.wireCode = () => wireCode(); Kit.wireCopy = wireCopy;
 
   // Call after rendering content late (from data.js etc.) to wire menus, blocks, sort, copy, reveal and charts.
   Kit.refresh = () => { $$("[data-toc]").forEach((el) => toc(el)); wirePhoneToc(); wireBlocks(); wireSide(); wireCopy(); wireSort(); wireReveal(); wireCharts(); };

@@ -24,6 +24,7 @@
      Kit.data.mode → "server" | "local" (opened from disk or another host)
      Kit.comments(element, {key, title, placeholder, compact})
      Kit.questions(element, spec)   decisions with options; also [data-questions] (see "Questions" below)
+     Kit.steps(element, spec)       a shared checklist (runbook, to-dos); also [data-steps] (see "Steps" below)
      Kit.data.author() / Kit.data.askAuthor() / Kit.data.personKey()
    Markup hooks: [data-save-status] shows save state, [data-author-chip] the name.
    ========================================================================== */
@@ -275,6 +276,18 @@
      Returns { acceptAll(), finish(), answers(), el } and fires kit:answers ({answered, total, answers, submitted}) on el. */
   const pad2 = (n) => String(n).padStart(2, "0");
   const qx = (s) => esc(s == null ? "" : s);
+  /* Notes from the agent on an item (a question, a step): authored ones from the spec ({text, author, at, tone}
+     or a plain string, plus a legacy `advice` string) and live items saved with artifact data append. Newest last;
+     older than the latest two fold away; resolved items are hidden. */
+  const noteDay = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
+  function notesHtml(authored, liveItems, agent) {
+    const items = (authored || []).map((u) => (typeof u === "string" ? { text: u } : u)).map((u) => ({ ...u, author: u.author || agent || "Agent", role: u.role || "agent", at: u.at || u.date }))
+      .concat((liveItems || []).filter((i) => !i.resolved).map((i) => ({ text: i.text, author: i.author, role: i.role, at: i.createdAt, tone: i.tone })))
+      .filter((u) => u.text).sort((a, b) => (a.at && b.at ? new Date(a.at) - new Date(b.at) : 0));
+    const card = (u) => `<div class="kit-q-update ${u.role === "agent" ? "agent" : "human"} ${qx(u.tone || "")}"><b>${qx(u.author || "Agent")}${u.at ? ` · ${qx(noteDay(u.at))}` : ""}</b><p>${qx(u.text)}</p></div>`;
+    const shown = items.slice(-2), older = items.slice(0, -2);
+    return (older.length ? `<details class="kit-q-older"><summary>${older.length} earlier note${older.length === 1 ? "" : "s"}</summary>${older.map(card).join("")}</details>` : "") + shown.map(card).join("");
+  }
   function questions(el, spec) {
     spec = Array.isArray(spec) ? { questions: spec } : spec || {};
     const list = (spec.questions || []).filter((q) => q && q.id && Array.isArray(q.options) && q.options.length);
@@ -420,16 +433,8 @@
 
     /* Notes from the agent: authored in the spec, plus live items in comments.q-<id> */
     const live = {}; // questionId -> items saved with artifact data append
-    const day = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
     function paintUpdates(q) {
-      const host = secOf(q).querySelector(".kit-q-updates");
-      const authored = (q.updates || []).concat(q.advice ? [{ text: q.advice }] : []).map((u) => (typeof u === "string" ? { text: u } : u))
-        .map((u) => ({ ...u, author: u.author || spec.agent || "Agent", role: u.role || "agent", at: u.at || u.date }));
-      const items = authored.concat((live[q.id] || []).filter((i) => !i.resolved).map((i) => ({ text: i.text, author: i.author, role: i.role, at: i.createdAt, tone: i.tone })))
-        .filter((u) => u.text).sort((a, b) => (a.at && b.at ? new Date(a.at) - new Date(b.at) : 0));
-      const card = (u) => `<div class="kit-q-update ${u.role === "agent" ? "agent" : "human"} ${qx(u.tone || "")}"><b>${qx(u.author || "Agent")}${u.at ? ` · ${qx(day(u.at))}` : ""}</b><p>${qx(u.text)}</p></div>`;
-      const shown = items.slice(-2), older = items.slice(0, -2);
-      host.innerHTML = (older.length ? `<details class="kit-q-older"><summary>${older.length} earlier note${older.length === 1 ? "" : "s"}</summary>${older.map(card).join("")}</details>` : "") + shown.map(card).join("");
+      secOf(q).querySelector(".kit-q-updates").innerHTML = notesHtml((q.updates || []).concat(q.advice ? [{ text: q.advice }] : []), live[q.id], spec.agent);
     }
     list.forEach(paintUpdates);
     Data.watch("comments.q-", (docs) => {
@@ -502,18 +507,196 @@
     return { el, acceptAll, finish, answers: () => ({ ...answers }), paint };
   }
   Kit.questions = questions;
+
+  /* ---------- Steps ([data-steps]) ----------
+     A checklist people work through together: a runbook (phases of steps with commands, what to expect and what
+     to do if it fails) or a to-do list for the reader. Everyone sees the same ticks, who ticked and when, and a note
+     per step; "Start a new run" archives the run. Spec (JSON in the attribute, data-steps-src="PLAN.steps", or
+     Kit.steps(el, spec)); an array is taken as the steps:
+       { phases: [{ id, title, summary, steps }] | steps: [{ id, title, why, owner, due, link: {href, label},
+                     commands: [], expect, fail: [], updates: [{ text, author, at, tone }] }],
+         title, key: "state.checklist", heading: 2 | 3, bar, runs, side: "#selector", history: "#selector", agent,
+         labels: { next, newRun, done, step } }
+     Keep step ids stable: progress is saved by id. Saves (the format agents read):
+       state.checklist           { runId, title, startedAt, startedBy, steps: { <id>: { done, by, at, note, noteBy, noteAt } } }
+       state.checklist.<runId>   an archived run (same shape, plus archivedAt, archivedBy)
+     Agents add a note on a step live: artifact data append <slug> comments.s-<id> --item '{"text":"…"}' --author "Claude Code".
+     Returns { el, next(), paint } and fires kit:steps ({done, total, run}) on el. */
+  const STEP_ICON = {
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    note: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12.5V3.5h10v6l-3 3H3z M10 12.5v-3h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  };
+  function steps(el, spec) {
+    spec = Array.isArray(spec) ? { steps: spec } : spec || {};
+    const phases = (spec.phases || [{ id: "", title: "", steps: spec.steps || [] }]).map((p) => ({ ...p, steps: (p.steps || []).filter((st) => st && st.id) })).filter((p) => p.steps.length);
+    const all = phases.flatMap((p) => p.steps.map((st) => ({ ...st, phase: p.id })));
+    const KEY = spec.key || "state.checklist", total = all.length, titled = phases.some((p) => p.title);
+    const L = { next: "Jump to next step", newRun: "Start a new run", done: "done", allDone: "All steps done ✓", step: "step", ...(spec.labels || {}) };
+    const H = spec.heading === 3 ? 3 : titled ? 2 : 3, HS = titled ? Math.min(H + 1, 4) : H;
+    el.classList.add("kit-steps"); el.dataset.wired = "1";
+    if (!total) { el.innerHTML = '<p class="muted">No steps.</p>'; return {}; }
+    const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }) : "");
+    const dayYear = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "");
+    const runIdNow = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}`; };
+    const runTitle = spec.title || document.title;
+    const fresh = () => ({ runId: runIdNow(), title: runTitle, startedAt: now(), startedBy: Data.author() || "", steps: {} });
+    const bar = spec.bar !== false, runsOn = spec.runs !== false;
+
+    let n = 0;
+    const stepHtml = (st) => { n++; const id = qx(st.id); return `<li class="kit-st" id="s-${id}" data-step="${id}">
+        <button class="kit-st-tick" type="button" aria-pressed="false" aria-label="Mark ${qx(L.step)} ${n} done: ${qx(st.title)}"><span class="kit-st-n">${n}</span>${STEP_ICON.check}</button>
+        <div class="kit-st-card">
+          <div class="kit-st-top"><h${HS} class="kit-st-title">${qx(st.title)}</h${HS}>${st.owner ? `<span class="tag outline">${qx(st.owner)}</span>` : ""}${st.due ? `<span class="tag warn">${qx(st.due)}</span>` : ""}<span class="tag accent kit-st-nexttag">Next</span><span class="spacer"></span><button class="btn ghost kit-st-more" type="button" aria-expanded="false">Show details</button></div>
+          <div class="kit-st-body">
+            ${st.why ? `<p class="kit-st-why">${qx(st.why)}</p>` : ""}
+            ${st.link && st.link.href ? `<p class="kit-st-link"><a href="${qx(st.link.href)}"${/^https?:/.test(st.link.href) ? ' target="_blank" rel="noopener"' : ""}>${qx(st.link.label || st.link.href)} →</a></p>` : ""}
+            ${(st.commands || []).map((c) => `<pre class="kit-st-cmd" data-copy${st.lang ? ` data-lang="${qx(st.lang)}"` : ""}>${qx(c)}</pre>`).join("")}
+            ${st.expect ? `<div class="kit-st-expect"><span class="eyebrow">Expected</span><pre>${qx(st.expect)}</pre></div>` : ""}
+            ${st.fail && st.fail.length ? `<details class="fold kit-st-fail"><summary>If this fails</summary><div class="in"><ul class="dots">${st.fail.map((f) => `<li>${qx(f)}</li>`).join("")}</ul></div></details>` : ""}
+          </div>
+          <div class="kit-q-updates kit-st-updates" aria-live="polite"></div>
+          <div class="kit-st-foot"><span class="kit-st-who mono"></span><span class="spacer"></span><button class="btn ghost kit-st-notebtn" type="button">${STEP_ICON.note}<span>Add note</span></button></div>
+          <div class="kit-st-notebox" hidden><label class="sr-only" for="sn-${id}">Note for ${qx(st.title)}</label><textarea id="sn-${id}" rows="2" placeholder="What happened? Output, deviations, links…"></textarea><div class="row" style="--gap:8px"><span class="spacer"></span><button class="btn" type="button" data-note-cancel>Cancel</button><button class="btn primary" type="button" data-note-save>Save note</button></div></div>
+          <p class="kit-st-note" hidden></p>
+        </div></li>`; };
+    el.innerHTML = (bar ? `<div class="kit-st-bar" aria-live="polite"><div class="kit-st-bartop">
+          <div class="kit-st-run"><span class="eyebrow">Current run</span><b data-run-title></b><span class="muted" data-run-meta></span></div>
+          <div class="kit-st-count"><b data-done>0</b><span>/ ${total} ${qx(L.done)}</span></div>
+          <div class="row" style="--gap:8px"><button class="btn" type="button" data-next>${qx(L.next)}</button>${runsOn ? `<button class="btn ghost" type="button" data-new-run>${qx(L.newRun)}</button>` : ""}</div></div>
+        <div class="kit-st-progress" role="img"></div><p class="kit-st-last mono"></p></div>` : "") +
+      phases.map((p, pi) => (p.title ? `<section class="kit-st-phase" id="p-${qx(p.id || pi + 1)}"><div class="kit-st-phasehead"><span class="big-num">${pi + 1}</span><div>${phases.length > 1 ? `<div class="eyebrow thread">Phase ${pi + 1} of ${phases.length}</div>` : ""}<h${H}>${qx(p.title)}</h${H}>${p.summary ? `<p class="muted">${qx(p.summary)}</p>` : ""}</div><span class="kit-st-phasecount mono" data-phase="${qx(p.id || pi + 1)}"></span></div>` : "") +
+        `<ol class="kit-st-list">${p.steps.map(stepHtml).join("")}</ol>` + (p.title ? "</section>" : "")).join("");
+    const side = spec.side && document.querySelector(spec.side), history = spec.history && document.querySelector(spec.history);
+    if (side) { let k = 0; side.innerHTML = phases.map((p, pi) => (p.title ? `<h5>${pi + 1} · ${qx(p.title)}</h5>` : "") + p.steps.map((st) => { k++; return `<a href="#s-${qx(st.id)}" data-side-step="${qx(st.id)}"><b>${pad2(k)}</b><span>${qx(st.title)}</span><i class="kit-st-check" aria-hidden="true">${STEP_ICON.check}</i></a>`; }).join("")).join(""); }
+    const li = (id) => el.querySelector(`.kit-st[data-step="${CSS.escape(id)}"]`);
+
+    /* Progress */
+    let doc = null, run = fresh(), archived = [];
+    const stateOf = (id) => (run.steps && run.steps[id]) || {};
+    function paint() {
+      const done = all.filter((st) => stateOf(st.id).done).length, next = all.find((st) => !stateOf(st.id).done);
+      if (bar) {
+        el.querySelector("[data-run-title]").textContent = run.title || runTitle;
+        el.querySelector("[data-run-meta]").textContent = doc ? `Run ${run.runId} · started ${dayYear(run.startedAt)} ${hm(run.startedAt)}${run.startedBy ? " by " + run.startedBy : ""}` : "Not started yet: tick the first step to start.";
+        el.querySelector("[data-done]").textContent = done;
+        const prog = el.querySelector(".kit-st-progress");
+        prog.setAttribute("aria-label", `${done} of ${total} steps done`);
+        prog.innerHTML = all.map((st) => `<a href="#s-${qx(st.id)}" class="${stateOf(st.id).done ? "on" : ""} ${next === st ? "nx" : ""}" title="${qx(st.title)}"></a>`).join("");
+        const last = all.map((st) => ({ st, s: stateOf(st.id) })).filter((x) => x.s.at).sort((a, b) => (a.s.at < b.s.at ? 1 : -1))[0];
+        el.querySelector(".kit-st-last").textContent = last ? `Last change: ${last.s.by || "someone"} ${last.s.done ? "ticked" : "unticked"} “${last.st.title}” · ${ago(last.s.at)}` : done === total ? "" : "Nobody has ticked a step yet.";
+        el.querySelector(".kit-st-bar").classList.toggle("complete", done === total);
+        const nb = el.querySelector("[data-next]"); nb.textContent = done === total ? L.allDone : L.next; nb.disabled = done === total;
+      }
+      all.forEach((st) => {
+        const item = li(st.id), s = stateOf(st.id);
+        item.classList.toggle("done", !!s.done); item.classList.toggle("next", next === st);
+        item.querySelector(".kit-st-tick").setAttribute("aria-pressed", String(!!s.done));
+        item.querySelector(".kit-st-who").textContent = s.done ? `Done by ${s.by || "someone"} · ${hm(s.at)}` : s.at ? `Unticked by ${s.by || "someone"} · ${hm(s.at)}` : "";
+        const nt = item.querySelector(".kit-st-note"); nt.hidden = !s.note;
+        if (s.note) nt.innerHTML = `<span class="mono">${qx(s.noteBy || "")}${s.noteAt ? " · " + hm(s.noteAt) : ""}</span>${qx(s.note)}`;
+        item.querySelector(".kit-st-notebtn span").textContent = s.note ? "Edit note" : "Add note";
+        const sl = side && side.querySelector(`[data-side-step="${CSS.escape(st.id)}"]`);
+        if (sl) { sl.classList.toggle("done", !!s.done); sl.classList.toggle("nx", next === st); }
+      });
+      phases.forEach((p, pi) => { const c = el.querySelector(`[data-phase="${CSS.escape(String(p.id || pi + 1))}"]`); if (c) c.textContent = `${p.steps.filter((st) => stateOf(st.id).done).length} / ${p.steps.length}`; });
+      if (history) history.innerHTML = archived.length ? archived.map((a) => {
+        const v = a.value || {}, d = Object.values(v.steps || {}).filter((x) => x.done).length;
+        return `<li><b>${qx(v.title || "Run")}</b><span class="mono">${qx(v.runId || a.key.slice(KEY.length + 1))}</span><span>${dayYear(v.startedAt)}${v.startedBy ? " · " + qx(v.startedBy) : ""}</span><span class="tag ${d === total ? "good" : "warn"} dot">${d} / ${total} done</span></li>`;
+      }).join("") : '<li class="empty">No archived runs yet.</li>';
+      el.dispatchEvent(new CustomEvent("kit:steps", { bubbles: true, detail: { done, total, run } }));
+    }
+    // Merge a change into the latest saved run, retrying when someone else saved in between.
+    async function mutate(change) {
+      await Data.ensureAuthor();
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const latest = await Data.get(KEY);
+        const value = latest ? JSON.parse(JSON.stringify(latest.value)) : { ...run, startedBy: run.startedBy || Data.author() };
+        value.steps = value.steps || {};
+        change(value);
+        try { doc = await Data.set(KEY, value, { expectedRevision: latest ? latest.revision : 0 }); run = doc.value; paint(); return; }
+        catch (e) { if (e.code !== "DATA_CONFLICT") throw e; }
+      }
+    }
+    el.addEventListener("click", async (e) => {
+      const item = e.target.closest(".kit-st");
+      if (e.target.closest("[data-next]")) return next();
+      if (e.target.closest("[data-new-run]")) return newRun(e.target.closest("[data-new-run]"));
+      if (!item) return;
+      const id = item.dataset.step, t = (sel) => e.target.closest(sel);
+      if (t(".kit-st-tick")) {
+        const btn = t(".kit-st-tick"), done = btn.getAttribute("aria-pressed") !== "true";
+        btn.disabled = true;
+        try { await mutate((v) => { v.steps[id] = { ...(v.steps[id] || {}), done, by: Data.author() || "Anonymous", at: now() }; }); if (done) { item.classList.add("just"); setTimeout(() => item.classList.remove("just"), 900); } }
+        catch (err) { /* the save status shows the error */ }
+        finally { btn.disabled = false; }
+      } else if (t(".kit-st-more")) {
+        const open = item.classList.toggle("open"); t(".kit-st-more").setAttribute("aria-expanded", String(open)); t(".kit-st-more").textContent = open ? "Hide details" : "Show details";
+      } else if (t(".kit-st-notebtn")) {
+        const box = item.querySelector(".kit-st-notebox"); box.hidden = !box.hidden;
+        if (!box.hidden) { const ta = box.querySelector("textarea"); ta.value = stateOf(id).note || ""; ta.focus(); }
+      } else if (t("[data-note-cancel]")) item.querySelector(".kit-st-notebox").hidden = true;
+      else if (t("[data-note-save]")) {
+        const b = t("[data-note-save]"), text = item.querySelector(".kit-st-notebox textarea").value.trim();
+        b.disabled = true;
+        try { await mutate((v) => { v.steps[id] = { ...(v.steps[id] || {}), note: text, noteBy: Data.author() || "Anonymous", noteAt: now() }; }); item.querySelector(".kit-st-notebox").hidden = true; }
+        finally { b.disabled = false; }
+      }
+    });
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && e.target.matches(".kit-st-notebox textarea")) e.target.closest(".kit-st-notebox").querySelector("[data-note-save]").click(); });
+    function next() {
+      const st = all.find((x) => !stateOf(x.id).done); if (!st) return;
+      const item = li(st.id);
+      item.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+      item.querySelector(".kit-st-tick").focus({ preventScroll: true });
+    }
+    async function newRun(btn) {
+      const done = all.filter((st) => stateOf(st.id).done).length;
+      if (!doc) { run = fresh(); paint(); return; }
+      if (!confirm(`Archive run ${run.runId} (${done} of ${total} done) and start a new, empty run for everyone?`)) return;
+      await Data.ensureAuthor();
+      btn.disabled = true;
+      try {
+        await Data.set(`${KEY}.${run.runId}`, { ...run, archivedAt: now(), archivedBy: Data.author() });
+        doc = await Data.set(KEY, { ...fresh(), startedBy: Data.author() }, { expectedRevision: doc.revision });
+        run = doc.value;
+        archived = (await Data.list(KEY + ".")).sort((a, b) => (a.key < b.key ? 1 : -1)); // show the archived run at once
+        paint();
+      } catch (e) { if (e.code === "DATA_CONFLICT") alert("Someone changed the run just now. Check the page and try again."); }
+      finally { btn.disabled = false; }
+    }
+
+    /* Notes from the agent per step */
+    const live = {};
+    const paintNotes = (st) => { li(st.id).querySelector(".kit-st-updates").innerHTML = notesHtml(st.updates, live[st.id], spec.agent); };
+    all.forEach(paintNotes);
+    Data.watch("comments.s-", (docs) => { all.forEach((st) => { const d = docs.find((x) => x.key === "comments.s-" + st.id); live[st.id] = (d && d.value && d.value.items) || []; paintNotes(st); }); }, { interval: 10000 });
+
+    paint();
+    Data.watch(KEY, (docs) => {
+      const cur = docs.find((d) => d.key === KEY);
+      archived = docs.filter((d) => d.key.startsWith(KEY + ".")).sort((a, b) => (a.key < b.key ? 1 : -1));
+      if (cur) { doc = cur; run = cur.value || fresh(); run.steps = run.steps || {}; }
+      paint();
+    }, { interval: 5000 });
+    setInterval(paint, 60000);
+    return { el, next, paint };
+  }
+  Kit.steps = steps;
   function wireQuestions() {
     let added = false;
-    document.querySelectorAll("[data-questions], [data-questions-src]").forEach((el) => {
-      if (el.dataset.wired) return;
-      const src = el.getAttribute("data-questions-src"), raw = (el.getAttribute("data-questions") || "").trim();
-      try {
-        const spec = src ? src.split(".").reduce((o, k) => (o ? o[k] : undefined), window) : raw ? JSON.parse(raw) : null;
-        if (!spec) throw new Error("no questions given (data-questions JSON or data-questions-src)");
-        questions(el, spec); added = true;
-      } catch (e) { el.dataset.wired = "1"; el.innerHTML = `<p class="kit-block-error">These questions could not be shown: ${esc(e.message)}</p>`; console.error("Kit: questions failed", el, e); }
+    [["questions", questions, "These questions"], ["steps", steps, "These steps"]].forEach(([name, fn, what]) => {
+      document.querySelectorAll(`[data-${name}], [data-${name}-src]`).forEach((el) => {
+        if (el.dataset.wired) return;
+        const src = el.getAttribute(`data-${name}-src`), raw = (el.getAttribute(`data-${name}`) || "").trim();
+        try {
+          const spec = src ? src.split(".").reduce((o, k) => (o ? o[k] : undefined), window) : raw ? JSON.parse(raw) : null;
+          if (!spec) throw new Error(`nothing given (data-${name} JSON or data-${name}-src)`);
+          fn(el, spec); added = true;
+        } catch (e) { el.dataset.wired = "1"; el.innerHTML = `<p class="kit-block-error">${what} could not be shown: ${esc(e.message)}</p>`; console.error(`Kit: ${name} failed`, el, e); }
+      });
     });
-    if (added && Kit.toc) document.querySelectorAll("[data-toc]").forEach((t) => Kit.toc(t)); // questions can be chapter items
+    if (added && Kit.toc) document.querySelectorAll("[data-toc]").forEach((t) => Kit.toc(t)); // questions and phases can be chapters or their items
+    if (added) { if (Kit.wireCode) Kit.wireCode(); if (Kit.wireCopy) Kit.wireCopy(); } // commands in steps: colouring and Copy buttons
   }
   document.addEventListener("kit:ready", wireQuestions);
   const refreshBefore = Kit.refresh;

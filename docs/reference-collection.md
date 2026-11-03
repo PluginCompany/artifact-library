@@ -11,7 +11,7 @@ Every server starts with a collection of finished, polished artifacts, one per c
 | Plan | `ref-decision-record` | Compare options and record a decision (adjustable weighted scoring) | ✓ |
 | Build | `ref-live-run-log` | Show a long task as it happens (driven by `artifact data set`) | ✓ |
 | Build | `ref-debug-notebook` | Write up a bug investigation (hypotheses, evidence, root cause, fix) | ✓ |
-| Build | `ref-runbook` | Run an operational procedure together (shared ticks, rollback) | ✓ |
+| Build | `ref-runbook` | Run an operational procedure together (shared ticks, notes, runs, rollback), built on the kit's steps block | ✓ |
 | Review | `ref-code-review` | Explain a change for review: why, screenshots with notes, each change with its reasoning and a short diff, decisions to confirm, a verdict | ✓ |
 | Review | `ref-implementation-review` | Review finished work finding by finding (annotated screenshots, criteria, a verdict) | ✓ |
 | Review | `ref-results-evidence` | Hand finished work back with proof: criteria and their checks, before/after, evidence, sign-off | ✓ |
@@ -41,7 +41,7 @@ ref-implementation-review/
 
 ## The kit
 
-`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme and style toggles, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`, lazy images, galleries, diffs and syntax colouring), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md), and the questions block) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
+`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme and style toggles, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`, lazy images, galleries, diffs and syntax colouring), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md), and the questions and steps blocks) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
 
 ### Blocks for explaining
 
@@ -57,6 +57,7 @@ Higher-level blocks so a page shows its structure instead of describing it. Each
 | Changes and what stays | `<div class="delta"><div class="changes">…</div><div class="stays">…</div></div>` | Reassuring readers about what does not change |
 | Steps with files | `<ol class="steps">` with `<p class="files"><code>src/x.ts</code></p>` in a step | Work plans that say which files each step touches |
 | Questions | `<div data-questions='{"questions":[{"id":"…","title":"…","recommended":"a","options":[{"id":"a","label":"…","summary":"…","pros":[],"cons":[],"effort":"S","then":"…"}]}]}'></div>`, `data-questions-src="PLAN.questions"` or `Kit.questions(el, spec)`; needs `kit/kit-data.js` | Decisions you need from the reader, on their own page or as a chapter of a plan, review or report: option cards with trade-offs and a recommended default, a note per question, "Accept all recommended", a summary and "I'm done". Saves `answer.<id>` and `state.submitted` ([saved-data.md](saved-data.md)); `heading`, `nav`, `toolbar`, `summary`, `finish` and `labels` adapt it. Notes from the agent show under a question: `updates` in the spec, or live with `artifact data append <slug> comments.q-<id>` |
+| Steps & to-dos | `<div data-steps='{"steps":[{"id":"…","title":"…","why":"…","owner":"You","due":"…","link":{"href":"…","label":"…"}}]}'></div>` (runbooks: `phases` of steps with `commands`, `expect`, `fail`), `data-steps-src="PLAN.todo"` or `Kit.steps(el, spec)`; needs `kit/kit-data.js` | Steps the reader takes (to-dos with owner, due date and a link to where to do it) or a procedure you run together, on its own page (start from `ref-runbook`) or as a chapter: shared ticks with who and when, a note per step, a sticky progress bar with "Jump to next step" and "Start a new run". Saves `state.checklist` and archived runs `state.checklist.<runId>` ([saved-data.md](saved-data.md)); `key` gives a second list its own document; `side`, `history`, `bar`, `runs`, `heading` and `labels` adapt it. Notes from the agent show under a step: `updates` in the spec, or live with `artifact data append <slug> comments.s-<id>` |
 
 ### Images and code
 

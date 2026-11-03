@@ -4,6 +4,20 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-03
+
+### Added
+- **Steps** (`[data-steps]`, `data-steps-src="PLAN.todo"`, `Kit.steps(el, spec)`): a shared checklist as a kit block, for a runbook (phases of steps with copyable commands, the output to expect and "if this fails") or a to-do list the agent hands to the reader (`owner` such as *You* or *Agent*, `due`, and a `link` to where to do it). Everyone sees the same ticks with who ticked and when, and a note per step; done steps fold to one line; a sticky progress bar has "Jump to next step" and "Start a new run", which archives the run. `side` puts the ticks in a side menu and `history` lists archived runs. It lives in `kit/kit-data.js`, so it works in any page that loads it: standalone, or as one chapter of a plan or report. `title`, `key`, `heading`, `bar`, `runs` and `labels` adapt it; an array is taken as the steps; it returns `next()` and fires `kit:steps` (`{done, total, run}`). Documented with a live example in the style guide.
+- **Notes from the agent on a step**, shown under it like on a question: `updates: [{text, author, at, tone}]` in the spec when the page is republished, or live: `artifact data append <slug> comments.s-<id> --item '{"text":"…"}' --author "Claude Code"` appears on open pages within about 10 s.
+- Progress is saved in the format `ref-runbook` always used, so agents read it as before: `state.checklist` `{runId, title, startedAt, startedBy, steps: {<id>: {done, by, at, note, noteBy, noteAt}}}`, and archived runs as `state.checklist.<runId>` (plus `archivedAt`, `archivedBy`). `key` saves under another name, for a second list on one page.
+
+### Changed
+- `ref-runbook` is built on the steps block. Its `app.js` keeps only the header, the facts, the seeding note and the rollback, so fixes to the checklist reach every page instead of each copy of the renderer. Artifacts already made from the old runbook keep their own copy and keep working.
+- The skill, the agent guide and the docs tell agents to use `[data-steps]` for to-dos for the reader and procedures to run together, instead of copying a renderer.
+
+### Fixed
+- `install.sh` replaces the binary atomically: it writes the new file next to the old one and renames it, instead of moving it from `/tmp`, which is a copy when `/tmp` is another filesystem. An agent that starts `artifact` during an upgrade gets the old or the new binary, never a half-written one.
+
 ## [0.11.0] - 2026-11-03
 
 ### Added

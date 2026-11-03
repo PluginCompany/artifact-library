@@ -37,7 +37,7 @@ window.COLLECTION = [
     job: "write up a bug investigation", shows: ["Hypothesis cards with status", "Evidence and before/after code", "Comments per hypothesis"] },
   { slug: "ref-runbook", phase: "Build", category: "Runbook", title: "Release and deploy runbook", source: "kit", saves: true,
     description: "A step-by-step operational procedure with copyable commands, shared ticks and an escape hatch at every step.",
-    job: "run an operational procedure together", shows: ["Shared progress with who and when", "If-this-fails boxes and rollback", "Runs archived and restartable"] },
+    job: "run an operational procedure together", shows: ["Shared progress with who and when", "If-this-fails boxes and rollback", "Built on the kit's steps block"] },
 
   { slug: "ref-implementation-review", phase: "Review", category: "Review", title: "Implementation review", source: "kit", saves: true,
     description: "A review of finished work: verdict, acceptance criteria and findings on annotated screenshots, each with its own thread.",

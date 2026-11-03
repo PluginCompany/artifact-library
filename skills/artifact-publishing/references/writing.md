@@ -105,6 +105,7 @@ When a chapter explains something with a shape, draw the shape. Use these kit bl
 | Several screenshots | Gallery (grid, sidebar walkthrough, notes on the image, compare) | `<div data-gallery="grid">` with `<figure>`s, or JSON |
 | A code change | A short diff of the lines that carry it, with notes | `<div data-diff='{…}'>` with `data-before`/`data-after` scripts |
 | Open decisions | Questions with options, a default and trade-offs | `<div data-questions='{…}'>` or `data-questions-src` |
+| Steps the reader takes, or a procedure run together | A shared checklist with ticks, notes and progress | `<div data-steps='{…}'>` or `data-steps-src` |
 
 A chapter longer than about 300 words without any table, diagram, figure or list is a warning sign: find the structure in it.
 
@@ -229,6 +230,20 @@ Use the kit's questions block (needs `kit/kit-data.js`): for a page of decisions
 ```
 
 Long questions go in `data.js` (`data-questions-src="PLAN.questions"`). Options can carry a picture (`image`, `code` with `lang`, `html`); `heading: 2` when the questions are the page's chapters; `summary: false` and `finish: false` inside a longer page; `labels` renames the words (a code review uses Built / Agreed / Overruled). Answers save as `answer.<id>` (`choice`, `choiceLabel`, `followsRecommendation`, `note`), "I'm done" as `state.submitted`. Read them with `artifact feedback <slug>`, and answer a reader's note on the question it belongs to (`artifact data append <slug> comments.q-<id>`, or `updates` in the spec when you republish).
+
+**Steps for the reader.** When the reader has to do things (order a server, add a key, approve in another tool) or you run a procedure together, list them in the kit's steps block instead of a paragraph: one step per action, a title that is the action, why it matters, who does it (`owner`: *You*, *Agent*, a name), by when (`due`) and a `link` to where to do it; runbook steps add `commands`, the output to `expect` and what to do if it `fail`s. A page of steps starts from `ref-runbook`; a few to-dos go in a chapter of the plan or report. Never copy a checklist renderer into the page.
+
+```html
+<section id="todo"><h2>What you need to do</h2>
+  <div data-steps='{"key": "state.todo", "runs": false, "steps": [
+    {"id": "box", "title": "Order the Storage Box", "owner": "You", "due": "Fri 7 Nov",
+     "why": "The backups need somewhere outside the servers.", "link": {"href": "https://…", "label": "Open the order page"}},
+    {"id": "first-run", "title": "Run the first backup", "owner": "Agent", "why": "I check that a restore works before the timer takes over."}
+  ]}'></div>
+</section>
+```
+
+Ticks and notes save as `state.checklist` (or the `key` you give; a second list on one page needs its own). Answer a reader's note on the step (`artifact data append <slug> comments.s-<id>`, or `updates` in the spec when you republish).
 
 ## 8. Review your page before sharing
 
