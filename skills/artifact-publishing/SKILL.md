@@ -16,7 +16,7 @@ This file works on its own. Three optional references sit beside it: `references
 
 Follow every rule. They are what separates a page people act on from a page they skim and close.
 
-1. **Copy a reference, don't start blank.** Download the closest reference (table below), keep its plumbing and `kit/`, replace the content. Use kit tokens and components; never hard-code colours or load fonts and scripts from the internet.
+1. **Copy a reference, don't start blank.** Download the closest reference (table below), keep its plumbing and `kit/`, replace the content. Remove what belongs to the reference itself: the Collection button, "Example content" tags on real content, and the "Reference artifact · source …" footer (write your own: who prepared it, for whom, when, from what). These carry `data-ref-only` and the kit hides them on copies anyway. Use kit tokens and components; never hard-code colours or load fonts and scripts from the internet.
 2. **Name the reader and the job.** Before writing, decide who opens the link and what they must do with it (approve, choose, verify, follow along). Cut what does not serve that.
 3. **The first screen says what, why and what you need.** Kind of page, the conclusion or proposal in one or two sentences, what the reader must do and where, and status (author, date, draft/awaiting approval/done). Conclusion first, reasons after.
 4. **A global chapter menu that stays on screen.** Every chapter is a `<section id="…">` with an `<h2>`. With 3 or more chapters, link every chapter from the **sticky top bar** (default): `<header class="topbar">` → brand → `<nav class="topnav" data-toc></nav>`. For long documents (8+ chapters or sub-sections) use a **sticky side nav** instead: `<nav class="side" data-toc></nav>` in `.shell`. Never put the menu in the page body, where it scrolls away. The menu lists **main chapters only** (aim for 4–9): individual questions, findings, steps or risks are items of one chapter ("Decisions", "Findings"), so put them inside that chapter's `<section id>` (or a `[data-chapter][id]` wrapper with `data-toc-label`): the top bar leaves them out and a side menu shows them as a sub-menu that folds open in that chapter; `data-toc-skip` leaves any other section out. The kit fills it, highlights the chapter being read and gives phones a Contents button; `artifact lint` reports `no-global-nav` and `nav-not-sticky` as errors.
@@ -58,7 +58,8 @@ Every server ships a reference collection (`<server>/artifacts/reference-collect
 
 ```bash
 artifact download ref-implementation-review --out ./review   # page, data.js and kit/
-# edit data.js / index.html — each index.html starts with an EDITING GUIDE comment
+# edit data.js / index.html — each index.html starts with an EDITING GUIDE comment;
+# drop the Collection button and the reference footer, rename the brand
 artifact publish ./review --slug login-review --title "Login flow review" --description "Acceptance criteria, annotated screenshots and findings." --json
 ```
 

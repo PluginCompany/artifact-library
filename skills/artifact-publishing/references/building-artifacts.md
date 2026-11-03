@@ -64,7 +64,7 @@ Store human-readable labels next to ids so `artifact feedback` output makes sens
 3. Three or more chapters → a global chapter menu that stays on screen: `nav.topnav[data-toc]` in the sticky top bar, or `nav.side[data-toc]` for long documents.
 4. Plain language; no paragraph longer than about four lines; every major chapter has a table, diagram, chart, figure or structured list.
 5. `artifact lint <slug>` passes without errors; you looked at its screenshots.
-6. Example or invented content is labelled "Example content".
+6. Example or invented content is labelled "Example content"; nothing of the reference you started from is left: no Collection button, no "Reference" label in the brand, no "Reference artifact · source …" footer.
 7. Real evidence over claims: screenshots, numbers, commands that were actually run. Never fabricate test results. Screenshots below the first screen load lazily (`img[data-src]` with `width`/`height`).
 8. Checked at 1440 px and 375–390 px, light and dark, with no horizontal scroll and no console errors (screenshot it with Playwright and look at the images).
 9. Prints sensibly; respects reduced motion; keyboard reachable.

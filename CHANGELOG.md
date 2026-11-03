@@ -4,6 +4,18 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-03
+
+### Added
+- **Resizable side menu.** On wide screens, drag the right edge of a kit page's side menu (or focus the handle and use the arrow keys, Shift for bigger steps); double-click or Home resets it. The width is remembered for every kit page on the server and is limited to 200–560 px.
+- **Reference-only chrome is marked `data-ref-only`**: the Collection button, "Example content" tags and the "Reference artifact · source …" footer of every reference. The kit shows them on the seeded references (`ref-*`, `agent-guide`, `reference-collection`, `artifact-cli`) and hides them on pages made from one, so a runbook or plan copied from a reference no longer links readers to the collection or calls itself a reference.
+
+### Changed
+- The skill, the reference docs and the blank template tell agents to remove reference chrome and write their own footer (who prepared it, for whom, when, from what). The template no longer has a Collection button or a "Reference" label.
+
+### Fixed
+- **Scrolling up a long page could crawl.** When the side menu followed the section being read, it used `scrollIntoView`, which also scrolled the page a few pixels (the page's scroll padding for the sticky bar counts against menu links near the top). Each nudge moved the reading line to the previous section and nudged again, so scrolling up a long runbook fought the reader for seconds. The menu now scrolls itself only; a 31-step runbook went from 19 page nudges per scroll up to none.
+
 ## [0.10.0] - 2026-11-03
 
 ### Added

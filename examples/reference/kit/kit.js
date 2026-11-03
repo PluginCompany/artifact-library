@@ -7,6 +7,8 @@
                            (kit.js puts a Bold / Clean style button next to it)
      [data-style-toggle]   place the style button yourself instead
      [data-side-toggle]    button that opens the .side nav on small screens
+                           (on wide screens the .side menu is resizable: drag its edge, arrows, double-click resets)
+     [data-ref-only]       shown only on the seeded references, hidden on pages made from them
      .side a[href^="#"]    scroll-spy: marks the current section link
      pre[data-copy]        adds a Copy button
      table[data-sortable]  click a th[data-sort] to sort (data-sort="num" for numbers)
@@ -63,6 +65,15 @@
     set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} },
   };
   Kit.$ = $; Kit.$$ = $$; Kit.store = store;
+
+  // Reference-only chrome (the Collection button, "Example content" tags, the "Reference artifact · source …"
+  // footer) carries data-ref-only. It shows on the seeded references themselves and is hidden on every page
+  // made from them, so a copy never sends readers to the collection or claims to be a reference.
+  Kit.isReference = (() => {
+    const m = /\/artifacts\/([^/]+)\//.exec(location.pathname);
+    return m ? /^(ref-|agent-guide$|reference-collection$|artifact-cli$)/.test(m[1]) : /\/examples\/reference\//.test(location.pathname);
+  })();
+  if (!Kit.isReference) document.documentElement.setAttribute("data-kit-copy", "");
 
   /* ---------- Theme ---------- */
   const THEME_KEY = "kit-theme";
@@ -175,13 +186,17 @@
     if (!sideWired) $$("[data-side-toggle]").forEach((b) => b.addEventListener("click", () => side && side.classList.toggle("open")));
     if (!side || sideWired) return;
     sideWired = true;
+    wireSideResize(side);
     let pinned = null, pinTimer = null, frame = 0;
     const links = () => $$('a[href^="#"]', side).filter((a) => a.getAttribute("href").length > 1);
     const target = (a) => document.getElementById(decodeURIComponent(a.getAttribute("href").slice(1)));
     const mark = (current) => links().forEach((a) => {
       const on = a === current;
       a.classList.toggle("cur", on);
-      if (on) { a.setAttribute("aria-current", "location"); if (side.scrollHeight > side.clientHeight) { const r = a.getBoundingClientRect(), sr = side.getBoundingClientRect(); if (r.top < sr.top || r.bottom > sr.bottom) a.scrollIntoView({ block: "nearest" }); } }
+      // Keep the current link visible by scrolling the side menu only. scrollIntoView would also scroll the
+      // page (the root's scroll-padding counts the sticky bar), which moves the reading line, marks the
+      // previous section and scrolls again: a slow crawl up the page while the reader scrolls up.
+      if (on) { a.setAttribute("aria-current", "location"); if (side.scrollHeight > side.clientHeight) { const r = a.getBoundingClientRect(), sr = side.getBoundingClientRect(), m = 12; if (r.top < sr.top + m) side.scrollTop -= sr.top + m - r.top; else if (r.bottom > sr.bottom - m) side.scrollTop += r.bottom - (sr.bottom - m); } }
       else a.removeAttribute("aria-current");
     });
     const update = () => {
@@ -212,6 +227,45 @@
     });
     if ("MutationObserver" in window) new MutationObserver(schedule).observe(side, { childList: true, subtree: true });
     schedule();
+  }
+
+  // The side menu is resizable on wide screens: drag its right edge, or focus the handle and use the arrow
+  // keys; double-click (or Home) resets. The width is remembered for every kit page on the server.
+  const SIDE_KEY = "kit-side-width", SIDE_MIN = 200;
+  function wireSideResize(side) {
+    const shell = side.closest(".shell");
+    if (!shell || $(".kit-side-grip", shell)) return;
+    const max = () => Math.max(SIDE_MIN, Math.min(560, Math.round(innerWidth * 0.45)));
+    const grip = document.createElement("div");
+    grip.className = "kit-side-grip"; grip.tabIndex = 0; grip.setAttribute("data-kit-made", "");
+    grip.setAttribute("role", "separator"); grip.setAttribute("aria-orientation", "vertical"); grip.setAttribute("aria-label", "Resize the menu");
+    grip.title = "Drag to resize the menu · double-click to reset";
+    shell.appendChild(grip);
+    const set = (w, save) => {
+      if (w == null) { shell.style.removeProperty("--side-w"); if (save) store.set(SIDE_KEY, null); }
+      else { w = Math.round(Math.max(SIDE_MIN, Math.min(max(), w))); shell.style.setProperty("--side-w", w + "px"); if (save) store.set(SIDE_KEY, String(w)); }
+      grip.setAttribute("aria-valuenow", String(Math.round(side.getBoundingClientRect().width)));
+    };
+    grip.setAttribute("aria-valuemin", String(SIDE_MIN)); grip.setAttribute("aria-valuemax", String(max()));
+    const saved = parseInt(store.get(SIDE_KEY), 10);
+    set(saved > 0 ? saved : null, false);
+    grip.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault(); grip.setPointerCapture(e.pointerId); shell.classList.add("kit-resizing");
+      const left = shell.getBoundingClientRect().left;
+      const move = (ev) => set(ev.clientX - left, false);
+      const up = () => { grip.removeEventListener("pointermove", move); shell.classList.remove("kit-resizing"); set(side.getBoundingClientRect().width, true); };
+      grip.addEventListener("pointermove", move);
+      grip.addEventListener("pointerup", up, { once: true });
+      grip.addEventListener("pointercancel", up, { once: true });
+    });
+    grip.addEventListener("dblclick", () => set(null, true));
+    grip.addEventListener("keydown", (e) => {
+      const w = side.getBoundingClientRect().width, step = e.shiftKey ? 48 : 16;
+      if (e.key === "ArrowLeft") set(w - step, true); else if (e.key === "ArrowRight") set(w + step, true);
+      else if (e.key === "Home") set(null, true); else return;
+      e.preventDefault();
+    });
   }
 
   function wireCopy() {

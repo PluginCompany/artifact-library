@@ -89,5 +89,6 @@ that opens in Bold.
   `--s1…--s5`; every chart card offers a table view. Never dual axes.
 - **Responsive and printable:** no horizontal scroll at 375 px; print hides chrome.
 - **Example content is labelled** as such on the page.
+- **Reference-only chrome carries `data-ref-only`**: the Collection button, "Example content" tags and the "Reference artifact · source …" footer. The kit shows them on the seeded references (`ref-*`, `agent-guide`, `reference-collection`, `artifact-cli`) and hides them on every page made from one.
 - Artifact-specific CSS/JS stays in the artifact; promote it to `kit/` only when two
   artifacts need it.

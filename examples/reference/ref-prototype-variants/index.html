@@ -44,14 +44,14 @@
   <nav class="topnav" aria-label="Sections"><a href="#try">Try them</a><a href="#compare">Compare</a><a href="#pick">Your pick</a></nav>
   <span class="spacer"></span>
   <span class="hide-md" data-save-status></span>
-  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <a data-ref-only class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
   <button class="icon-btn" type="button" data-theme-toggle></button>
 </header>
 
 <section class="hero" id="top">
   <div class="wrap hero-inner pv-hero">
     <div>
-      <div class="hero-eyebrow rise"><span class="eyebrow">Prototype · Artifact service</span><span class="tag thread">Example content</span></div>
+      <div class="hero-eyebrow rise"><span class="eyebrow">Prototype · Artifact service</span><span class="tag thread" data-ref-only>Example content</span></div>
       <h1 class="display rise" style="--i:1">Three ways to fix the <em>toolbar</em></h1>
       <p class="lead rise" style="--i:2" id="intro"></p>
       <div class="tags rise" style="--i:3;margin-top:18px" id="findings"></div>
@@ -109,6 +109,6 @@
   </section>
 </main>
 
-<footer class="wrap foot-note">Reference artifact · source <code>examples/reference/ref-prototype-variants</code> · variants in <code>data.js</code>, mock-ups in <code>app.js</code> · built with the reference kit. The problems (F2, F3) are real; the designs are example content.</footer>
+<footer class="wrap foot-note" data-ref-only>Reference artifact · source <code>examples/reference/ref-prototype-variants</code> · variants in <code>data.js</code>, mock-ups in <code>app.js</code> · built with the reference kit. The problems (F2, F3) are real; the designs are example content.</footer>
 </body>
 </html>

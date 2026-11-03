@@ -44,14 +44,14 @@
   </nav>
   <span class="spacer"></span>
   <span data-save-status class="hide-sm"></span>
-  <a class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <a data-ref-only class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
   <button class="icon-btn" type="button" data-theme-toggle></button>
 </header>
 
 <section class="hero" id="summary">
   <div class="wrap hero-inner vr-hero">
     <div>
-      <div class="row" style="--gap:8px"><span class="tag thread">Example content</span><span class="eyebrow" id="h-eyebrow"></span></div>
+      <div class="row" style="--gap:8px"><span class="tag thread" data-ref-only>Example content</span><span class="eyebrow" id="h-eyebrow"></span></div>
       <h1 class="display rise" id="h-title" style="--i:1"></h1>
       <p class="lead rise" id="h-lead" style="--i:2"></p>
       <dl class="facts rise" id="h-facts" style="--i:3"></dl>
@@ -81,6 +81,6 @@
   </section>
 </main>
 
-<footer class="wrap foot-note" id="foot"></footer>
+<footer class="wrap foot-note" data-ref-only id="foot"></footer>
 </body>
 </html>

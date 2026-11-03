@@ -91,6 +91,8 @@
 /* 2. Base & typography ----------------------------------------------------- */
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
+/* Reference-only chrome is hidden on pages made from a reference (kit.js sets data-kit-copy) */
+[data-kit-copy] [data-ref-only]{display:none!important}
 html{scroll-behavior:smooth;scroll-padding-top:calc(var(--bar) + 16px);-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4,h5{font-family:var(--display);font-weight:var(--w-heavy);letter-spacing:-.012em;line-height:1.12;margin:0;text-wrap:balance}
@@ -174,7 +176,14 @@ li+li{margin-top:.25em}
 @media (max-width:760px){.topnav{display:none}.brand small{display:none}}
 
 /* Shell with sticky side navigation */
-.shell{display:grid;grid-template-columns:272px minmax(0,1fr)}
+.shell{position:relative;display:grid;grid-template-columns:var(--side-w,272px) minmax(0,1fr)}
+/* Drag handle on the side menu's right edge (kit.js); wide screens only */
+.kit-side-grip{position:absolute;z-index:26;top:0;bottom:0;left:calc(var(--side-w,272px) - 5px);width:10px;cursor:col-resize;touch-action:none}
+.kit-side-grip::after{content:"";position:sticky;top:calc(50vh - 20px);display:block;width:4px;height:40px;margin:0 auto;border-radius:2px;background:var(--line-strong);opacity:0;transition:opacity .15s}
+.kit-side-grip:hover::after,.kit-side-grip:focus-visible::after,.kit-resizing .kit-side-grip::after{opacity:1}
+.kit-side-grip:focus-visible{outline:none}
+.kit-side-grip:focus-visible::after{background:var(--accent)}
+.kit-resizing{cursor:col-resize;-webkit-user-select:none;user-select:none}
 .side{position:sticky;top:var(--bar);height:calc(100vh - var(--bar));overflow-y:auto;padding:20px 10px 40px clamp(12px,2vw,24px);border-right:1px solid var(--line)}
 .side h5{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.1em*var(--label-k));text-transform:var(--label-case);color:var(--muted);margin:18px 10px 6px}
 .side h5:first-child{margin-top:0}
@@ -188,6 +197,7 @@ li+li{margin-top:.25em}
 .icon-btn.side-toggle{display:none}
 @media (max-width:1000px){
   .shell{grid-template-columns:minmax(0,1fr)}
+  .kit-side-grip{display:none}
   .side{position:fixed;left:0;top:var(--bar);z-index:25;width:min(320px,88vw);background:var(--ground);transform:translateX(-102%);transition:transform .25s ease}
   .side.open{transform:none;box-shadow:var(--shadow)}
   .icon-btn.side-toggle{display:inline-grid}
@@ -892,7 +902,7 @@ html.kit-lb-open{overflow:hidden}
   :root{color-scheme:light}
   body{background:#fff;font-size:11pt}
   .topbar,.side,.no-print,.pager,.chart-tip,pre .copy,.thread-form,.thread-items .resolve,.kit-toc-sheet,.kit-toc-btn{display:none!important}
-  .kit-lb,.kit-g-expand,.kit-g-arrow,.kit-g-cmp input,.kd-modes,.kd-btn{display:none!important}
+  .kit-lb,.kit-g-expand,.kit-g-arrow,.kit-g-cmp input,.kd-modes,.kd-btn,.kit-side-grip{display:none!important}
   .kd-t td.code{white-space:pre-wrap!important;overflow-wrap:anywhere}
   .kit-q-bar,.kit-q-jump,.kit-q-meta .btn,.kit-q-finish .btn,.kit-q-finish .author-chip{display:none!important}
   .kit-q{break-inside:avoid-page}

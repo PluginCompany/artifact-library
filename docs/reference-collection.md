@@ -106,6 +106,8 @@ Page CSS should use them too (`font:var(--w-heavy) 40px var(--display)`, `border
 
 ## Make your own
 
+Replace the content and remove what belongs to the reference itself: the Collection button, "Example content" tags on real content and the "Reference artifact · source …" footer. They carry `data-ref-only`, so the kit hides them on copies even when they are left in.
+
 ```bash
 artifact download ref-implementation-review --out ./login-review
 # edit data.js / index.html

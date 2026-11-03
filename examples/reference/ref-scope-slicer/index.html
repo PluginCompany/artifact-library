@@ -45,13 +45,13 @@
   <nav class="topnav" aria-label="Sections"><a href="#slice">Slice</a><a href="#timeline">Timeline</a><a href="#proposals">Proposals</a><a href="#discuss">Discussion</a></nav>
   <span class="spacer"></span>
   <span class="hide-md" data-save-status></span>
-  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <a data-ref-only class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
   <button class="icon-btn" type="button" data-theme-toggle></button>
 </header>
 
 <section class="hero" id="top">
   <div class="wrap hero-inner">
-    <div class="hero-eyebrow rise"><span class="eyebrow">Planning · <span id="h-release"></span></span><span class="tag thread">Example content</span></div>
+    <div class="hero-eyebrow rise"><span class="eyebrow">Planning · <span id="h-release"></span></span><span class="tag thread" data-ref-only>Example content</span></div>
     <h1 class="display rise" style="--i:1">What fits in <em>v0.5</em>?</h1>
     <p class="lead rise" style="--i:2" id="h-intro"></p>
   </div>
@@ -105,6 +105,6 @@
   </section>
 </main>
 
-<footer class="wrap foot-note">Reference artifact · source <code>examples/reference/ref-scope-slicer</code> · items in <code>data.js</code> · built with the reference kit. Items come from real findings and ideas for the artifact service; efforts and values are example estimates.</footer>
+<footer class="wrap foot-note" data-ref-only>Reference artifact · source <code>examples/reference/ref-scope-slicer</code> · items in <code>data.js</code> · built with the reference kit. Items come from real findings and ideas for the artifact service; efforts and values are example estimates.</footer>
 </body>
 </html>

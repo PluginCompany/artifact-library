@@ -104,7 +104,7 @@
         <span class="spacer"></span>
         ${R.meta.sample ? '<span class="tag warn dot sample-tag">Sample data</span>' : ""}
         <button class="icon-btn hide-sm" type="button" data-print title="Print or save as PDF" aria-label="Print or save as PDF">${icon.print}</button>
-        <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">${icon.grid}<span class="hide-sm">Collection</span></a>
+        <a data-ref-only class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">${icon.grid}<span class="hide-sm">Collection</span></a>
         <button class="icon-btn" type="button" data-theme-toggle></button>`;
       top.insertAdjacentHTML("afterend", `<nav class="report-tabs" aria-label="Report pages">${PAGES.map((p, i) => `<a href="${p.href}"${p.id === pageId ? ' aria-current="page"' : ""}><b>${String(i + 1).padStart(2, "0")}</b>${p.label}</a>`).join("")}</nav>`);
     }

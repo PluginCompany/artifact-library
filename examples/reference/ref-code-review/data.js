@@ -91,7 +91,7 @@ window.REVIEW = {
         "Every reference page links Clean statically, so it is there on the first paint. kit.js still adds it to pages that don't, at the cost of a brief flash of Bold before the deferred script runs.",
       ],
       snippets: [
-        { file: "examples/reference/kit/kit.js", start: 105, title: "The default flips",
+        { file: "examples/reference/kit/kit.js", start: 116, title: "The default flips",
           before: `  const authored = $$('link[rel~="stylesheet"]').find((l) => CLEAN_CSS.test(l.getAttribute("href") || ""));
   const defaultStyle = authored ? "clean" : "bold";
   let cleanLink = authored;
@@ -104,7 +104,7 @@ window.REVIEW = {
   if (!cleanLink) {
     cleanLink = document.createElement("link");
     cleanLink.rel = "stylesheet"; cleanLink.href = kitBase + "themes/clean/clean.css"; cleanLink.media = defaultStyle === "clean" ? "all" : "not all";`,
-          notes: [{ line: 106, text: "The reader's saved choice (kit-style) still wins over this default, so anyone who switched to Bold keeps it." }] },
+          notes: [{ line: 117, text: "The reader's saved choice (kit-style) still wins over this default, so anyone who switched to Bold keeps it." }] },
         { file: "examples/reference/ref-ops-report/index.html", title: "Every reference links Clean up front", caption: "The same line went into all 27 pages and scripts/release-page.html.",
           patch: `@@ -50,6 +50,7 @@
  <script src="kit/kit.js" defer></script>
@@ -135,7 +135,7 @@ elif [ -n "\${KIT_THEME:-}" ] && [ "$KIT_THEME" != "clean" ]; then`,
         "While an image loads it shows a placeholder the size of the image (from width and height), and a file that is not there says so with its path instead of a broken-image icon. Printing loads everything first.",
       ],
       snippets: [
-        { file: "examples/reference/kit/kit.js", start: 812, title: "One observer for every lazy image",
+        { file: "examples/reference/kit/kit.js", start: 866, title: "One observer for every lazy image",
           after: `  function wireImages(root = document) {
     $$("img[data-src], img[data-srcset], img[loading='lazy'], img[data-lightbox], .kit-gallery img", root).forEach(watchImage);
     const lazy = $$("img[data-src], img[data-srcset]", root);
@@ -146,8 +146,8 @@ elif [ -n "\${KIT_THEME:-}" ] && [ "$KIT_THEME" != "clean" ]; then`,
     }), { rootMargin: "600px 400px" });
     lazy.forEach((img) => lazyIO.observe(img));
   }`,
-          notes: [{ line: 819, text: "400 px sideways as well, so thumbnails in a strip are ready before they scroll into view." }] },
-        { file: "examples/reference/kit/kit.js", start: 822, title: "Print and lint can ask for everything",
+          notes: [{ line: 873, text: "400 px sideways as well, so thumbnails in a strip are ready before they scroll into view." }] },
+        { file: "examples/reference/kit/kit.js", start: 876, title: "Print and lint can ask for everything",
           after: `  Kit.images = {
     wire: wireImages,
     loadAll() { $$("img[data-src], img[data-srcset]").forEach(loadImage); $$("img[loading='lazy']").forEach((i) => (i.loading = "eager")); },
@@ -204,13 +204,13 @@ function eagerImages(html: string): number {
         "Each reference had its own zoom overlay with its own keyboard handling, or none. The kit now has one: Kit.lightbox.open(items, index), used by galleries and by any img[data-lightbox]. It traps focus, closes on Esc and on a click beside the image, and pages through with the arrow keys and swipe.",
       ],
       snippets: [
-        { file: "examples/reference/kit/kit.js", start: 882, title: "Leaving the viewer puts things back",
+        { file: "examples/reference/kit/kit.js", start: 936, title: "Leaving the viewer puts things back",
           after: `    const close = () => {
       el.hidden = true; img.removeAttribute("src"); document.documentElement.classList.remove("kit-lb-open");
       if (window.artifactToolbar) window.artifactToolbar.hide(false);
       if (s.last && s.last.focus) s.last.focus({ preventScroll: true });
     };`,
-          notes: [{ line: 884, text: "The server's version toolbar would sit over the caption; the viewer hides it while open (docs/api.md, toolbar footprint)." }, { line: 885, text: "Focus returns to the tile or image that opened the viewer, so keyboard readers keep their place." }] },
+          notes: [{ line: 938, text: "The server's version toolbar would sit over the caption; the viewer hides it while open (docs/api.md, toolbar footprint)." }, { line: 939, text: "Focus returns to the tile or image that opened the viewer, so keyboard readers keep their place." }] },
       ],
       tests: "Opened from a grid tile at 1440 and 390 px: arrow keys page through, Esc closes, focus is back on the tile.",
     },
@@ -220,7 +220,7 @@ function eagerImages(html: string): number {
         "Agents write figures with captions anyway, so a gallery can be plain HTML: <div data-gallery=\"grid\"> around <figure>s, the caption's <b> becoming the title. Data-driven pages pass JSON or point data-gallery-src at a global, which is how this page renders its screenshots.",
       ],
       snippets: [
-        { file: "examples/reference/kit/kit.js", start: 955, title: "Items from the figures inside",
+        { file: "examples/reference/kit/kit.js", start: 1009, title: "Items from the figures inside",
           after: `    if (!spec.items) spec.items = $$(":scope > figure, :scope > img", el).map((n) => {
       const img = n.matches("img") ? n : $("img", n);
       if (!img) return null;
@@ -228,7 +228,7 @@ function eagerImages(html: string): number {
       if (head) { it.title = it.title || head.textContent.trim(); it.caption = cap.textContent.replace(head.textContent, "").trim().replace(/^[·:—–-]\\s*/, ""); }
       return it;
     }).filter(Boolean);`,
-          notes: [{ line: 959, text: "Without a <b>, the whole caption is the caption and the image's alt text names it in the viewer." }] },
+          notes: [{ line: 1013, text: "Without a <b>, the whole caption is the caption and the image's alt text names it in the viewer." }] },
       ],
       alternatives: [
         { option: "JSON only", why: "Markup works without data.js, reads well in the page source and degrades to plain figures if the script fails." },
@@ -242,16 +242,16 @@ function eagerImages(html: string): number {
         "Pairs of removed and added lines get a second, word-level pass. When less than 40% of a line survives, marking words is just noise, so the whole line stays marked instead.",
       ],
       snippets: [
-        { file: "examples/reference/kit/kit.js", start: 1135, title: "Exact for snippets, bounded for everything else",
+        { file: "examples/reference/kit/kit.js", start: 1189, title: "Exact for snippets, bounded for everything else",
           after: `  function lcsOps(A, B, eq = (x, y) => x === y) {
     let s = 0, e = 0;
     while (s < A.length && s < B.length && eq(A[s], B[s])) s++;
     while (e < A.length - s && e < B.length - s && eq(A[A.length - 1 - e], B[B.length - 1 - e])) e++;
     const a = A.slice(s, A.length - e), b = B.slice(s, B.length - e), n = a.length, m = b.length, ops = Array(s).fill("ctx");
     if (n * m > 4e6) { a.forEach(() => ops.push("del")); b.forEach(() => ops.push("add")); }`,
-          highlight: [[1140, 1140]],
-          notes: [{ line: 1140, tone: "warn", title: "The cap", text: "Past 4 million cells (about 2,000 × 2,000 changed lines) the table would take 16 MB, so the block is shown as removed then added. Such a diff does not belong in a review; use a patch with range instead." }] },
-        { file: "examples/reference/kit/kit.js", start: 1166, title: "When to mark words",
+          highlight: [[1194, 1194]],
+          notes: [{ line: 1194, tone: "warn", title: "The cap", text: "Past 4 million cells (about 2,000 × 2,000 changed lines) the table would take 16 MB, so the block is shown as removed then added. Such a diff does not belong in a review; use a patch with range instead." }] },
+        { file: "examples/reference/kit/kit.js", start: 1220, title: "When to mark words",
           after: `    const solid = Math.max(a.replace(/\\s/g, "").length, b.replace(/\\s/g, "").length);
     return solid && same / solid >= 0.4 ? [ma, mb] : null;` },
       ],

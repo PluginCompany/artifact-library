@@ -56,13 +56,13 @@
   </nav>
   <span class="spacer"></span>
   <span data-save-status class="hide-sm"></span>
-  <a class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <a data-ref-only class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
   <button class="icon-btn" type="button" data-theme-toggle></button>
 </header>
 
 <section class="hero" id="outcome">
   <div class="wrap hero-inner">
-    <div class="row" style="--gap:8px"><span class="tag thread">Example content</span><span class="eyebrow" id="h-eyebrow"></span></div>
+    <div class="row" style="--gap:8px"><span class="tag thread" data-ref-only>Example content</span><span class="eyebrow" id="h-eyebrow"></span></div>
     <h1 class="display rise" id="h-title" style="--i:1"></h1>
     <p class="lead rise" id="h-lead" style="--i:2"></p>
     <div class="re-board rise" id="board" style="--i:3"></div>
@@ -127,7 +127,7 @@
       <div class="panel"><div id="thread"></div></div>
     </div>
   </section>
-  <p class="wrap foot-note" id="foot"></p>
+  <p class="wrap foot-note" data-ref-only id="foot"></p>
 </main>
 
 <dialog class="re-lightbox" id="lightbox" aria-label="Screenshot">

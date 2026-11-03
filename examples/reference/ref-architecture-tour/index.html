@@ -50,7 +50,7 @@
   <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Sections"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>
   <a class="brand" href="#top"><i>A</i><span>Artifact service</span><small>Architecture tour</small></a>
   <span class="spacer"></span>
-  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <a data-ref-only class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
   <button class="icon-btn" type="button" data-theme-toggle></button>
 </header>
 
@@ -213,7 +213,7 @@ services:
       <dl class="facts" id="gloss"></dl>
     </section>
 
-    <footer class="foot-note">
+    <footer class="foot-note" data-ref-only>
       Reference artifact · source <code>examples/reference/ref-architecture-tour</code> · facts taken from Artifact Library <span data-meta="version"></span> (<code>src/</code> at the time of writing). Built with the reference kit.
     </footer>
   </main>

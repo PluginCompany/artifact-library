@@ -54,14 +54,14 @@
   <a class="brand" href="#top"><i>Q</i><span>Questions before v0.5</span><small>Questionnaire</small></a>
   <span class="spacer"></span>
   <span class="hide-md" data-save-status></span>
-  <a class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
+  <a data-ref-only class="icon-btn" href="/artifacts/reference-collection/" title="All reference artifacts"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span class="hide-sm">Collection</span></a>
   <button class="icon-btn" type="button" data-theme-toggle></button>
 </header>
 
 <section class="hero" id="top">
   <div class="wrap hero-inner q-hero">
     <div>
-      <div class="hero-eyebrow rise"><span class="eyebrow">Decision questionnaire · <span id="h-project"></span></span><span class="tag thread">Example content</span></div>
+      <div class="hero-eyebrow rise"><span class="eyebrow">Decision questionnaire · <span id="h-project"></span></span><span class="tag thread" data-ref-only>Example content</span></div>
       <h1 class="display rise" style="--i:1"><span id="h-count">Six</span> decisions before <em>v0.5</em></h1>
       <p class="lead rise" style="--i:2" id="h-intro"></p>
       <div class="row rise" style="--i:3;margin-top:24px;--gap:12px">
@@ -97,6 +97,6 @@ artifact data get ref-decision-questionnaire state.submitted</pre></div>
   </div>
 </section>
 
-<footer class="wrap foot-note">Reference artifact · source <code>examples/reference/ref-decision-questionnaire</code> · questions in <code>data.js</code> · built with the reference kit. The questions are real open points for the artifact service; the agent framing is example content.</footer>
+<footer class="wrap foot-note" data-ref-only>Reference artifact · source <code>examples/reference/ref-decision-questionnaire</code> · questions in <code>data.js</code> · built with the reference kit. The questions are real open points for the artifact service; the agent framing is example content.</footer>
 </body>
 </html>

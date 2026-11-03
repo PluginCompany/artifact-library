@@ -19,7 +19,7 @@
   const committedLines = D.commits.reduce((s, c) => s + c.added + c.removed, 0);
   document.title = `Weekly digest · Week ${D.week.number}`;
   $("#b-week").textContent = `Week ${D.week.number}`;
-  $("#h-eyebrow").innerHTML = `Weekly digest · Week ${D.week.number} · ${esc(range)} · Artifact Library <span class="tag thread">Example content</span>`;
+  $("#h-eyebrow").innerHTML = `Weekly digest · Week ${D.week.number} · ${esc(range)} · Artifact Library <span class="tag thread" data-ref-only>Example content</span>`;
   $("#h-title").innerHTML = esc(N.headline).replace(/\*([^*]+)\*/, "<em>$1</em>");
   $("#h-summary").textContent = N.summary;
   $("#h-meta").innerHTML = [
