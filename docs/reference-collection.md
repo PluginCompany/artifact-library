@@ -5,7 +5,7 @@ Every server starts with a collection of finished, polished artifacts, one per c
 | Phase | Slug | Use it to | Saves feedback |
 |---|---|---|---|
 | Plan | `ref-plan-deck` | Pitch a plan or roadmap (keyboard slide deck, speaker notes, print to PDF) | |
-| Plan | `ref-decision-questionnaire` | Get several decisions at once (options with trade-offs and a recommended default) | ✓ |
+| Plan | `ref-decision-questionnaire` | Get several decisions at once (options with trade-offs and a recommended default), built on the kit's questions block | ✓ |
 | Plan | `ref-prototype-variants` | Choose between clickable UI variants before building | ✓ |
 | Plan | `ref-scope-slicer` | Cut scope to fit capacity (live timeline, dependency warnings, saved proposals) | ✓ |
 | Plan | `ref-decision-record` | Compare options and record a decision (adjustable weighted scoring) | ✓ |
@@ -41,7 +41,7 @@ ref-implementation-review/
 
 ## The kit
 
-`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme and style toggles, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`, lazy images, galleries, diffs and syntax colouring), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md)) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
+`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme and style toggles, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`, lazy images, galleries, diffs and syntax colouring), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md), and the questions block) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
 
 ### Blocks for explaining
 
@@ -56,6 +56,7 @@ Higher-level blocks so a page shows its structure instead of describing it. Each
 | Before/after | `<div class="ba"><figure class="before">…</figure><figure class="after">…</figure></div>` | Screens, output or numbers before and after a change |
 | Changes and what stays | `<div class="delta"><div class="changes">…</div><div class="stays">…</div></div>` | Reassuring readers about what does not change |
 | Steps with files | `<ol class="steps">` with `<p class="files"><code>src/x.ts</code></p>` in a step | Work plans that say which files each step touches |
+| Questions | `<div data-questions='{"questions":[{"id":"…","title":"…","recommended":"a","options":[{"id":"a","label":"…","summary":"…","pros":[],"cons":[],"effort":"S","then":"…"}]}]}'></div>`, `data-questions-src="PLAN.questions"` or `Kit.questions(el, spec)`; needs `kit/kit-data.js` | Decisions you need from the reader, on their own page or as a chapter of a plan, review or report: option cards with trade-offs and a recommended default, a note per question, "Accept all recommended", a summary and "I'm done". Saves `answer.<id>` and `state.submitted` ([saved-data.md](saved-data.md)); `heading`, `nav`, `toolbar`, `summary`, `finish` and `labels` adapt it. Notes from the agent show under a question: `updates` in the spec, or live with `artifact data append <slug> comments.q-<id>` |
 
 ### Images and code
 

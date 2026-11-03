@@ -214,12 +214,12 @@ class Stage:
             r = await self.frame().evaluate("([q,n]) => { const b = document.querySelectorAll(q)[n].getBoundingClientRect(); return [b.x,b.y,b.width,b.height]; }", [sel, n])
             return {"x": web["x"] + r[0], "y": web["y"] + r[1], "width": r[2], "height": r[3]}
         for i, (qid, n) in enumerate(picks):
-            await self.scroll(f"#{qid} .opts", 800 if i else 900, offset); await self.wait(120)
-            b = await opt_box(f"#{qid} .opt", n)
+            await self.scroll(f"#{qid} .kit-q-opts", 800 if i else 900, offset); await self.wait(120)
+            b = await opt_box(f"#{qid} .kit-q-opt", n)
             if i == 0:
                 # The card alone is too narrow to fill the frame at a zoom that keeps the options in
                 # view, so frame the question list beside it too (it marks each answer as it lands).
-                row, card = await opt_box(f"#{qid} .opts", 0), await opt_box(f"#{qid}", 0)
+                row, card = await opt_box(f"#{qid} .kit-q-opts", 0), await opt_box(f"#{qid}", 0)
                 left = web["x"] + await self.frame().evaluate("() => { const l = document.querySelector('.q-layout'); return l.getBoundingClientRect().x + parseFloat(getComputedStyle(l).paddingLeft); }")
                 right = card["x"] + card["width"]
                 s = min(1.6, 1840 / (right - left))
@@ -264,7 +264,7 @@ async def hook(s, data):
     await s.caption("You decide", "It asks the open questions. <em>You click your answer.</em>")
     await s.open("/artifacts/ref-decision-questionnaire/", 200)
     await s.layout("browser", 750)
-    qids = await s.frame().evaluate("[...document.querySelectorAll('section.q')].map(q => q.id)")
+    qids = await s.frame().evaluate("[...document.querySelectorAll('section.kit-q')].map(q => q.id)")
     await s.choose_many([(qids[0], 1), (qids[1], 0), (qids[3], 1)])
 
     fb = cli("feedback", "ref-decision-questionnaire", "--prefix", "answer.")

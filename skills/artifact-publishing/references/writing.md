@@ -62,7 +62,7 @@ Put the `nav` inside the `header.topbar`, never in the hero or the page body: a 
 </section>
 ```
 
-`ref-decision-questionnaire` already wraps its questions this way (`#decisions`, with its own question list for jumping between them). Use `data-toc-skip` on a section to leave it out of the menu for any other reason.
+`ref-decision-questionnaire` already wraps its questions this way (`#decisions`); the kit's questions block draws each question as a section with its own list for jumping between them. Use `data-toc-skip` on a section to leave it out of the menu for any other reason.
 
 For long documents (8+ chapters, or chapters with sub-sections) use the sticky side nav instead: `<div class="shell"><nav class="side" data-toc aria-label="Chapters"></nav><main class="main">…</main></div>` plus a `[data-side-toggle]` button for phones. Hand-written menus are fine too: `<a href="#chapter-id">` links in `.topnav` or `.side`; the kit adds scroll-spy to both. Keep chapter titles short (two to five words) so the menu fits.
 
@@ -104,7 +104,7 @@ When a chapter explains something with a shape, draw the shape. Use these kit bl
 | Work in steps | Numbered steps with the files each touches | `<ol class="steps">` with `<p class="files">` |
 | Several screenshots | Gallery (grid, sidebar walkthrough, notes on the image, compare) | `<div data-gallery="grid">` with `<figure>`s, or JSON |
 | A code change | A short diff of the lines that carry it, with notes | `<div data-diff='{…}'>` with `data-before`/`data-after` scripts |
-| Open decisions | Questions with options, a default and trade-offs | copy `ref-decision-questionnaire` |
+| Open decisions | Questions with options, a default and trade-offs | `<div data-questions='{…}'>` or `data-questions-src` |
 
 A chapter longer than about 300 words without any table, diagram, figure or list is a warning sign: find the structure in it.
 
@@ -213,7 +213,22 @@ When you need the reader to decide:
 - An overall verdict when approval is needed (Approve / Approve with changes / Not yet, with a note).
 - Tell the reader that answers are saved and reach you: "Your answers are saved on this page; tell me when you're done."
 
-Start from `ref-decision-questionnaire` (answers save as `answer.<id>`). Read them with `artifact feedback <slug>`.
+Use the kit's questions block (needs `kit/kit-data.js`): for a page of decisions start from `ref-decision-questionnaire`; for a few decisions inside a plan, review or report, put the block in that chapter. Never copy a questionnaire renderer into the page.
+
+```html
+<section id="decisions"><h2>Decisions</h2>
+  <div data-questions='{"questions": [{"id": "engine", "title": "Which search engine should we start with?",
+    "context": "Both handle today's library; they differ in what they add.", "recommended": "memory",
+    "options": [
+      {"id": "memory", "label": "In-memory index", "summary": "Text kept in memory, rebuilt at start.",
+       "pros": ["No new dependency"], "cons": ["Grows with the library"], "effort": "S", "then": "Build it this week."},
+      {"id": "fts", "label": "SQLite FTS5", "summary": "A full-text index in a database file.",
+       "pros": ["Scales further"], "cons": ["A database file to back up"], "effort": "M", "then": "Add the file and a migration."}
+    ]}]}'></div>
+</section>
+```
+
+Long questions go in `data.js` (`data-questions-src="PLAN.questions"`). Options can carry a picture (`image`, `code` with `lang`, `html`); `heading: 2` when the questions are the page's chapters; `summary: false` and `finish: false` inside a longer page; `labels` renames the words (a code review uses Built / Agreed / Overruled). Answers save as `answer.<id>` (`choice`, `choiceLabel`, `followsRecommendation`, `note`), "I'm done" as `state.submitted`. Read them with `artifact feedback <slug>`, and answer a reader's note on the question it belongs to (`artifact data append <slug> comments.q-<id>`, or `updates` in the spec when you republish).
 
 ## 8. Review your page before sharing
 

@@ -18,7 +18,7 @@ window.COLLECTION = [
     job: "pitch a plan or roadmap to a group", shows: ["16:9 slides that scale to any screen", "Overview grid, speaker notes, deep links", "Prints one slide per PDF page"] },
   { slug: "ref-decision-questionnaire", phase: "Plan", category: "Questions", title: "Questions before v0.5", source: "kit", saves: true,
     description: "The agent asks several decisions at once; you answer on the page and the agent reads your answers.",
-    job: "get several decisions from someone", shows: ["Options with sketches and a recommended default", "Answers saved for the agent", "Progress and summary"] },
+    job: "get several decisions from someone", shows: ["Options with sketches and a recommended default", "Answers saved for the agent", "Built on the kit's questions block"] },
   { slug: "ref-prototype-variants", phase: "Plan", category: "Prototype", title: "Toolbar redesign variants", source: "kit", saves: true,
     description: "Three clickable variants of the same UI, switchable in place, with a pick and comments per variant.",
     job: "choose between UI options before building", shows: ["Interactive variants side by side", "Desktop/phone and light/dark", "Picks and comments saved"] },

@@ -46,7 +46,7 @@ MAX_WIDTH = 1600            # px; wider captures are scaled down (pins are perce
 READER = "Alex"
 
 TB = "section.dock"          # the injected version toolbar
-QUESTION = "section.q"
+QUESTION = "section.kit-q"
 # Hide the toolbar where it is not the subject (it floats over the bottom of the page)
 HIDE_TOOLBAR = {"eval": "for (const el of document.querySelectorAll('body > div')) if (el.shadowRoot && el.shadowRoot.querySelector('.dock')) el.style.setProperty('display', 'none', 'important')"}
 
@@ -88,9 +88,9 @@ SHOTS = [
 
     # --- Answering --------------------------------------------------------------
     dict(id="questionnaire", url="/artifacts/ref-decision-questionnaire/", viewport=(1440, 900),
-         clip={"around": [f"{QUESTION}:first-of-type h2, {QUESTION}:first-of-type h3", f"{QUESTION}:first-of-type .opt:nth-child(2)"], "pad": [130, 40, 40, 30]},
+         clip={"around": [f"{QUESTION}:first-of-type h2, {QUESTION}:first-of-type h3", f"{QUESTION}:first-of-type .kit-q-opt:nth-child(2)"], "pad": [130, 40, 40, 30]},
          actions=[HIDE_TOOLBAR, {"eval": f"document.querySelector('{QUESTION}').scrollIntoView({{block:'start'}}); scrollBy(0,-80)"}, {"wait": 900}],
-         pins={"options": f"{QUESTION}:first-of-type .opts", "chosen": f"{QUESTION}:first-of-type .opt[aria-checked=true]",
+         pins={"options": f"{QUESTION}:first-of-type .kit-q-opts", "chosen": f"{QUESTION}:first-of-type .kit-q-opt[aria-checked=true]",
                "recommended": f"{QUESTION}:first-of-type .tag.accent"}),
     dict(id="q-hero", url="/artifacts/ref-decision-questionnaire/", viewport=(1440, 900), clip=[0, 60, 1440, 620],
          actions=[HIDE_TOOLBAR, {"wait": 900}],
@@ -98,12 +98,12 @@ SHOTS = [
     dict(id="q-note", url="/artifacts/ref-decision-questionnaire/", viewport=(1440, 900),
          clip={"around": [f"{QUESTION}:first-of-type .q-foot"], "pad": [24, 20, 24, 20]},
          actions=[HIDE_TOOLBAR, {"eval": f"document.querySelector('{QUESTION} .q-foot').scrollIntoView({{block:'center'}})"}, {"wait": 900}],
-         pins={"then": f"{QUESTION}:first-of-type .then", "note": f"{QUESTION}:first-of-type label.note", "who": f"{QUESTION}:first-of-type .who",
+         pins={"then": f"{QUESTION}:first-of-type .kit-q-then", "note": f"{QUESTION}:first-of-type label.kit-q-note", "who": f"{QUESTION}:first-of-type .who",
                "clear": f"{QUESTION}:first-of-type .clear", "next": f"{QUESTION}:first-of-type .next"}),
     dict(id="name", url="/artifacts/ref-decision-questionnaire/", viewport=(1440, 900),
          clip={"around": ".kit-dialog", "pad": [40, 40, 40, 40]}, author=None,
-         actions=[{"eval": "document.querySelectorAll('section.q')[1].scrollIntoView({block:'center'})"}, {"wait": 500},
-                  {"click": "section.q:nth-of-type(2) .opt:not([aria-checked=true])"}, {"wait": 600}],
+         actions=[{"eval": "document.querySelectorAll('section.kit-q')[1].scrollIntoView({block:'center'})"}, {"wait": 500},
+                  {"click": "section.kit-q:nth-of-type(2) .kit-q-opt:not([aria-checked=true])"}, {"wait": 600}],
          pins={"input": ".kit-dialog input", "skip": ".kit-dialog [data-skip]", "go": ".kit-dialog button[value=ok]"}),
     dict(id="saved", url="/artifacts/ref-decision-questionnaire/", viewport=(1440, 900),
          clip={"around": ["[data-save-status]", ".topbar [data-theme-toggle]"], "pad": [24, 14, 16, 14]}, actions=[{"wait": 1200}],

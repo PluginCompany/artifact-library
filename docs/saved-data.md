@@ -15,10 +15,10 @@ Agents rely on these key prefixes; keep them.
 | Key | Value | Typical writer |
 |---|---|---|
 | `comments.<anchor>` | `{ items: [{ id, author, role, createdAt, text, resolved }] }` | `Kit.comments`, `artifact data append` |
-| `answer.<question>` | `{ questionId, question, choice, choiceLabel, note }` | questionnaires, picks |
+| `answer.<question>` | `{ questionId, question, choice, choiceLabel, recommended, recommendedLabel, followsRecommendation, note }` | the kit's questions block (`[data-questions]`), picks |
 | `review.<item>` | `{ verdict: "approved" \| "changes" \| "question", note }` | review pages |
 | `state.<name>` | anything | live pages (run logs, checklists) and agents |
-| `state.sent`, `state.submitted` | `{ at, author, … }` | the toolbar's "Send to agent", a page's "I'm done": they send held changes |
+| `state.sent`, `state.submitted` | `{ at, author, … }`; the questions block's `state.submitted` adds `answered, total, unanswered, followsRecommendations` | the toolbar's "Send to agent", a page's "I'm done": they send held changes |
 
 ## When answers reach the agent
 
@@ -28,6 +28,8 @@ Every save is stored at once, and agents can always read it with `artifact feedb
 - **Instant sync off**: saves are *held*. The toolbar shows "N changes not sent" with a **Send to agent** button, which writes `state.sent` `{at, author, changes}` and sends everything. A page's own "I'm done" (`state.submitted`, as in `ref-decision-questionnaire`) sends too. Turning instant sync back on sends what is still held.
 
 The switch is in the toolbar's ⋯ menu on every artifact. It is one setting per browser for the whole server (the `artifact_sync` cookie), so it covers every artifact, including ones published before this existed, without changes to their pages. Held documents carry `held: true`; `artifact feedback` marks them "not sent yet" until the next send. Pages published with `--no-toolbar` have no Send button, so readers who hold changes send them from another artifact's toolbar or with the page's own "I'm done".
+
+For decisions, use the kit's questions block rather than writing answers yourself: `<div data-questions-src="PLAN.questions"></div>` (or `[data-questions]` with JSON, or `Kit.questions(el, spec)`) saves `answer.<id>` per question and `state.submitted` on "I'm done", exactly as above, and fires `kit:answers` on the element whenever answers change. `ref-decision-questionnaire` and the decisions in `ref-code-review` use it; in a code review `recommended` is what was built and `followsRecommendation` means the reviewer agrees with it. The agent answers on a question in `comments.q-<id>` (`artifact data append <slug> comments.q-<id> --item '{"text":"…"}' --author "Claude Code"`): open pages show it under the question within about 10 s, without a new version, and resolved items are hidden.
 
 Store readable labels next to ids so `artifact feedback` makes sense without the page. Use a top-level `items` array only for threads: `artifact feedback` prints any `value.items` as comments.
 

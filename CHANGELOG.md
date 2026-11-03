@@ -4,6 +4,18 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-03
+
+### Added
+- **Questions** (`[data-questions]`, `data-questions-src`, `Kit.questions(el, spec)`): several decisions on one page as a kit block. Each question has option cards with a summary, pros and cons, effort, a recommended tag and an optional picture (image, code, HTML or a sketch), what happens for each choice and a note; above them a progress bar with "Accept all recommended", beside them a jump list (from four questions), below them a summary table and "I'm done". It lives in `kit/kit-data.js`, so it works in any page that loads it: standalone, or as one chapter of a plan, review or report. `heading`, `nav`, `toolbar`, `summary`, `finish` and `labels` adapt it; it returns `acceptAll()`, `finish()` and `answers()` and fires `kit:answers`. Documented with a live example in the style guide.
+- **Notes from the agent on a question**, shown under its context: `updates: [{text, author, at, tone}]` (or a plain `advice` string) in the spec when the page is republished, with `agent` as the default author, or live without a new version: `artifact data append <slug> comments.q-<id> --item '{"text":"…"}' --author "Claude Code"` appears on open pages within about 10 s. Newest last; older than the latest two fold away, resolved ones are hidden. Agents use it to answer a reader's note or explain a changed recommendation.
+- Answers are saved in the format the questionnaire reference always used, so agents and `artifact feedback` read them as before: `answer.<id>` `{questionId, question, choice, choiceLabel, recommended, recommendedLabel, followsRecommendation, note}` and `state.submitted` `{at, author, answered, total, unanswered, followsRecommendations}`.
+
+### Changed
+- `ref-decision-questionnaire` is built on the questions block. Its `app.js` keeps only the hero, the progress ring, the accept-all button and its own sketches, so fixes to the questions reach every page instead of each copy of the renderer. Artifacts already made from the old questionnaire keep their own copy and keep working.
+- `ref-code-review`: "Decisions for you" uses the questions block (Built / Agreed / Overruled). Its `answer.<decisionId>` now has the standard shape above instead of `{decision, choice, label, keeps, note}`; `followsRecommendation` means the reviewer agrees with what was built.
+- The skill, the agent guide and the docs tell agents to use `[data-questions]` whenever they need decisions from the reader, instead of copying a renderer.
+
 ## [0.9.0] - 2026-11-03
 
 ### Added

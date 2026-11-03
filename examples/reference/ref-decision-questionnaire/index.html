@@ -12,21 +12,25 @@
 
   Files
     data.js    ALL questions, options, defaults and “what I’ll do” texts. Edit this.
-    app.js     Renders data.js, saves answers with Kit.data, shows live changes.
-               Add a new sketch to SKETCHES when an option needs a picture.
-    style.css  Styles for this page only (option cards, sketches, progress).
-    kit/       Shared kit (kit.css, kit.js, kit-data.js), copied in by ../publish.sh.
+    app.js     The page around the questions: hero, progress ring, “accept all defaults”,
+               and SKETCHES, the small drawings some options use (sketch: "<name>").
+    style.css  Styles for this page only (hero, progress ring, sketches).
+    kit/       Shared kit, copied in by ../publish.sh. The questions themselves (cards,
+               saving, jump list, summary, “I’m done”) are the kit's questions block,
+               Kit.questions in kit/kit-data.js: fixes to it reach every page.
 
   Saved data
     answer.<questionId>  { questionId, question, choice, choiceLabel, recommended,
-                           followsRecommendation, note }
-    state.submitted      { at, author, answered, total }
+                           recommendedLabel, followsRecommendation, note }
+    state.submitted      { at, author, answered, total, unanswered, followsRecommendations }
 
   Common edits
     New question       add an object to QUESTIONNAIRE.questions in data.js.
     Change the default set `recommended` to an option id.
-    Code instead of a  give the option `code: "…"` instead of `sketch`.
-    picture
+    A picture          give the option image: "shots/x.webp" (or {src, w, h, alt}),
+                       code: "…" (lang: "ts" colours it), html: "<svg…>", or a sketch.
+    Questions in another page: <div data-questions-src="PLAN.questions"></div> with
+                       kit/kit-data.js loaded; no app.js needed.
   Do not
     - rename question ids after people have answered (answers are keyed by id)
     - hard-code colours; use kit tokens
@@ -74,32 +78,17 @@
   </div>
 </section>
 
-<!-- One chapter for the global menu: the questions inside are its items, with their own list (.jump). -->
-<div class="wrap q-layout" id="decisions" data-chapter data-toc-label="Decisions">
-  <nav class="jump" aria-label="Questions">
-    <div class="eyebrow">Questions</div>
-    <ol id="jump-list"></ol>
-    <a class="jump-summary" href="#summary">Review &amp; finish</a>
-  </nav>
-
-  <main id="questions" class="q-list"></main>
+<!-- One chapter for the global menu; the questions inside are its items. The kit's questions block
+     (Kit.questions, called from app.js) draws the cards and their jump list here. -->
+<div class="wrap" id="decisions" data-chapter data-toc-label="Decisions" style="padding-top:40px">
+  <div id="questions"></div>
 </div>
 
 <section class="wrap section" id="summary">
   <div class="section-head">
     <div><div class="eyebrow thread">Last step</div><h2 class="h2 stitch">Review and finish</h2><p>Everything you picked, next to the default. Change anything by clicking its row.</p></div>
   </div>
-  <div class="table-wrap"><table class="table summary-table"><thead><tr><th>Question</th><th>Your answer</th><th class="hide-sm">Note</th><th>Default</th></tr></thead><tbody id="summary-body"></tbody></table></div>
-  <div class="finish">
-    <div>
-      <h3 class="h3" id="finish-title">Ready when you are</h3>
-      <p class="muted" id="finish-text">Press “I’m done” to tell the agent it can read your answers. You can still change them afterwards.</p>
-    </div>
-    <div class="row" style="--gap:10px">
-      <button class="author-chip" type="button" data-author-chip></button>
-      <button class="btn primary lg" type="button" id="done-btn">I’m done</button>
-    </div>
-  </div>
+  <div id="summary-slot"></div>
   <div class="grid cols-2 agent-box" style="--gap:16px">
     <div class="callout stitched"><b>How the agent reads this</b>Answers are saved on the artifact server, not in this page. The agent reads them with:
       <pre data-copy style="margin-top:10px">artifact feedback ref-decision-questionnaire --prefix answer.

@@ -139,31 +139,16 @@ document.addEventListener("kit:ready", () => {
     box.classList.add("verdict-box");
   }
 
-  /* ---------- Decisions ---------- */
+  /* ---------- Decisions: the kit's questions block, with "Built" as the default ---------- */
   function renderDecisions() {
-    $("#decision-list").innerHTML = R.decisions.map((d, i) => `<section class="rv-dec" id="d-${d.id}">
-      <div class="rv-dec-head"><span class="rv-n">D${i + 1}</span><h3>${esc(d.title)}</h3></div>
-      ${d.context ? `<p class="muted">${esc(d.context)}</p>` : ""}
-      <div class="rv-opts" role="radiogroup" aria-label="${esc(d.title)}">${d.options.map((o) => `<button type="button" role="radio" aria-checked="false" class="rv-opt" data-d="${d.id}" data-o="${esc(o.id)}">
-        <span class="rv-opt-top"><i class="rv-radio" aria-hidden="true"></i><b>${esc(o.label)}</b>${o.id === d.chosen ? '<span class="tag accent">Built</span>' : ""}</span><span class="rv-opt-text">${esc(o.text)}</span></button>`).join("")}</div>
-      ${d.why ? `<p class="rv-dec-why"><b>Why it was built this way</b>${esc(d.why)}</p>` : ""}
-      <div class="rv-dec-note"><label class="sr-only" for="dn-${d.id}">Note on this decision</label><textarea id="dn-${d.id}" placeholder="Anything the agent should know about your choice (optional)"></textarea><span class="saved" aria-live="polite"></span></div>
-    </section>`).join("");
-    $$(".rv-opt").forEach((b) => b.addEventListener("click", () => answer(b.dataset.d, b.dataset.o)));
-    $$(".rv-opts").forEach((g) => g.addEventListener("keydown", (e) => {
-      const opts = $$(".rv-opt", g), i = opts.indexOf(document.activeElement), d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
-      if (i < 0 || !d) return;
-      e.preventDefault(); const next = opts[(i + d + opts.length) % opts.length]; next.focus(); next.click();
-    }));
-    $$(".rv-dec-note textarea").forEach((ta) => ta.addEventListener("change", () => { const id = ta.id.slice(3), v = val("answer." + id); if (v) answer(id, v.choice); else $(".saved", ta.parentElement).textContent = "Pick an option to save the note."; }));
-  }
-  async function answer(id, choice) {
-    const d = R.decisions.find((x) => x.id === id), o = d.options.find((x) => x.id === choice);
-    await Kit.data.ensureAuthor();
-    try {
-      docs["answer." + id] = await Kit.data.set("answer." + id, { decision: d.title, choice, label: o.label, keeps: choice === d.chosen, note: $("#dn-" + id).value.trim(), author: Kit.data.author() || undefined });
-      paint();
-    } catch (e) { $(`#d-${id} .saved`).textContent = "Not saved: " + e.message; }
+    Kit.questions($("#decision-list"), {
+      questions: R.decisions.map((d) => ({ id: d.id, title: d.title, context: d.context, recommended: d.chosen, why: d.why,
+        options: d.options.map((o) => ({ id: o.id, label: o.label, summary: o.text })) })),
+      heading: 3, nav: false, toolbar: false, summary: false, finish: false,
+      labels: { recommended: "Built", keep: "Agreed", changed: "Overruled", why: "Why it was built this way" },
+    });
+    // Answers saved by the block reach the side dots and "For the agent" straight away.
+    $("#decision-list").addEventListener("kit:answers", (e) => { Object.entries(e.detail.answers).forEach(([id, d]) => (docs["answer." + id] = d)); R.decisions.forEach((d) => { if (!e.detail.answers[d.id]) delete docs["answer." + d.id]; }); paint(); });
   }
 
   /* ---------- Verdict section: progress, asks, overall ---------- */
@@ -184,7 +169,7 @@ document.addEventListener("kit:ready", () => {
     $("#progress-bar").innerHTML = bar; $("#progress-bar").setAttribute("aria-label", `${done} of ${total} changes reviewed`);
     $("#progress-count").textContent = `${done} of ${total}`;
     $("#progress-legend").innerHTML = Object.entries(counts).map(([k, n]) => `<span><i style="--c:${VERDICTS[k].c}"></i><b>${n}</b> ${VERDICTS[k].word.toLowerCase()}</span>`).join("") + `<span><i style="--c:var(--line-strong)"></i><b>${total - done}</b> to read</span>`;
-    const answered = R.decisions.filter((d) => val("answer." + d.id)).length;
+    const answered = R.decisions.filter((d) => val("answer." + d.id) && val("answer." + d.id).choice).length;
     $("#side-progress").innerHTML = `<b>${done} of ${total} changes reviewed</b><div class="rv-bar">${bar}</div><span class="muted">${answered} of ${R.decisions.length} decisions answered</span>`;
     R.changes.forEach((c) => {
       const v = val("review." + c.id);
@@ -194,12 +179,8 @@ document.addEventListener("kit:ready", () => {
     });
     $$(".verdict-box").forEach((b) => b._paint && b._paint());
     R.decisions.forEach((d) => {
-      const v = val("answer." + d.id);
-      $$(`#d-${d.id} .rv-opt`).forEach((b) => { const on = !!v && v.choice === b.dataset.o; b.setAttribute("aria-checked", String(on)); b.tabIndex = on || (!v && b === $(`#d-${d.id} .rv-opt`)) ? 0 : -1; });
-      const ta = $("#dn-" + d.id); if (document.activeElement !== ta) ta.value = (v && v.note) || "";
-      $(`#d-${d.id} .saved`).textContent = v ? (v.keeps ? "Agreed with what was built" : `Asked for “${v.label}”`) + ` · ${docs["answer." + d.id].author || v.author || "someone"} · ${Kit.ago(docs["answer." + d.id].updatedAt)}` : "";
-      const link = $(`.side a[href="#d-${d.id}"]`);
-      if (link) { let dot = $(".sd", link); if (!dot) { dot = document.createElement("i"); dot.className = "sd"; dot.setAttribute("aria-hidden", "true"); link.appendChild(dot); } dot.className = "sd " + (v ? (v.keeps ? "approved" : "changes") : ""); }
+      const v = val("answer." + d.id), link = $(`.side a[href="#q-${d.id}"]`);
+      if (link) { let dot = $(".sd", link); if (!dot) { dot = document.createElement("i"); dot.className = "sd"; dot.setAttribute("aria-hidden", "true"); link.appendChild(dot); } dot.className = "sd " + (v && v.choice ? (v.followsRecommendation ? "approved" : "changes") : ""); }
     });
     // Everything the agent has to act on
     const asks = [], open = (prefix) => Object.entries(docs).filter(([k]) => k === prefix || k.startsWith(prefix + "--"))
@@ -211,7 +192,7 @@ document.addEventListener("kit:ready", () => {
     });
     R.decisions.forEach((d, i) => {
       const v = val("answer." + d.id);
-      if (v && !v.keeps) asks.push(`<div class="rv-ask changes"><span class="vd changes">Overruled</span><a href="#d-${d.id}">D${i + 1} · ${esc(d.title)}</a><p>Change it to “${esc(v.label)}”.${v.note ? " " + esc(v.note) : ""}</p></div>`);
+      if (v && v.choice && !v.followsRecommendation) asks.push(`<div class="rv-ask changes"><span class="vd changes">Overruled</span><a href="#q-${d.id}">${pad(i + 1)} · ${esc(d.title)}</a><p>Change it to “${esc(v.choiceLabel)}”.${v.note ? " " + esc(v.note) : ""}</p></div>`);
     });
     $("#asks").innerHTML = asks.length ? asks.join("") : '<p class="rv-empty">Nothing requested yet. Requested changes, questions and overruled decisions collect here as you review.</p>';
     $$(".rv-snip-foot button").forEach((b) => { const d = docs[b.dataset.key], n = (d && d.value && d.value.items && d.value.items.length) || 0, cnt = $(".cnt", b); cnt.hidden = !n; cnt.textContent = n; });

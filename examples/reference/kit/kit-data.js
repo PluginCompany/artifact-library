@@ -23,6 +23,7 @@
      Kit.data.watch(prefix, callback, {interval}) → stop()   polls for changes
      Kit.data.mode → "server" | "local" (opened from disk or another host)
      Kit.comments(element, {key, title, placeholder, compact})
+     Kit.questions(element, spec)   decisions with options; also [data-questions] (see "Questions" below)
      Kit.data.author() / Kit.data.askAuthor() / Kit.data.personKey()
    Markup hooks: [data-save-status] shows save state, [data-author-chip] the name.
    ========================================================================== */
@@ -255,6 +256,268 @@
     startThreadWatch();
     return { key, refresh: () => Data.get(key).then(render) };
   };
+
+  /* ---------- Questions ([data-questions]) ----------
+     Several decisions on one page: option cards with trade-offs and a recommended default, a note per
+     question, "accept all recommended", a jump list, a summary and "I'm done". Spec (JSON in the attribute,
+     data-questions-src="PLAN.questions", or Kit.questions(el, spec)); an array is taken as the questions:
+       { questions: [{ id, title, context, evidence, recommended, why, updates: [{ text, author, at, tone }],
+                       options: [{ id, label, summary, pros:[], cons:[], effort: "S"|"M"|"L", then,
+                                   image: "shots/a.webp" | {src, w, h, alt}, code, lang, html, sketch }] }],
+         heading: 2 | 3, nav, toolbar, summary: true | false | "#selector", finish, sketches: {name: "<svg…>"}, agent: "Claude",
+         labels: { recommended, keep, changed, open, then, why, acceptAll, done } }
+     Notes from the agent on a question: `updates` in the spec (written when the page is republished), and live
+     without republishing: artifact data append <slug> comments.q-<id> --item '{"text":"…"}' --author "Claude Code"
+     Both show under the question's context, newest last.
+     Saves (the format agents read):
+       answer.<id>      { questionId, question, choice, choiceLabel, recommended, recommendedLabel, followsRecommendation, note }
+       state.submitted  { at, author, answered, total, unanswered: [ids], followsRecommendations }   ("I'm done")
+     Returns { acceptAll(), finish(), answers(), el } and fires kit:answers ({answered, total, answers, submitted}) on el. */
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const qx = (s) => esc(s == null ? "" : s);
+  function questions(el, spec) {
+    spec = Array.isArray(spec) ? { questions: spec } : spec || {};
+    const list = (spec.questions || []).filter((q) => q && q.id && Array.isArray(q.options) && q.options.length);
+    const L = { recommended: "Recommended", keep: "Default", changed: "Your choice", open: "Not answered", then: "What happens",
+      why: "Why the default", acceptAll: "Accept all recommended", done: "I’m done", ...(spec.labels || {}) };
+    const H = spec.heading === 2 ? "h2" : "h3", total = list.length;
+    const byId = Object.fromEntries(list.map((q) => [q.id, q]));
+    const optOf = (q, id) => q.options.find((o) => o.id === id);
+    const answers = {}; let submitted = null, confirmFinish = false;
+    const choiceOf = (q) => answers[q.id] && answers[q.id].value && answers[q.id].value.choice;
+    const nav = spec.nav !== false && total >= 4, finishOn = spec.finish !== false, toolbar = spec.toolbar !== false && list.some((q) => q.recommended);
+    const sumHost = spec.summary === false ? null : typeof spec.summary === "string" ? document.querySelector(spec.summary) : el;
+    el.classList.add("kit-questions"); el.dataset.wired = "1";
+    if (!total) { el.innerHTML = '<p class="muted">No questions.</p>'; return {}; }
+
+    const visual = (q, o) => {
+      if (o.image) {
+        const im = typeof o.image === "string" ? { src: o.image } : o.image;
+        return `<img data-src="${qx(im.src)}" alt="${qx(im.alt || "")}"${+im.w > 0 && +im.h > 0 ? ` width="${Math.round(+im.w)}" height="${Math.round(+im.h)}"` : ""}>`;
+      }
+      if (o.code) return `<code class="kit-q-code">${o.lang && Kit.highlight ? Kit.highlight(String(o.code), o.lang) : qx(o.code)}</code>`;
+      if (o.html) return String(o.html);
+      if (o.sketch) return (spec.sketches && spec.sketches[o.sketch]) || "";
+      return "";
+    };
+    const card = (q, qi) => {
+      const pics = q.options.map((o) => visual(q, o)), anyPic = pics.some(Boolean), anyThen = q.options.some((o) => o.then);
+      const next = qi + 1 < total ? `#q-${qx(list[qi + 1].id)}` : sumHost ? "#q-summary" : "";
+      return `<section class="kit-q" id="q-${qx(q.id)}" data-q="${qx(q.id)}" aria-labelledby="qt-${qx(q.id)}">
+        <header class="kit-q-head"><span class="kit-q-num">${pad2(qi + 1)}</span>
+          <div><${H} id="qt-${qx(q.id)}">${qx(q.title)}</${H}>${q.context ? `<p class="kit-q-context">${qx(q.context)}</p>` : ""}${q.evidence ? `<span class="tag outline">${qx(q.evidence)}</span>` : ""}<div class="kit-q-updates" aria-live="polite"></div></div>
+          <span class="kit-q-state" data-state="open">${qx(L.open)}</span></header>
+        <div class="kit-q-opts n${q.options.length}" role="radiogroup" aria-labelledby="qt-${qx(q.id)}">${q.options.map((o, oi) => `
+          <button type="button" class="kit-q-opt" role="radio" aria-checked="false" tabindex="${oi === 0 ? 0 : -1}" data-opt="${qx(o.id)}">
+            ${anyPic ? `<span class="kit-q-visual">${pics[oi]}</span>` : ""}
+            <span class="kit-q-body">
+              <span class="kit-q-top"><span class="kit-q-radio" aria-hidden="true"></span><b>${qx(o.label)}</b></span>
+              ${o.id === q.recommended || o.effort ? `<span class="kit-q-tags">${o.id === q.recommended ? `<span class="tag accent">${qx(L.recommended)}</span>` : ""}${o.effort ? `<span class="tag outline">Effort ${qx(o.effort)}</span>` : ""}</span>` : ""}
+              ${o.summary ? `<span class="kit-q-sum">${qx(o.summary)}</span>` : ""}
+              ${(o.pros || []).filter(Boolean).length || (o.cons || []).filter(Boolean).length ? `<span class="kit-q-pc">${(o.pros || []).filter(Boolean).map((p) => `<span class="pro">${qx(p)}</span>`).join("")}${(o.cons || []).filter(Boolean).map((c) => `<span class="con">${qx(c)}</span>`).join("")}</span>` : ""}
+            </span>
+          </button>`).join("")}
+        </div>
+        <div class="kit-q-foot">
+          ${anyThen ? `<div class="kit-q-then"><b>${qx(L.then)}</b><span></span></div>` : q.why ? `<div class="kit-q-then chosen"><b>${qx(L.why)}</b><span>${qx(q.why)}</span></div>` : ""}
+          <label class="kit-q-note"><span>Note for the agent <em>optional</em></span><textarea rows="2" placeholder="Anything the agent should know about this choice…"></textarea></label>
+          <div class="kit-q-meta"><span class="who" aria-live="polite"></span><span class="spacer"></span><button class="btn ghost" type="button" data-clear hidden>Clear answer</button>${next ? `<a class="btn ghost" href="${next}">${qi + 1 < total ? "Next question" : "Review answers"} ↓</a>` : ""}</div>
+        </div></section>`;
+    };
+    el.innerHTML = (toolbar ? `<div class="kit-q-bar"><div class="kit-q-progress"><span><b data-n>0</b> of ${total} answered</span><span class="meter" aria-hidden="true"><i></i></span></div>
+        <button class="btn" type="button" data-accept-all>${qx(L.acceptAll)}</button><p class="kit-q-accept-note muted">Fills only the questions nobody has answered; change any of them afterwards.</p></div>` : "") +
+      `<div class="kit-q-layout${nav ? " has-nav" : ""}">${nav ? `<nav class="kit-q-jump" aria-label="Questions"><ol>${list.map((q, i) => `<li><a href="#q-${qx(q.id)}" data-q="${qx(q.id)}"><span class="dot" aria-hidden="true"></span><b>${pad2(i + 1)}</b><span>${qx(q.title)}</span></a></li>`).join("")}</ol>${sumHost ? '<a class="kit-q-jump-sum" href="#q-summary">Review &amp; finish</a>' : ""}</nav>` : ""}
+        <div class="kit-q-list">${list.map(card).join("")}</div></div>`;
+    let sum = null;
+    if (sumHost) {
+      sum = document.createElement("div");
+      sum.className = "kit-q-summary"; sum.id = "q-summary";
+      sum.innerHTML = `<div class="table-wrap"><table class="table kit-q-table"><thead><tr><th>Question</th><th>Answer</th><th class="kit-q-hide-sm">Note</th>${toolbar ? `<th>${qx(L.keep)}</th>` : ""}</tr></thead><tbody></tbody></table></div>` +
+        (finishOn ? `<div class="kit-q-finish"><div><b class="kit-q-finish-title">Ready when you are</b><p class="muted kit-q-finish-text">Press “${qx(L.done)}” to tell the agent it can read your answers. You can still change them afterwards.</p></div>
+          <div class="row" style="--gap:10px"><button class="author-chip" type="button" data-author-chip></button><button class="btn primary lg" type="button" data-done>${qx(L.done)}</button></div></div>` : "");
+      sumHost.appendChild(sum);
+    }
+    if (Kit.images) Kit.images.wire(el);
+
+    /* Saving */
+    const valueFor = (q, choice, note) => {
+      const o = choice ? optOf(q, choice) : null, rec = q.recommended ? optOf(q, q.recommended) : null;
+      return { questionId: q.id, question: q.title, choice: choice || null, choiceLabel: o ? o.label : null, recommended: q.recommended || null,
+        recommendedLabel: rec ? rec.label : null, followsRecommendation: choice && q.recommended ? choice === q.recommended : null, note: (note || "").trim() };
+    };
+    const secOf = (q) => el.querySelector(`[data-q="${CSS.escape(q.id)}"].kit-q`);
+    const flash = (q, msg) => { const who = secOf(q).querySelector(".who"); who.textContent = msg; who.classList.add("err"); setTimeout(() => who.classList.remove("err"), 4000); };
+    async function save(q, choice, note) {
+      await Data.ensureAuthor();
+      const sec = secOf(q); sec.classList.add("saving");
+      try { answers[q.id] = await Data.set("answer." + q.id, valueFor(q, choice, note)); }
+      catch (e) { flash(q, "Couldn’t save: " + e.message); }
+      finally { sec.classList.remove("saving"); paint(); }
+    }
+    function choose(q, choice) {
+      if (choiceOf(q) === choice) return;
+      const ta = secOf(q).querySelector("textarea");
+      paintQuestion(q, { value: valueFor(q, choice, ta.value), author: Data.author(), updatedAt: now(), pending: true });
+      save(q, choice, ta.value);
+    }
+    list.forEach((q) => {
+      const sec = secOf(q), radios = Array.from(sec.querySelectorAll(".kit-q-opt")), ta = sec.querySelector("textarea");
+      radios.forEach((b, i) => {
+        b.addEventListener("click", () => choose(q, b.dataset.opt));
+        b.addEventListener("keydown", (e) => {
+          const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+          if (!d) return;
+          e.preventDefault();
+          const next = radios[(i + d + radios.length) % radios.length]; next.focus(); choose(q, next.dataset.opt);
+        });
+      });
+      let timer;
+      const saveNote = () => { const cur = answers[q.id] && answers[q.id].value; if (!cur && !ta.value.trim()) return; save(q, cur ? cur.choice : null, ta.value); };
+      ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(saveNote, 700); });
+      ta.addEventListener("blur", () => { clearTimeout(timer); const cur = answers[q.id] && answers[q.id].value; if (((cur && cur.note) || "") !== ta.value.trim()) saveNote(); });
+      sec.querySelector("[data-clear]").addEventListener("click", async () => {
+        try { await Data.remove("answer." + q.id); delete answers[q.id]; ta.value = ""; paint(); } catch (e) { flash(q, "Couldn’t clear: " + e.message); }
+      });
+    });
+    async function acceptAll() {
+      await Data.ensureAuthor();
+      const open = list.filter((q) => q.recommended && !choiceOf(q));
+      for (const q of open) await save(q, q.recommended, secOf(q).querySelector("textarea").value || "");
+      return open.length;
+    }
+    const accept = el.querySelector("[data-accept-all]");
+    if (accept) accept.addEventListener("click", async () => {
+      accept.disabled = true;
+      const n = await acceptAll();
+      accept.disabled = false;
+      el.querySelector(".kit-q-accept-note").textContent = n ? `Filled ${n} question${n === 1 ? "" : "s"} with the recommended option. Change any of them below.` : "Every question already had an answer, so nothing changed.";
+    });
+    async function finish(force) {
+      const missing = list.filter((q) => !choiceOf(q));
+      const title = sum && sum.querySelector(".kit-q-finish-title"), text = sum && sum.querySelector(".kit-q-finish-text"), btn = sum && sum.querySelector("[data-done]");
+      if (missing.length && !confirmFinish && !force) {
+        confirmFinish = true;
+        if (btn) { btn.textContent = `Finish with ${missing.length} unanswered`; title.textContent = `${missing.length} question${missing.length === 1 ? " has" : "s have"} no answer`;
+          text.textContent = `The agent will treat ${missing.map((q) => "“" + q.title.replace(/\?$/, "") + "”").join(", ")} as open. Press again to finish anyway, or answer ${missing.length === 1 ? "it" : "them"} first.`; }
+        return false;
+      }
+      await Data.ensureAuthor();
+      const answered = list.filter((q) => choiceOf(q));
+      try {
+        submitted = await Data.set("state.submitted", { at: now(), author: Data.author() || "Anonymous", answered: answered.length, total,
+          unanswered: missing.map((q) => q.id), followsRecommendations: answered.filter((q) => choiceOf(q) === q.recommended).length });
+        confirmFinish = false;
+      } catch (e) { if (text) text.textContent = "Couldn’t save: " + e.message; }
+      paint();
+      return true;
+    }
+    const doneBtn = sum && sum.querySelector("[data-done]");
+    if (doneBtn) doneBtn.addEventListener("click", () => finish());
+    if (sum) {
+      const go = (e) => { const tr = e.target.closest("tr[data-q]"); if (tr && (e.type === "click" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); location.hash = "q-" + tr.dataset.q; } };
+      sum.querySelector("tbody").addEventListener("click", go); sum.querySelector("tbody").addEventListener("keydown", go);
+    }
+
+    /* Notes from the agent: authored in the spec, plus live items in comments.q-<id> */
+    const live = {}; // questionId -> items saved with artifact data append
+    const day = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
+    function paintUpdates(q) {
+      const host = secOf(q).querySelector(".kit-q-updates");
+      const authored = (q.updates || []).concat(q.advice ? [{ text: q.advice }] : []).map((u) => (typeof u === "string" ? { text: u } : u))
+        .map((u) => ({ ...u, author: u.author || spec.agent || "Agent", role: u.role || "agent", at: u.at || u.date }));
+      const items = authored.concat((live[q.id] || []).filter((i) => !i.resolved).map((i) => ({ text: i.text, author: i.author, role: i.role, at: i.createdAt, tone: i.tone })))
+        .filter((u) => u.text).sort((a, b) => (a.at && b.at ? new Date(a.at) - new Date(b.at) : 0));
+      const card = (u) => `<div class="kit-q-update ${u.role === "agent" ? "agent" : "human"} ${qx(u.tone || "")}"><b>${qx(u.author || "Agent")}${u.at ? ` · ${qx(day(u.at))}` : ""}</b><p>${qx(u.text)}</p></div>`;
+      const shown = items.slice(-2), older = items.slice(0, -2);
+      host.innerHTML = (older.length ? `<details class="kit-q-older"><summary>${older.length} earlier note${older.length === 1 ? "" : "s"}</summary>${older.map(card).join("")}</details>` : "") + shown.map(card).join("");
+    }
+    list.forEach(paintUpdates);
+    Data.watch("comments.q-", (docs) => {
+      list.forEach((q) => { const d = docs.find((x) => x.key === "comments.q-" + q.id); live[q.id] = (d && d.value && d.value.items) || []; paintUpdates(q); });
+    }, { interval: 10000 });
+
+    /* Painting */
+    function paintQuestion(q, doc) {
+      const sec = secOf(q), v = doc && doc.value, choice = v && v.choice;
+      sec.querySelectorAll(".kit-q-opt").forEach((b) => { const on = b.dataset.opt === choice; b.setAttribute("aria-checked", String(on)); b.classList.toggle("on", on); if (choice) b.tabIndex = on ? 0 : -1; });
+      const ta = sec.querySelector("textarea");
+      if (document.activeElement !== ta && v) ta.value = v.note || "";
+      const st = sec.querySelector(".kit-q-state"), keeps = choice && q.recommended && choice === q.recommended;
+      st.dataset.state = choice ? (keeps ? "default" : "custom") : "open";
+      st.textContent = choice ? (keeps ? L.keep : L.changed) : L.open;
+      const then = sec.querySelector(".kit-q-then span");
+      if (then && q.options.some((o) => o.then)) {
+        const o = choice ? optOf(q, choice) : q.recommended && optOf(q, q.recommended);
+        then.textContent = !o ? "Pick an option to see what happens next." : choice ? o.then || "" : `If you keep the default (${o.label.toLowerCase()}): ${o.then || ""}`;
+        then.parentElement.classList.toggle("chosen", !!choice);
+      }
+      const who = sec.querySelector(".who");
+      if (!who.classList.contains("err")) {
+        if (doc && doc.pending) who.textContent = "Saving…";
+        else if (v) who.innerHTML = `${choice ? "Answered" : "Note saved"} by <b>${qx(doc.author || "Anonymous")}</b> · <time datetime="${qx(doc.updatedAt)}">${ago(doc.updatedAt)}</time>`;
+        else who.textContent = "";
+      }
+      sec.querySelector("[data-clear]").hidden = !v;
+    }
+    function paint() {
+      list.forEach((q) => paintQuestion(q, answers[q.id]));
+      const n = list.filter((q) => choiceOf(q)).length;
+      const nEl = el.querySelector("[data-n]"); if (nEl) { nEl.textContent = n; el.querySelector(".kit-q-progress .meter i").style.width = (n / total) * 100 + "%"; el.querySelector(".kit-q-progress .meter").classList.toggle("good", n === total); }
+      el.querySelectorAll(".kit-q-jump a[data-q]").forEach((a) => { const q = byId[a.dataset.q], c = q && choiceOf(q); a.dataset.state = c ? (c === q.recommended ? "default" : "custom") : "open"; });
+      if (sum) {
+        sum.querySelector("tbody").innerHTML = list.map((q, i) => {
+          const v = answers[q.id] && answers[q.id].value, rec = q.recommended && optOf(q, q.recommended);
+          return `<tr data-q="${qx(q.id)}" tabindex="0"><td><span class="num">${pad2(i + 1)}</span> ${qx(q.title)}</td>
+            <td>${v && v.choice ? `<b>${qx(v.choiceLabel)}</b>${q.recommended ? (v.choice === q.recommended ? ` <span class="tag good">${qx(L.keep)}</span>` : ` <span class="tag thread">${qx(L.changed)}</span>`) : ""}` : `<span class="tag warn dot">${qx(L.open)}</span>`}</td>
+            <td class="kit-q-hide-sm kit-q-notecell">${v && v.note ? qx(v.note) : '<span class="faint">—</span>'}</td>${toolbar ? `<td class="muted">${rec ? qx(rec.label) : "—"}</td>` : ""}</tr>`;
+        }).join("");
+        const btn = sum.querySelector("[data-done]");
+        if (btn && !confirmFinish) {
+          const s = submitted && submitted.value;
+          btn.textContent = s ? "Mark done again" : L.done;
+          sum.querySelector(".kit-q-finish-title").textContent = s ? "Sent to the agent" : "Ready when you are";
+          sum.querySelector(".kit-q-finish-text").textContent = s ? `${s.author} finished ${ago(s.at)} with ${s.answered} of ${s.total} answered. Later changes are still saved; press again to tell the agent to re-read.`
+            : `Press “${L.done}” to tell the agent it can read your answers. You can still change them afterwards.`;
+          sum.querySelector(".kit-q-finish").classList.toggle("sent", !!s);
+        }
+      }
+      el.dispatchEvent(new CustomEvent("kit:answers", { bubbles: true, detail: { answered: n, total, answers: { ...answers }, submitted } }));
+    }
+    // The jump list marks the question being read.
+    if (nav && "IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+        if (en.isIntersecting) el.querySelectorAll(".kit-q-jump a[data-q]").forEach((a) => a.classList.toggle("cur", "q-" + a.dataset.q === en.target.id));
+      }), { rootMargin: "-35% 0px -55% 0px" });
+      el.querySelectorAll(".kit-q").forEach((s) => io.observe(s));
+    }
+    paint();
+    Data.watch("answer.", (docs) => {
+      const seen = new Set();
+      docs.forEach((d) => { const id = d.key.slice(7); if (byId[id]) { answers[id] = d; seen.add(id); } });
+      Object.keys(answers).forEach((id) => { if (!seen.has(id)) delete answers[id]; });
+      paint();
+    }, { interval: 6000 });
+    if (finishOn) Data.watch("state.submitted", (docs) => { submitted = docs.find((d) => d.key === "state.submitted") || null; paint(); }, { interval: 10000 });
+    setInterval(paint, 60000); // keep "x min ago" fresh
+    return { el, acceptAll, finish, answers: () => ({ ...answers }), paint };
+  }
+  Kit.questions = questions;
+  function wireQuestions() {
+    let added = false;
+    document.querySelectorAll("[data-questions], [data-questions-src]").forEach((el) => {
+      if (el.dataset.wired) return;
+      const src = el.getAttribute("data-questions-src"), raw = (el.getAttribute("data-questions") || "").trim();
+      try {
+        const spec = src ? src.split(".").reduce((o, k) => (o ? o[k] : undefined), window) : raw ? JSON.parse(raw) : null;
+        if (!spec) throw new Error("no questions given (data-questions JSON or data-questions-src)");
+        questions(el, spec); added = true;
+      } catch (e) { el.dataset.wired = "1"; el.innerHTML = `<p class="kit-block-error">These questions could not be shown: ${esc(e.message)}</p>`; console.error("Kit: questions failed", el, e); }
+    });
+    if (added && Kit.toc) document.querySelectorAll("[data-toc]").forEach((t) => Kit.toc(t)); // questions can be chapter items
+  }
+  document.addEventListener("kit:ready", wireQuestions);
+  const refreshBefore = Kit.refresh;
+  Kit.refresh = () => { if (refreshBefore) refreshBefore(); wireQuestions(); };
 
   document.addEventListener("DOMContentLoaded", () => { paintAuthor(); emit(); });
 })();

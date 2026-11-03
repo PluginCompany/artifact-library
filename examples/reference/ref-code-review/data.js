@@ -16,12 +16,14 @@
                 caption. app.js warns in the console when a snippet runs over 40 lines.
    decisions    calls the author made that the reviewer should confirm or overrule:
                 {id, title, context, options:[{id, label, text}], chosen: option id, why}
+                Rendered by the kit's questions block (Kit.questions), with "Built" as the default.
 
    Saved by readers (artifact feedback ref-code-review prints all of it)
      review.<changeId>          { change, verdict: approved|changes|question, note }
      comments.<changeId>        discussion of a change
      comments.<changeId>--<n>   discussion of its n-th snippet (1-based)
-     answer.<decisionId>        { decision, choice, label, keeps, note }
+     answer.<decisionId>        { questionId, question, choice, choiceLabel, recommended (= chosen),
+                                  recommendedLabel, followsRecommendation (agrees with what was built), note }
      review.overall             { verdict: approved|changes|question, note }
      state.submitted            { at, author, verdict }   when the reviewer sends the review
      comments.general           anything else

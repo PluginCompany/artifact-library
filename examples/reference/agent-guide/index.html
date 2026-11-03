@@ -175,7 +175,7 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
         <div class="panel"><h3 class="h3">A chapter menu</h3><p>Every chapter is a <code>&lt;section id&gt;</code> with an <code>&lt;h2&gt;</code>. With three or more, put <code>&lt;nav class="topnav" data-toc&gt;</code> inside the sticky <code>header.topbar</code> (or a sticky side nav for long pages), never in the page body where it scrolls away. The kit links every chapter, highlights the current one and gives phones a Contents button. List main chapters only: questions, findings or steps nested inside a chapter's section are its items; the top bar leaves them out and a side menu folds them open under their chapter.</p></div>
         <div class="panel"><h3 class="h3">Plain and short</h3><p>Full sentences, one idea per paragraph, at most about four lines. Use the words the reader uses; define a term once or drop it. Numbers beat adjectives: “about four working days”, not “moderate effort”.</p></div>
         <div class="panel"><h3 class="h3">Measure, cite, label</h3><p>If you can count it, time it or run it, do, and say how. Point to files and lines (<code>src/catalog.ts:42</code>). Mark estimates as estimates and invented content as Example content.</p></div>
-        <div class="panel"><h3 class="h3">Decisions on the page</h3><p>Turn open questions into options with trade-offs and a recommended default, plus a verdict when you need approval (<code>ref-decision-questionnaire</code>). Say that answers are saved and reach you.</p></div>
+        <div class="panel"><h3 class="h3">Decisions on the page</h3><p>Turn open questions into options with trade-offs and a recommended default with the kit's <code>[data-questions]</code> block: a page of its own (<code>ref-decision-questionnaire</code>) or a chapter of a plan or review. Add a verdict when you need approval. Say that answers are saved and reach you.</p></div>
       </div>
       <h3 class="h3 sub-h">Rewrite shorthand into sentences</h3>
       <div class="anti">
@@ -201,7 +201,7 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
           <tr><td>Work done in steps</td><td>Numbered steps with the files each touches</td><td><code>&lt;ol class="steps"&gt;</code> with <code>&lt;p class="files"&gt;</code></td></tr>
           <tr><td>Several screenshots</td><td>Gallery: grid, sidebar walkthrough, notes on the image, compare</td><td><code>&lt;div data-gallery="grid"&gt;</code> with <code>&lt;figure&gt;</code>s, or JSON</td></tr>
           <tr><td>A code change</td><td>A short diff of the lines that carry it (about 25 at most), with notes</td><td><code>&lt;div data-diff='{…}'&gt;</code> with <code>data-before</code> / <code>data-after</code> scripts, or a patch</td></tr>
-          <tr><td>Open decisions</td><td>Questions with options and a default</td><td>copy <code>ref-decision-questionnaire</code></td></tr>
+          <tr><td>Open decisions</td><td>Questions with options, trade-offs and a default</td><td><code>&lt;div data-questions='{…}'&gt;</code> or <code>data-questions-src</code></td></tr>
         </tbody>
       </table></div>
       <div class="grid cols-2 show-code">
@@ -276,6 +276,13 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
         <li><code>[data-diff]</code> from before/after code or a <code>git diff</code>; readers switch between Unified, Split and Result. Keep each snippet to the lines that carry the change; for a whole review built that way, copy <code>ref-code-review</code>.</li>
         <li><code>&lt;pre data-lang="ts"&gt;</code> colours code.</li>
       </ul>
+      <h3 class="h3 sub-h">Decisions</h3>
+      <ul class="dots">
+        <li><code>&lt;div data-questions-src="PLAN.questions"&gt;</code> (or <code>data-questions</code> with JSON, or <code>Kit.questions(el, spec)</code>) draws questions as option cards with pros and cons, effort, a recommended default and an optional picture, a note per question, <i>Accept all recommended</i>, a summary and <i>I’m done</i>. It needs <code>kit/kit-data.js</code>.</li>
+        <li>Use it whenever you need decisions from the reader, on their own page (start from <code>ref-decision-questionnaire</code>) or inside a plan, review or report chapter. Don't copy a questionnaire renderer into the page: fixes to the block reach every page that uses it.</li>
+        <li>Answers save as <code>answer.&lt;id&gt;</code> and <code>state.submitted</code>. <code>labels</code> renames the words (<code>ref-code-review</code> uses Built / Agreed / Overruled); <code>summary: false</code> and <code>finish: false</code> fit it into a longer page.</li>
+        <li>Answer a reader's note on the question itself: <code>artifact data append &lt;slug&gt; comments.q-&lt;id&gt; --item '{"text":"…"}' --author "Claude Code"</code> shows under it on the open page within seconds. Notes that should stay go in the question's <code>updates</code> when you republish.</li>
+      </ul>
       <h3 class="h3 sub-h">Clean or Bold</h3>
       <p class="sub">Every kit page comes in two styles. <b>Clean</b> (<code>kit/themes/clean/</code>) is the default: a calm, professional documentation look with a flat white page, hairline borders, small radii, semibold Inter headings and one blue accent. <b>Bold</b> (<code>kit.css</code> alone) is the expressive look with heavy display type and dashed rules. Readers switch with the <i>Bold / Clean</i> button the kit adds next to the light/dark toggle, and their choice wins. Every reference links Clean after every other stylesheet, so it is there on the first paint; keep that line:</p>
       <pre data-copy>&lt;link rel="stylesheet" href="kit/kit.css"&gt;
@@ -311,7 +318,7 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
             <thead><tr><th>Key</th><th>Value</th></tr></thead>
             <tbody>
               <tr><td><code>comments.&lt;anchor&gt;</code></td><td><code>{ items: [{ id, author, role, createdAt, text, resolved? }] }</code></td></tr>
-              <tr><td><code>answer.&lt;question&gt;</code></td><td><code>{ choice, note }</code> — one document per question</td></tr>
+              <tr><td><code>answer.&lt;question&gt;</code></td><td><code>{ questionId, question, choice, choiceLabel, note }</code> — one document per question; the questions block adds <code>recommended</code> and <code>followsRecommendation</code></td></tr>
               <tr><td><code>review.&lt;item&gt;</code></td><td><code>{ verdict: "approved" | "changes" | "question", note }</code></td></tr>
               <tr><td><code>state.&lt;name&gt;</code></td><td>Anything live: a run's progress, a runbook's ticks, a chosen scope</td></tr>
             </tbody>

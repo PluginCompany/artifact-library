@@ -144,15 +144,15 @@ def shots():
             "update": "shadow:.update", "latest": "shadow:.update a", "versions": "shadow:select"}},
         "tb_page": {"url": "/artifacts/v05-plan/", "wait": "shadow:.dock", "targets": {"dock": "shadow:.dock", "page": ".deck, main, body > div"}},
         # ------------------------------------------------------------ answering
-        "q_intro": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.q", "targets": {
+        "q_intro": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.kit-q", "targets": {
             "progress": ".ring, .progress, [class*=ring]", "start": "text:a,button|Start with question", "defaults": "text:a,button|Accept all defaults", "list": ".q-nav, nav"}},
-        "q_options": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.q", "do": [("scroll", "#q-comment-notify", 90), ("wait", 700)], "targets": {
-            "question": "#q-comment-notify h2, #q-comment-notify h3", "option": "#q-comment-notify .opt", "recommended": "#q-comment-notify .tag.accent",
-            "tradeoffs": "#q-comment-notify .opt ul, #q-comment-notify .opt .pros"}},
-        "q_chosen": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.q", "do": [("scroll", "#q-comment-notify", 90), ("wait", 500),
-                     ("click", "#q-comment-notify .opt:nth-child(2)"), ("wait", 1400)], "targets": {
-            "chosen": "#q-comment-notify .opt[aria-checked=true]", "status": "[data-save-status]", "note": "#q-comment-notify textarea", "who": "text:#q-comment-notify *|Answered by"}},
-        "q_summary": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.q", "do": [("scroll", "#summary", 80), ("wait", 900)], "targets": {
+        "q_options": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.kit-q", "do": [("scroll", "#q-comment-notify", 90), ("wait", 700)], "targets": {
+            "question": "#q-comment-notify h2, #q-comment-notify h3", "option": "#q-comment-notify .kit-q-opt", "recommended": "#q-comment-notify .tag.accent",
+            "tradeoffs": "#q-comment-notify .kit-q-opt .kit-q-pc"}},
+        "q_chosen": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.kit-q", "do": [("scroll", "#q-comment-notify", 90), ("wait", 500),
+                     ("click", "#q-comment-notify .kit-q-opt:nth-child(2)"), ("wait", 1400)], "targets": {
+            "chosen": "#q-comment-notify .kit-q-opt[aria-checked=true]", "status": "[data-save-status]", "note": "#q-comment-notify textarea", "who": "text:#q-comment-notify *|Answered by"}},
+        "q_summary": {"url": "/artifacts/ref-decision-questionnaire/", "wait": "section.kit-q", "do": [("scroll", "#summary", 80), ("wait", 900)], "targets": {
             "summary": "#summary", "answer": "#summary li, #summary tr", "agent": "text:#summary *|agent"}},
         "rv_thread": {"url": "/artifacts/ref-implementation-review/", "wait": "#finding-list", "do": [("scroll", "#findings", 70), ("wait", 500), ("click", "#finding-list .f-talk"), ("wait", 1200)], "targets": {
             "thread": ".kit-thread", "human": ".thread-items li:not(.agent)", "agent": ".thread-items li.agent", "form": ".kit-thread form"}},

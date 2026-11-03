@@ -9,7 +9,7 @@ them on first start.
 | `agent-guide` | Explain | How agents should plan, build, verify, publish and follow up on artifacts |
 | `reference-collection` | Hub | Live catalogue of this collection and the kit style guide (`kit.html`) |
 | `ref-plan-deck` | Plan | Keyboard slide deck, overview grid, speaker notes, print-to-PDF |
-| `ref-decision-questionnaire` | Plan | Several decisions at once; answers saved for the agent |
+| `ref-decision-questionnaire` | Plan | Several decisions at once, on the kit's questions block; answers saved for the agent |
 | `ref-prototype-variants` | Plan | Clickable UI variants with picks and comments per variant |
 | `ref-scope-slicer` | Plan | Work items against capacity, live timeline, saved proposals |
 | `ref-decision-record` | Plan | Options, adjustable weighted scoring, readers record their position |
@@ -52,7 +52,7 @@ browser storage and say so in `[data-save-status]`.
 | Key | Shape | Written by |
 |---|---|---|
 | `comments.<anchor>` | `{ items: [{ id, author, role, createdAt, text, resolved }] }` | `Kit.comments(el, {key})`, `artifact data append` |
-| `answer.<question>` | `{ choice, note }` | pages (questionnaires, picks) |
+| `answer.<question>` | `{ questionId, question, choice, choiceLabel, recommended, followsRecommendation, note }` | the kit's questions block (`[data-questions]`), picks |
 | `review.<item>` | `{ verdict: "approved" \| "changes" \| "question", note }` | review pages |
 | `state.<name>` | anything | pages or agents (`artifact data set`) for live state |
 
@@ -81,6 +81,9 @@ that opens in Bold.
 - **Images and code:** screenshots below the first screen use `img[data-src]` with
   `width`/`height`; sets of them a `[data-gallery]`; code changes a `[data-diff]`;
   code blocks `pre[data-lang]`.
+- **Decisions:** a `[data-questions]` block (`Kit.questions`, in `kit-data.js`), on its own
+  page or in a chapter of another; never a copied renderer. Agents reply on a question with
+  `artifact data append <slug> comments.q-<id>`.
 - **Status always has a word.** `tag good|warn|bad` carries a label; never colour alone.
 - **Charts:** `Kit.chart.line|column|bar|donut|spark`. Series colours are fixed slots
   `--s1…--s5`; every chart card offers a table view. Never dual axes.

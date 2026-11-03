@@ -68,7 +68,7 @@ async def main():
         await shot(ctx, "library", ORIGIN + "/")
 
         async def first_question(pg):
-            qid = await pg.evaluate("document.querySelector('section.q').id")
+            qid = await pg.evaluate("document.querySelector('section.kit-q').id")
             await pg.evaluate(f"document.getElementById('{qid}').scrollIntoView({{block:'start'}}); scrollBy(0,-90)")
         await shot(ctx, "questionnaire", ORIGIN + "/artifacts/ref-decision-questionnaire/", first_question)
 

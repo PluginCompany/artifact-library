@@ -26,7 +26,8 @@ Find the closest reference (table in SKILL.md, or `artifact search ref-`), then 
   - `[data-gallery]`: a layout name with `<figure><img><figcaption><b>Title</b> caption</figcaption></figure>` children, or JSON `{layout, items:[{src, title, caption, w, h, notes}]}` (`data-gallery-src` for a global in `data.js`, `Kit.gallery(el, spec)` from script). Layouts: `grid`, `masonry`, `strip`, `sidebar` (numbered walkthrough), `annotated` (notes on the image), `compare` (drag a divider). Notes are pins `{x, y, title, text}` or boxes `{x, y, w, h, …}` in percent of the image.
   - `[data-diff]`: JSON `{file, start, before, after}` or `{patch, range}`, or `<script type="text/plain" data-before|data-after|data-patch>` children; `notes:[{line, side, title, text}]`, `highlight:[[a, b]]`, `mode: "unified"|"split"|"final"`. Readers switch Unified / Split / Result. Show only the lines that carry the change, a line or two of context, at most ~25 lines per snippet; split a bigger change into several snippets, each with a caption.
   - `pre[data-lang="ts"]` (js, py, sh, css, html, json, sql, …) colours code; `Kit.highlight(text, lang)` returns the HTML.
-- `kit-data.js` — saving (below).
+- `kit-data.js` — saving (below) and the questions block:
+  - `[data-questions]` with JSON `{questions:[{id, title, context, evidence, recommended, why, options:[{id, label, summary, pros, cons, effort, then, image | code (+lang) | html | sketch}]}]}` (an array is taken as the questions), `data-questions-src="PLAN.questions"` for a global in `data.js`, or `Kit.questions(el, spec)`: decisions answered by clicking an option card, with a note per question, "Accept all recommended", a jump list from four questions, a summary and "I'm done". Use it whenever you need decisions from the reader: a page of its own (start from `ref-decision-questionnaire`) or a chapter of a plan, review or report. Don't copy a renderer into the page. Options: `heading: 2|3` (3, default, inside a chapter), `nav`, `toolbar`, `summary: true|false|"#selector"`, `finish`, `sketches: {name: "<svg…>"}`, `labels` (a code review uses Built / Agreed / Overruled). Saves `answer.<id>` and `state.submitted` (below), fires `kit:answers`; returns `{acceptAll(), finish(), answers()}`. Notes from you show under a question: `updates: [{text, author, at, tone: "warn"|"good"}]` in the spec (`agent: "Claude"` sets the default author), or live with `artifact data append <slug> comments.q-<id>` (below).
 - `fonts/` — self-hosted; pages work without internet.
 - `themes/clean/` — the Clean style, the default: plain, professional documentation look (flat white page, hairline borders, small radii, semibold Inter headings, one blue accent). Every reference links it after every other stylesheet (`<link rel="stylesheet" href="kit/themes/clean/clean.css">`) so it is there on the first paint; keep that line. Readers switch between Clean and Bold (the expressive kit.css look) with a button kit.js adds next to the light/dark toggle. To open a page in Bold, drop the Clean link and write `<html data-kit-style="bold">`.
 
@@ -49,11 +50,12 @@ Conventions agents rely on:
 | Key | Value |
 |---|---|
 | `comments.<anchor>` | `{ items: [{ id, author, role, createdAt, text, resolved }] }` — append-only thread |
-| `answer.<question>` | `{ questionId, question, choice, choiceLabel, note }` |
+| `answer.<question>` | `{ questionId, question, choice, choiceLabel, note }`; the questions block adds `recommended`, `recommendedLabel`, `followsRecommendation` |
 | `review.<item>` | `{ verdict: "approved" \| "changes" \| "question", note }` |
 | `state.<name>` | anything the page or the agent keeps live (run logs, checklists, selections) |
+| `state.submitted` | `{ at, author, … }` when the reader presses "I'm done"; the questions block adds `answered, total, unanswered, followsRecommendations` |
 
-Store human-readable labels next to ids so `artifact feedback` output makes sense without the page. Then tell the user: "Answer on the page; I'll see it when you save." and run `artifact wait <slug>` in the background (`--until submitted` for a questionnaire's "I'm done"); without background commands, ask them to tell you when they're done. Read with `artifact feedback <slug>`, reply with `artifact data append`, resolve with `artifact data update-item`.
+Store human-readable labels next to ids so `artifact feedback` output makes sense without the page. Then tell the user: "Answer on the page; I'll see it when you save." and run `artifact wait <slug>` in the background (`--until submitted` for a questionnaire's "I'm done"); without background commands, ask them to tell you when they're done. Read with `artifact feedback <slug>`, reply with `artifact data append`, resolve with `artifact data update-item`. After reading the answers of a questions block, reply to a reader's note on the question itself, not only in chat: `artifact data append <slug> comments.q-<questionId> --item '{"text":"Your note (slow tampering): a real risk. Recommended now: …"}' --author "Claude Code"` appears under that question on the open page within about 10 s, no republish needed. Explain a changed recommendation the same way.
 
 ## Quality checklist before you share the link
 
@@ -77,6 +79,7 @@ Store human-readable labels next to ids so `artifact feedback` output makes sens
 - A process or comparison described in paragraphs — draw it with `[data-flow]` or `table.compare`.
 - A review that pastes the whole diff and says why nowhere — copy `ref-code-review`: each change with its reasoning and a short `[data-diff]` of the lines that matter (`ref-code-walkthrough` when the reviewer must read every line of a diff).
 - Thirty screenshots loaded with the page — `img[data-src]` or a `[data-gallery]` loads them as the reader scrolls.
+- A questionnaire renderer copied into a plan or review — put a `[data-questions]` block in the chapter instead.
 - Estimates where a measurement was possible — run it, count it, time it, and say how.
 - A long page without a chapter menu, or with the menu in the page body where it scrolls away — put `nav.topnav[data-toc]` in the sticky top bar.
 - Colour as the only signal, dual-axis charts, a number on every data point.

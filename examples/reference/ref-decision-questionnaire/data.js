@@ -10,11 +10,15 @@
                  sketch: "<name>" (see SKETCHES in app.js) or code: "snippet",
                  then: what the agent will do if this is chosen }
      recommended option id the agent would pick by default
+     updates     optional notes from the agent on this question, newest last:
+                 [{ author, at, text, tone }]. Without republishing, reply live with
+                 artifact data append <slug> comments.q-<id> --item '{"text":"…"}' --author "Claude Code"
 
    Saved data (read with: artifact feedback ref-decision-questionnaire)
      answer.<questionId>  { questionId, question, choice, choiceLabel, recommended,
                             followsRecommendation, note }
-     state.submitted      { at, author, answered, total }
+     state.submitted      { at, author, answered, total, unanswered, followsRecommendations }
+     comments.q-<id>      notes the agent added live (shown on the question)
    ========================================================================== */
 window.QUESTIONNAIRE = {
   meta: {
@@ -31,6 +35,7 @@ window.QUESTIONNAIRE = {
       title: "How should the version toolbar behave on phones?",
       context: "At 390 px the floating toolbar wraps to two rows and covers the bottom of every artifact. Collapsing helps, but the choice is only remembered after you collapse it once.",
       evidence: "Finding F2 in the implementation review",
+      updates: [{ author: "Claude Code", at: "2026-10-10", text: "Alex asked whether the pill would hide the “newer version” notice. It would not: when a newer version exists the pill shows a dot and opens once by itself, so the recommendation stays the same." }],
       recommended: "pill",
       options: [
         { id: "pill", label: "Start collapsed as a small pill", sketch: "phone-pill", effort: "S",

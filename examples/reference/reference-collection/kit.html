@@ -84,6 +84,7 @@
     <a href="#images"><b>21</b>Images</a>
     <a href="#gallery"><b>22</b>Gallery</a>
     <a href="#diff"><b>23</b>Code diff</a>
+    <a href="#questions"><b>24</b>Questions</a>
   </nav>
 
   <main class="main sg" id="main">
@@ -495,6 +496,25 @@ diff --git a/src/catalog.ts b/src/catalog.ts
       </div></div>
       <div class="demo-block"><header><b>A new file</b></header><div class="demo">
         <div data-diff='{"file":"compose.yaml","after":"services:\n  artifacts:\n    image: ghcr.io/plugincompany/artifact-library:0.9\n    ports: [\"3000:3000\"]\n    volumes:\n      - ./data:/data\n    environment:\n      ARTIFACT_TOKEN: ${ARTIFACT_TOKEN}"}'></div>
+      </div></div>
+    </section>
+
+    <section id="questions">
+      <h2 class="stitch">Questions</h2>
+      <p class="muted">Several decisions on one page, answered by clicking an option. Each question has 2–4 options with a summary, pros and cons, effort and what happens next, and usually a recommended default; readers add a note, accept all defaults at once, review a summary and press <i>I’m done</i>. Answers are saved for the agent as <code>answer.&lt;id&gt;</code> and <code>state.submitted</code>, the same format as <code>ref-decision-questionnaire</code>. Needs <code>kit/kit-data.js</code>. Put the questions in <code>data-questions</code> as JSON, point <code>data-questions-src</code> at a global, or call <code>Kit.questions(el, spec)</code>.</p>
+      <div class="table-wrap" style="margin-top:14px"><table class="table compact">
+        <thead><tr><th>Field</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>questions</code></td><td><code>[{id, title, context, evidence, recommended, why, options}]</code>; the answer is saved as <code>answer.&lt;id&gt;</code>, so keep ids stable</td></tr>
+          <tr><td><code>options</code></td><td><code>[{id, label, summary, pros, cons, effort, then}]</code>, with an optional picture: <code>image</code> (<code>"shots/a.webp"</code> or <code>{src, w, h, alt}</code>), <code>code</code> (+ <code>lang</code>), <code>html</code>, or <code>sketch</code> (a name in <code>sketches</code>)</td></tr>
+          <tr><td><code>heading</code></td><td><code>3</code> (default) inside a chapter, <code>2</code> when the questions are the page's chapters</td></tr>
+          <tr><td><code>nav</code>, <code>toolbar</code></td><td>Jump list beside the cards (from four questions); progress bar and <i>Accept all recommended</i></td></tr>
+          <tr><td><code>summary</code>, <code>finish</code></td><td>Summary table here, elsewhere (<code>"#selector"</code>) or not at all; the <i>I’m done</i> button</td></tr>
+          <tr><td><code>labels</code></td><td>Words for <code>recommended</code>, <code>keep</code>, <code>changed</code>, <code>open</code>, <code>then</code>, <code>why</code>, <code>acceptAll</code>, <code>done</code>; a code review uses Built / Agreed / Overruled</td></tr>
+        </tbody>
+      </table></div>
+      <div class="demo-block"><header><b>Two decisions with a summary</b></header><div class="demo">
+        <div data-questions='{"questions":[{"id":"sg-search","title":"How should search match words?","context":"Readers search titles, descriptions and page text. Plurals and typos currently miss.","recommended":"prefix","options":[{"id":"exact","label":"Exact words","summary":"Every word must appear as typed.","pros":["Predictable"],"cons":["Misses plurals"],"effort":"S","then":"Keep today&#39;s matching and document it.","code":"q=torque → torque","lang":"text"},{"id":"prefix","label":"Word starts","summary":"Words match from their start, so repair finds repairs.","pros":["Finds plurals","Still fast in memory"],"cons":["No typo tolerance"],"effort":"S","then":"Match word prefixes and add tests for plurals.","code":"q=repair → repair, repairs, repaired","lang":"text"},{"id":"fuzzy","label":"Typo tolerant","summary":"Close spellings match too.","pros":["Forgiving"],"cons":["Surprising matches","Needs an index"],"effort":"L","then":"Add an index with edit-distance matching.","code":"q=torqe → torque","lang":"text"}]},{"id":"sg-shots","title":"Where should screenshots go in a review?","recommended":"gallery","options":[{"id":"gallery","label":"One gallery near the top","summary":"Readers see the result before the code.","image":{"src":"shots/library.webp","w":1600,"h":844,"alt":"A gallery of library screenshots"},"then":"Use a sidebar gallery in the Screenshots chapter."},{"id":"inline","label":"Next to each change","summary":"Every change shows its own screen.","image":{"src":"shots/questionnaire.webp","w":1600,"h":996,"alt":"A single screenshot next to a change"},"then":"Put one image under each change card."}]}]}'></div>
       </div></div>
     </section>
   </main>

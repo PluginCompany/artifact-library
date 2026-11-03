@@ -1,15 +1,11 @@
-/* Decision questionnaire — renders window.QUESTIONNAIRE (data.js) and saves
-   answers with Kit.data as answer.<questionId>. Sections: hero/progress,
-   jump nav, question cards, review table and "I'm done". */
+/* Decision questionnaire — the page around the kit's questions block (Kit.questions in kit/kit-data.js):
+   hero with a progress ring, "accept all defaults", and this example's option sketches. The block renders
+   window.QUESTIONNAIRE.questions (data.js), saves answer.<questionId> and state.submitted, and draws the
+   jump list, the summary table and "I'm done". */
 document.addEventListener("kit:ready", () => {
   "use strict";
   const Q = window.QUESTIONNAIRE;
-  const { $, $$, esc } = Kit;
-  const D = Kit.data;
-  const byId = Object.fromEntries(Q.questions.map((q) => [q.id, q]));
-  const optOf = (q, id) => q.options.find((o) => o.id === id);
-  const answers = {};        // questionId -> saved document (or undefined)
-  let submitted = null;      // state.submitted document
+  const { $, esc } = Kit;
   const WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
 
   /* ---------- Sketches: tiny pictures drawn with kit tokens ---------- */
@@ -73,205 +69,28 @@ document.addEventListener("kit:ready", () => {
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
   $("#start-btn").href = "#q-" + Q.questions[0].id;
 
-  /* ---------- Question cards ---------- */
-  const list = $("#questions");
-  Q.questions.forEach((q, qi) => {
-    const sec = document.createElement("section");
-    sec.className = "q reveal"; sec.id = "q-" + q.id; sec.dataset.q = q.id;
-    sec.setAttribute("aria-labelledby", `qt-${q.id}`);
-    const rec = optOf(q, q.recommended);
-    sec.innerHTML = `
-      <header class="q-head">
-        <span class="q-num">${String(qi + 1).padStart(2, "0")}</span>
-        <div class="q-titles">
-          <h2 id="qt-${esc(q.id)}">${esc(q.title)}</h2>
-          <p class="q-context">${esc(q.context)}</p>
-          ${q.evidence ? `<span class="tag outline">${esc(q.evidence)}</span>` : ""}
-        </div>
-        <span class="q-state" data-state="open">Not answered</span>
-      </header>
-      <div class="opts n${q.options.length}" role="radiogroup" aria-labelledby="qt-${esc(q.id)}">
-        ${q.options.map((o, oi) => `
-          <button type="button" class="opt" role="radio" aria-checked="false" tabindex="${oi === 0 ? 0 : -1}" data-opt="${esc(o.id)}">
-            <span class="opt-visual">${o.code ? `<code class="opt-code">${esc(o.code)}</code>` : SKETCHES[o.sketch] || ""}</span>
-            <span class="opt-body">
-              <span class="opt-top"><span class="radio" aria-hidden="true"></span><b>${esc(o.label)}</b></span>
-              <span class="opt-tags">${o.id === q.recommended ? '<span class="tag accent">Recommended</span>' : ""}<span class="tag outline">Effort ${esc(o.effort || "?")}</span></span>
-              <span class="opt-sum">${esc(o.summary)}</span>
-              <span class="pc">${(o.pros || []).map((p) => `<span class="pro">${esc(p)}</span>`).join("")}${(o.cons || []).map((c) => `<span class="con">${esc(c)}</span>`).join("")}</span>
-            </span>
-          </button>`).join("")}
-      </div>
-      <div class="q-foot">
-        <div class="then"><b>What I’ll do</b><span class="then-text"></span></div>
-        <label class="note"><span>Note for the agent <em>optional</em></span><textarea rows="2" placeholder="Anything I should know about this choice…"></textarea></label>
-        <div class="q-meta"><span class="who" aria-live="polite"></span><span class="spacer"></span><button class="btn ghost clear" type="button" hidden>Clear answer</button><a class="btn ghost next" href="#${qi + 1 < total ? "q-" + Q.questions[qi + 1].id : "summary"}">${qi + 1 < total ? "Next question" : "Review answers"} ↓</a></div>
-      </div>`;
-    list.appendChild(sec);
-    sec.querySelector(".then-text").textContent = `If you keep the default (${rec.label.toLowerCase()}): ${rec.then}`;
-
-    const radios = $$(".opt", sec);
-    radios.forEach((b, i) => {
-      b.addEventListener("click", () => choose(q, b.dataset.opt));
-      b.addEventListener("keydown", (e) => {
-        const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-        if (!d) return;
-        e.preventDefault();
-        const next = radios[(i + d + radios.length) % radios.length];
-        next.focus(); choose(q, next.dataset.opt);
-      });
-    });
-    const ta = $("textarea", sec);
-    let timer;
-    ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => saveNote(q, ta.value), 700); });
-    ta.addEventListener("blur", () => { clearTimeout(timer); if ((answers[q.id]?.value?.note || "") !== ta.value.trim()) saveNote(q, ta.value); });
-    $(".clear", sec).addEventListener("click", () => clearAnswer(q));
-  });
-
-  $("#jump-list").innerHTML = Q.questions.map((q, i) => `<li><a href="#q-${esc(q.id)}" data-q="${esc(q.id)}"><span class="dot" aria-hidden="true"></span><b>${String(i + 1).padStart(2, "0")}</b><span>${esc(q.title)}</span></a></li>`).join("");
-
-  /* ---------- Saving ---------- */
-  const valueFor = (q, choice, note) => {
-    const o = choice ? optOf(q, choice) : null;
-    return { questionId: q.id, question: q.title, choice: choice || null, choiceLabel: o ? o.label : null, recommended: q.recommended,
-      recommendedLabel: optOf(q, q.recommended).label, followsRecommendation: choice ? choice === q.recommended : null, note: (note || "").trim() };
-  };
-  async function save(q, choice, note) {
-    await D.ensureAuthor();
-    const sec = $("#q-" + q.id);
-    sec.classList.add("saving");
-    try { answers[q.id] = await D.set("answer." + q.id, valueFor(q, choice, note)); }
-    catch (e) { flash(sec, "Couldn’t save: " + e.message); }
-    finally { sec.classList.remove("saving"); paint(); }
-  }
-  function choose(q, choice) {
-    const cur = answers[q.id]?.value;
-    if (cur && cur.choice === choice) return;
-    const ta = $(`#q-${q.id} textarea`);
-    paintQuestion(q, { value: valueFor(q, choice, ta.value), author: D.author(), updatedAt: new Date().toISOString(), pending: true });
-    save(q, choice, ta.value);
-  }
-  function saveNote(q, note) {
-    const cur = answers[q.id]?.value;
-    if (!cur && !note.trim()) return;
-    save(q, cur ? cur.choice : null, note);
-  }
-  async function clearAnswer(q) {
-    try { await D.remove("answer." + q.id); delete answers[q.id]; $(`#q-${q.id} textarea`).value = ""; paint(); }
-    catch (e) { flash($("#q-" + q.id), "Couldn’t clear: " + e.message); }
-  }
-  function flash(sec, msg) { const who = $(".who", sec); who.textContent = msg; who.classList.add("err"); setTimeout(() => who.classList.remove("err"), 4000); }
-
-  $("#accept-all").addEventListener("click", async (e) => {
-    const btn = e.currentTarget; btn.disabled = true;
-    await D.ensureAuthor();
-    const open = Q.questions.filter((q) => !answers[q.id]?.value?.choice);
-    for (const q of open) await save(q, q.recommended, $(`#q-${q.id} textarea`).value || "");
-    btn.disabled = false;
-    $("#accept-note").textContent = open.length ? `Filled ${open.length} question${open.length === 1 ? "" : "s"} with the default. Change any of them below.` : "Every question already had an answer, so nothing changed.";
-    document.getElementById("summary").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-  });
-
-  let confirmFinish = false;
-  $("#done-btn").addEventListener("click", async () => {
-    const answered = Q.questions.filter((q) => answers[q.id]?.value?.choice);
-    const missing = Q.questions.filter((q) => !answers[q.id]?.value?.choice);
-    if (missing.length && !confirmFinish) {
-      confirmFinish = true;
-      $("#done-btn").textContent = `Finish with ${missing.length} unanswered`;
-      $("#finish-title").textContent = `${missing.length} question${missing.length === 1 ? " has" : "s have"} no answer`;
-      $("#finish-text").textContent = `The agent will treat ${missing.map((q) => "“" + q.title.replace(/\?$/, "") + "”").join(", ")} as open. Press again to finish anyway, or answer ${missing.length === 1 ? "it" : "them"} first.`;
-      return;
-    }
-    await D.ensureAuthor();
-    try {
-      submitted = await D.set("state.submitted", { at: new Date().toISOString(), author: D.author() || "Anonymous", answered: answered.length, total,
-        unanswered: missing.map((q) => q.id), followsRecommendations: answered.filter((q) => answers[q.id].value.choice === q.recommended).length });
-      confirmFinish = false;
-    } catch (e) { $("#finish-text").textContent = "Couldn’t save: " + e.message; }
-    paint();
-  });
-
-  /* ---------- Painting ---------- */
-  function paintQuestion(q, doc) {
-    const sec = $("#q-" + q.id), v = doc && doc.value, choice = v && v.choice;
-    $$(".opt", sec).forEach((b) => {
-      const on = b.dataset.opt === choice;
-      b.setAttribute("aria-checked", String(on));
-      b.classList.toggle("on", on);
-    });
-    if (choice) $$(".opt", sec).forEach((b) => (b.tabIndex = b.dataset.opt === choice ? 0 : -1));
-    const ta = $("textarea", sec);
-    if (document.activeElement !== ta && v) ta.value = v.note || "";
-    const st = $(".q-state", sec);
-    st.dataset.state = choice ? (choice === q.recommended ? "default" : "custom") : "open";
-    st.textContent = choice ? (choice === q.recommended ? "Default" : "Your choice") : "Not answered";
-    const o = choice ? optOf(q, choice) : optOf(q, q.recommended);
-    $(".then-text", sec).textContent = choice ? o.then : `If you keep the default (${o.label.toLowerCase()}): ${o.then}`;
-    $(".then", sec).classList.toggle("chosen", !!choice);
-    const who = $(".who", sec);
-    if (!who.classList.contains("err")) {
-      if (doc && doc.pending) who.textContent = "Saving…";
-      else if (v) who.innerHTML = `${choice ? "Answered" : "Note saved"} by <b>${esc(doc.author || "Anonymous")}</b> · <time datetime="${esc(doc.updatedAt)}">${Kit.ago(doc.updatedAt)}</time>`;
-      else who.textContent = "";
-    }
-    $(".clear", sec).hidden = !v;
-  }
-  function paint() {
-    Q.questions.forEach((q) => paintQuestion(q, answers[q.id]));
-    const n = Q.questions.filter((q) => answers[q.id]?.value?.choice).length;
+  /* ---------- Progress ring and "finished" banner follow the block ---------- */
+  document.addEventListener("kit:answers", (e) => {
+    const { answered: n, submitted } = e.detail, C = 2 * Math.PI * 52;
     $("#ring-n").textContent = n;
     $("#ring-of").textContent = `of ${total} answered`;
     $("#ring").setAttribute("aria-label", `${n} of ${total} answered`);
-    const C = 2 * Math.PI * 52;
     $("#ring-fill").style.strokeDasharray = `${(n / total) * C} ${C}`;
     $("#ring").classList.toggle("complete", n === total);
-    $$("#jump-list a").forEach((a) => {
-      const v = answers[a.dataset.q]?.value;
-      a.dataset.state = v && v.choice ? (v.choice === byId[a.dataset.q].recommended ? "default" : "custom") : "open";
-    });
-    $("#summary-body").innerHTML = Q.questions.map((q, i) => {
-      const v = answers[q.id]?.value, rec = optOf(q, q.recommended);
-      return `<tr data-q="${esc(q.id)}" tabindex="0"><td><span class="num">${String(i + 1).padStart(2, "0")}</span> ${esc(q.title)}</td>
-        <td>${v && v.choice ? `<b>${esc(v.choiceLabel)}</b>${v.choice === q.recommended ? ' <span class="tag good">Default</span>' : ' <span class="tag thread">Changed</span>'}` : '<span class="tag warn dot">Not answered</span>'}</td>
-        <td class="hide-sm note-cell">${v && v.note ? esc(v.note) : '<span class="faint">—</span>'}</td>
-        <td class="muted">${esc(rec.label)}</td></tr>`;
-    }).join("");
-    const banner = $("#submitted-banner");
-    if (submitted && submitted.value) {
-      const s = submitted.value;
-      banner.hidden = false;
-      banner.innerHTML = `<b>Finished</b>${esc(s.author)} pressed “I’m done” ${Kit.ago(s.at)} with ${s.answered} of ${s.total} answered.`;
-      if (!confirmFinish) {
-        $("#finish-title").textContent = "Sent to the agent";
-        $("#finish-text").textContent = `${s.author} finished ${Kit.ago(s.at)}. Later changes are still saved; press again to tell the agent to re-read.`;
-        $("#done-btn").textContent = "Mark done again";
-      }
-    } else {
-      banner.hidden = true;
-      if (!confirmFinish) $("#done-btn").textContent = "I’m done";
-    }
-  }
-  $("#summary-body").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-q]"); if (tr) location.hash = "q-" + tr.dataset.q; });
-  $("#summary-body").addEventListener("keydown", (e) => { const tr = e.target.closest("tr[data-q]"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); location.hash = "q-" + tr.dataset.q; } });
+    const banner = $("#submitted-banner"), s = submitted && submitted.value;
+    banner.hidden = !s;
+    if (s) banner.innerHTML = `<b>Finished</b>${esc(s.author)} pressed “I’m done” ${Kit.ago(s.at)} with ${s.answered} of ${s.total} answered.`;
+  });
 
-  // Jump nav: mark the question in view
-  if ("IntersectionObserver" in window) {
-    const io = new IntersectionObserver((entries) => entries.forEach((en) => {
-      if (en.isIntersecting) $$("#jump-list a").forEach((a) => a.classList.toggle("cur", "q-" + a.dataset.q === en.target.id));
-    }), { rootMargin: "-35% 0px -55% 0px" });
-    $$(".q").forEach((s) => io.observe(s));
-  }
-
-  /* ---------- Live: answers from anyone, as they are saved ---------- */
-  paint();
+  /* ---------- The questions ---------- */
+  const block = Kit.questions($("#questions"), { questions: Q.questions, heading: 2, toolbar: false, summary: "#summary-slot", sketches: SKETCHES,
+    labels: { acceptAll: "Accept all defaults" } });
+  $("#accept-all").addEventListener("click", async (e) => {
+    const btn = e.currentTarget; btn.disabled = true;
+    const n = await block.acceptAll();
+    btn.disabled = false;
+    $("#accept-note").textContent = n ? `Filled ${n} question${n === 1 ? "" : "s"} with the default. Change any of them below.` : "Every question already had an answer, so nothing changed.";
+    document.getElementById("summary").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  });
   Kit.refresh();
-  D.watch("answer.", (docs) => {
-    const seen = new Set();
-    docs.forEach((d) => { const id = d.key.slice(7); if (byId[id]) { answers[id] = d; seen.add(id); } });
-    Object.keys(answers).forEach((id) => { if (!seen.has(id)) delete answers[id]; });
-    paint();
-  }, { interval: 6000 });
-  D.watch("state.submitted", (docs) => { submitted = docs.find((d) => d.key === "state.submitted") || null; paint(); }, { interval: 10000 });
-  setInterval(paint, 60000); // keep "x min ago" fresh
 });

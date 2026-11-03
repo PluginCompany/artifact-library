@@ -4,7 +4,7 @@
 window.GUIDE = {
   references: [
     { slug: "ref-plan-deck", kind: "Plan", job: "Pitch a plan or roadmap to a group", why: "16:9 slides authored as HTML sections, overview grid, speaker notes, one-slide-per-page PDF.", saves: [] },
-    { slug: "ref-decision-questionnaire", kind: "Plan", job: "Get answers to several open questions before building", why: "Each question with options, trade-offs and a recommended default; answers and notes save on the page.", saves: ["answer.<question>", "state.submitted"] },
+    { slug: "ref-decision-questionnaire", kind: "Plan", job: "Get answers to several open questions before building", why: "Built on the kit's questions block: each question with options, trade-offs and a recommended default; answers and notes save on the page, and the agent can reply on a question.", saves: ["answer.<question>", "state.submitted", "comments.q-<question>"] },
     { slug: "ref-prototype-variants", kind: "Plan", job: "Let someone choose between UI designs", why: "Clickable variants side by side on desktop and phone, light and dark, with a saved pick.", saves: ["answer.pick.<person>", "comments.variant-<id>"] },
     { slug: "ref-scope-slicer", kind: "Plan", job: "Cut scope to fit a deadline", why: "Toggle features with estimates and dependencies; the timeline and conflicts update live.", saves: ["state.scope.<person>", "comments.scope"] },
     { slug: "ref-decision-record", kind: "Plan", job: "Compare options and record a decision", why: "Option cards, adjustable weighted scoring, consequences, rollout and a decision log; readers save their own weighting.", saves: ["answer.weights.<person>", "comments.adr"] },
@@ -50,6 +50,7 @@ window.GUIDE = {
     { dont: "Write engineer shorthand: “Reacquire lock, check existence, requeue stale jobs.”", instead: "Full sentences for the named reader: what happens, why, and what it means for them." },
     { dont: "Describe a process, a comparison or a set of numbers in paragraphs.", instead: "Draw it: `[data-flow]`, `table.compare`, stat tiles or `Kit.chart`." },
     { dont: "Paste a whole generated diff into a review and explain nothing.", instead: "Each change with its reasoning and a short `[data-diff]` of the lines that matter (`ref-code-review`)." },
+    { dont: "Copy a questionnaire renderer into a plan or review that needs a few decisions.", instead: "Put a `[data-questions]` block in that chapter; it saves answers in the format `artifact feedback` reads." },
     { dont: "Estimate what you could have measured.", instead: "Run it, count it or time it, and say how; label the rest as estimates." },
     { dont: "A long page without a chapter menu, or a menu in the page body that scrolls away.", instead: "`<nav class=\"topnav\" data-toc>` inside the sticky `header.topbar` links every chapter and highlights the current one." },
     { dont: "Paste a 200-line answer into chat when the user will read it more than once.", instead: "Publish it and send the link with a two-line summary." },
