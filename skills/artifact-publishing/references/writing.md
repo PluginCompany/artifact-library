@@ -102,6 +102,8 @@ When a chapter explains something with a shape, draw the shape. Use these kit bl
 | Old vs new screen or output | Before/after | `<div class="ba"><figure class="before">…<figure class="after">` |
 | What changes and what stays | Two lists side by side | `<div class="delta"><div class="changes">…<div class="stays">` |
 | Work in steps | Numbered steps with the files each touches | `<ol class="steps">` with `<p class="files">` |
+| Several screenshots | Gallery (grid, sidebar walkthrough, notes on the image, compare) | `<div data-gallery="grid">` with `<figure>`s, or JSON |
+| A code change | A short diff of the lines that carry it, with notes | `<div data-diff='{…}'>` with `data-before`/`data-after` scripts |
 | Open decisions | Questions with options, a default and trade-offs | copy `ref-decision-questionnaire` |
 
 A chapter longer than about 300 words without any table, diagram, figure or list is a warning sign: find the structure in it.
@@ -154,6 +156,33 @@ Several lanes: `{"rows": [{"label": "Publishing", "steps": [...]}, {"label": "Se
   <div class="stays"><h4>What stays the same</h4><ul><li>No new dependency, database or container.</li></ul></div>
 </div>
 ```
+
+**Screenshots:** load the ones below the first screen lazily and give their size, so the page opens fast and does not jump; `data-lightbox` opens them full size. Several at once go in a gallery; `notes` point at what to look at (percent of the image).
+
+```html
+<img data-src="shots/search.webp" width="1600" height="900" alt="Search shows a matching sentence" data-lightbox="shots">
+<div data-gallery='{"layout": "annotated", "items": [
+  {"src": "shots/search.webp", "w": 1600, "h": 900, "title": "Search", "caption": "Matches inside pages show the sentence.",
+   "notes": [{"x": 30, "y": 22, "title": "Snippet", "text": "The matching sentence, with the word marked."}]}
+]}'></div>
+```
+
+Layouts: `grid`, `masonry`, `strip`, `sidebar` (a numbered walkthrough), `annotated`, `compare` (drag a divider between two images).
+
+**Code changes:** show the lines that carry the change, not the whole file. One snippet is at most about 25 lines; a bigger change becomes several snippets, each with a sentence on why. A note under a line explains the line a reviewer would ask about.
+
+```html
+<div data-diff='{"file": "src/limits.ts", "start": 12, "notes": [{"line": 12, "text": "An empty value means the default, not zero."}]}'>
+  <script type="text/plain" data-before>
+    if (env === undefined) return fallback;
+  </script>
+  <script type="text/plain" data-after>
+    if (env === undefined || env.trim() === "") return fallback;
+  </script>
+</div>
+```
+
+A `git diff` works too (`data-patch`, with `range: [from, to]` to keep only some lines). Readers switch between Unified, Split and Result. `<pre data-lang="ts">` colours a plain code block. For a review built around such snippets, copy `ref-code-review`.
 
 **Steps with files:**
 

@@ -34,6 +34,7 @@
 <script src="kit/kit-data.js" defer></script>
 <script src="data.js" defer></script>
 <script src="app.js" defer></script>
+<link rel="stylesheet" href="kit/themes/clean/clean.css">
 </head>
 <body>
 <header class="topbar">
@@ -198,6 +199,8 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
           <tr><td>Old and new screens or output</td><td>Before/after</td><td><code>.ba</code> with <code>figure.before</code> and <code>figure.after</code></td></tr>
           <tr><td>What changes and what stays</td><td>Two lists side by side</td><td><code>.delta</code> with <code>.changes</code> and <code>.stays</code></td></tr>
           <tr><td>Work done in steps</td><td>Numbered steps with the files each touches</td><td><code>&lt;ol class="steps"&gt;</code> with <code>&lt;p class="files"&gt;</code></td></tr>
+          <tr><td>Several screenshots</td><td>Gallery: grid, sidebar walkthrough, notes on the image, compare</td><td><code>&lt;div data-gallery="grid"&gt;</code> with <code>&lt;figure&gt;</code>s, or JSON</td></tr>
+          <tr><td>A code change</td><td>A short diff of the lines that carry it (about 25 at most), with notes</td><td><code>&lt;div data-diff='{…}'&gt;</code> with <code>data-before</code> / <code>data-after</code> scripts, or a patch</td></tr>
           <tr><td>Open decisions</td><td>Questions with options and a default</td><td>copy <code>ref-decision-questionnaire</code></td></tr>
         </tbody>
       </table></div>
@@ -265,11 +268,20 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
           </ul>
         </div>
       </div>
-      <h3 class="h3 sub-h">Bold or Clean</h3>
-      <p class="sub">Every kit page comes in two styles. <b>Bold</b> is the default look above. <b>Clean</b> (<code>kit/themes/clean/</code>) is a calm, professional documentation look: flat white page, hairline borders, small radii, semibold Inter headings, one blue accent. Readers can switch with the <i>Bold / Clean</i> button the kit adds next to the light/dark toggle; you only pick the default. Make Clean the default for plans, specs, reviews and reports that should read like product documentation by linking it after every other stylesheet:</p>
+      <h3 class="h3 sub-h">Images and code</h3>
+      <ul class="dots">
+        <li>Screenshots below the first screen: <code>&lt;img data-src="shots/a.webp" width="1600" height="900" alt="…"&gt;</code>. They load as the reader scrolls, keep their place, and a missing file shows its path. <code>artifact lint</code> warns when more than 12 images load up front.</li>
+        <li><code>data-lightbox</code> on an image opens it full size; the same <code>data-lightbox="name"</code> pages through several.</li>
+        <li><code>[data-gallery]</code> in six layouts (grid, masonry, strip, sidebar, annotated, compare), with notes placed in percent of the image.</li>
+        <li><code>[data-diff]</code> from before/after code or a <code>git diff</code>; readers switch between Unified, Split and Result. Keep each snippet to the lines that carry the change; for a whole review built that way, copy <code>ref-code-review</code>.</li>
+        <li><code>&lt;pre data-lang="ts"&gt;</code> colours code.</li>
+      </ul>
+      <h3 class="h3 sub-h">Clean or Bold</h3>
+      <p class="sub">Every kit page comes in two styles. <b>Clean</b> (<code>kit/themes/clean/</code>) is the default: a calm, professional documentation look with a flat white page, hairline borders, small radii, semibold Inter headings and one blue accent. <b>Bold</b> (<code>kit.css</code> alone) is the expressive look with heavy display type and dashed rules. Readers switch with the <i>Bold / Clean</i> button the kit adds next to the light/dark toggle, and their choice wins. Every reference links Clean after every other stylesheet, so it is there on the first paint; keep that line:</p>
       <pre data-copy>&lt;link rel="stylesheet" href="kit/kit.css"&gt;
 &lt;link rel="stylesheet" href="style.css"&gt;
 &lt;link rel="stylesheet" href="kit/themes/clean/clean.css"&gt;</pre>
+      <p class="sub">To open a page in Bold, leave that link out and write <code>&lt;html data-kit-style="bold"&gt;</code>.</p>
     </section>
 
     <!-- 08 -->
@@ -414,7 +426,7 @@ EOF</pre></div></details>
     <!-- 11 -->
     <section class="sec" id="anti">
       <h2 class="h2 stitch">Anti-patterns</h2>
-      <div class="anti" id="anti-list"></div>
+      <div class="anti grid" id="anti-list"></div>
     </section>
 
     <!-- 12 -->

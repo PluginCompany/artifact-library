@@ -46,7 +46,7 @@ const wall = Array(14).fill('This sentence goes on about details that belong in 
 const bad = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bad</title></head><body>
 <h2>One</h2><p>${wall}</p><p>${wall}</p><p>${wall}</p>
 <h2>Two</h2><div style="width:900px">wide</div><h2>Three</h2><p style="font-size:10px">Tiny text that nobody can read comfortably.</p>
-<img src="missing.png"><script>notDefined()</script></body></html>`;
+<img src="missing.png"><img data-src="lazy-missing.png" alt="">${Array(13).fill('<img src="missing.png" alt="">').join('')}<script>notDefined()</script></body></html>`;
 
 const scrolling = clean.replace('<nav style="position:sticky;top:0;background:#fff">', '<header style="position:sticky;top:0">Plan</header><nav>');
 
@@ -68,8 +68,10 @@ test('lint renders the page and reports concrete problems', { skip: !browserAvai
 
   const result = (await lint(app, 'bad')).json();
   const checks = (severity: string) => result.findings.filter((f: { severity: string }) => f.severity === severity).map((f: { check: string }) => f.check).sort();
-  assert.deepEqual(checks('error'), ['horizontal-overflow', 'missing-file', 'no-global-nav', 'script-error']);
-  for (const name of ['missing-description', 'heading-without-id', 'wall-of-text', 'chapter-without-visual', 'image-without-alt', 'small-text']) assert.ok(checks('warning').includes(name), name);
+  assert.deepEqual(checks('error'), ['horizontal-overflow', 'missing-file', 'missing-file', 'no-global-nav', 'script-error']); // missing.png and lazy-missing.png
+  for (const name of ['missing-description', 'heading-without-id', 'wall-of-text', 'chapter-without-visual', 'image-without-alt', 'small-text', 'eager-images']) assert.ok(checks('warning').includes(name), name);
+  // A lazy image is loaded for the check, so its missing file is reported too.
+  assert.ok(result.findings.some((f: { check: string; where?: string }) => f.check === 'missing-file' && f.where === 'lazy-missing.png'));
   const overflow = result.findings.find((f: { check: string }) => f.check === 'horizontal-overflow');
   assert.equal(overflow.width, 390);
   assert.equal(result.screenshots, undefined);

@@ -38,7 +38,7 @@ const contentChecks = () => {
     const cls = typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
     return el.tagName.toLowerCase() + id + cls;
   };
-  const VISUAL = 'table, svg, img, picture, video, canvas, figure, pre, [data-flow], [data-chart], .chart, .chart-card, .ba, .delta, .stats, .steps, .timeline, .flow, .cards, details, [role="radiogroup"], .grid, .cols-2, .cols-3, .cols-4, .auto-grid';
+  const VISUAL = 'table, svg, img, picture, video, canvas, figure, pre, [data-flow], [data-chart], [data-gallery], [data-diff], .kit-gallery, .kit-diff-set, .chart, .chart-card, .ba, .delta, .stats, .steps, .timeline, .flow, .cards, details, [role="radiogroup"], .grid, .cols-2, .cols-3, .cols-4, .auto-grid';
   const isVisual = (el: Element) => el.matches(VISUAL) || ((el.matches('ul, ol')) && el.querySelectorAll(':scope > li').length >= 3);
 
   if (!document.title.trim()) findings.push({ severity: 'error', check: 'missing-title', message: 'The page has no <title>. Give it a name of a few words.' });
@@ -209,6 +209,7 @@ export class Linter {
         });
         const response = await page.goto(target, { waitUntil: 'load', timeout: 20_000 }).catch(() => page.goto(target, { waitUntil: 'domcontentloaded', timeout: 15_000 }));
         if (!response?.ok()) throw new ArtifactError('LINT_FAILED', `The entry page returned HTTP ${response?.status()}`, 502);
+        if (!stats) { const eager = eagerImages(await response.text().catch(() => '')); if (eager > EAGER_LIMIT) findings.push({ severity: 'warning', check: 'eager-images', message: `${eager} images load with the page: give them data-src (the kit loads them when they come near the screen) or loading="lazy", and width/height so the page does not jump.`, count: eager }); }
         await settle(page);
         const overflow = await inPage(page, overflowCheck);
         if (overflow) findings.push({ severity: 'error', check: 'horizontal-overflow', width, message: `At ${width} px the page scrolls sideways (${overflow.scrollWidth} px wide). Wrap or stack the element, or give it its own overflow-x:auto container.`, where: overflow.where });
@@ -231,7 +232,27 @@ export class Linter {
   }
 }
 
+/** Images the browser fetches while it reads the HTML: <img src> without loading="lazy" (data: URLs are free).
+ *  Counted in the authored HTML, before scripts move data-src into src as images come near the screen. */
+const EAGER_LIMIT = 12;
+function eagerImages(html: string): number {
+  return (html.replace(/<!--[\s\S]*?-->/g, '').match(/<img\b[^>]*>/gi) || [])
+    .filter(tag => /\ssrc\s*=\s*["']?(?!data:)[^\s"'>]/i.test(tag) && !/\sloading\s*=\s*["']?lazy/i.test(tag)).length;
+}
+
 async function settle(page: Page) {
+  // Lazy images are only requested near the screen: load every image so a missing file is reported wherever
+  // it sits on the page (the kit's Kit.images.loadAll, or data-src / loading="lazy").
+  await page.evaluate(() => {
+    const images = Array.from(document.images);
+    const kit = (window as unknown as { Kit?: { images?: { loadAll?: () => void } } }).Kit;
+    if (kit?.images?.loadAll) kit.images.loadAll();
+    for (const image of images) {
+      if (image.dataset.srcset) image.srcset = image.dataset.srcset;
+      if (image.dataset.src && !image.getAttribute('src')) image.src = image.dataset.src;
+      if (image.loading === 'lazy') image.loading = 'eager';
+    }
+  });
   await page.evaluate(async () => {
     await Promise.race([
       Promise.all([document.fonts.ready, ...Array.from(document.images).map(image => image.complete ? Promise.resolve() : new Promise(resolve => { image.onload = resolve; image.onerror = resolve; }))]),

@@ -1,0 +1,5 @@
+{
+  "slug": "ref-code-review",
+  "title": "Code review: galleries, diffs and lazy images",
+  "description": "A change explained for review: why, screenshots of the result with notes, each change with its reasoning and a tight diff, decisions to confirm or overrule, and a verdict saved for the agent."
+}

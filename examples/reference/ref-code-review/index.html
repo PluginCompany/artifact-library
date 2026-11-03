@@ -1,0 +1,136 @@
+<!doctype html>
+<!--
+  EDITING GUIDE — Code review (reference artifact)
+  ================================================
+  A change explained for a reviewer: why it exists, what it looks like, each change with
+  its reasoning and a small diff, the calls the reviewer should confirm, and a verdict.
+  Unlike ref-code-walkthrough (which renders a whole git diff), every snippet here is
+  chosen and trimmed by hand: the lines that carry the change, nothing more.
+
+  What lives where
+    data.js      ALL the content: intro, screenshots, changes, decisions. Edit this.
+    shots/       screenshots, made by capture.py; shots.js holds their sizes and the
+                 rectangles of named elements ("pins") that notes in data.js point at.
+    capture.py   Recreates shots/ and shots.js. Point PAGES/SHOTS at your app and run it.
+    app.js       Renders REVIEW with the kit's gallery and diff blocks and saves feedback.
+    style.css    Page-specific styles, kit tokens only.
+    kit/         Shared design system, copied in by publish.sh.
+
+  To review another change
+    1. Capture screenshots of the result (capture.py, or drop .webp files in shots/ and
+       list them in shots.js with their w/h).
+    2. Rewrite data.js: one entry per change, in reading order, each with WHY and one to
+       three snippets of at most ~25 lines. Cut every snippet to the lines that matter.
+    3. List the decisions you made that the reviewer could reasonably want differently.
+    4. Update artifact.json, then ./publish.sh <dir> and `artifact lint <slug>`.
+    5. Share the link and run `artifact wait <slug>`: the reviewer's verdicts, answers and
+       comments come back with `artifact feedback <slug>`.
+
+  What readers save: see the header of data.js.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Code Review</title>
+<meta name="description" content="A change explained for review: why, screenshots of the result, each change with its reasoning and a tight diff, decisions to confirm, and a verdict saved for the agent.">
+<link rel="stylesheet" href="kit/kit.css">
+<link rel="stylesheet" href="style.css">
+<script src="kit/kit.js" defer></script>
+<script src="kit/kit-data.js" defer></script>
+<script src="shots.js" defer></script>
+<script src="data.js" defer></script>
+<script src="app.js" defer></script>
+<link rel="stylesheet" href="kit/themes/clean/clean.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="icon-btn side-toggle" type="button" data-side-toggle aria-label="Chapters"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg></button>
+  <a class="brand" href="#top"><i>R</i><span>Code review</span><small>Reference</small></a>
+  <span class="spacer"></span>
+  <span data-save-status class="hide-sm"></span>
+  <a class="icon-btn hide-sm" href="/artifacts/reference-collection/" title="All reference artifacts">Collection</a>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Chapters">
+    <div class="side-progress" id="side-progress"></div>
+    <div data-toc></div>
+  </nav>
+
+  <main class="main" id="top">
+    <header class="rv-hero">
+      <div class="row" style="--gap:8px"><span class="tag thread">Example content</span><span class="eyebrow" id="h-eyebrow"></span></div>
+      <h1 class="h1" id="h-title"></h1>
+      <p class="lead" id="h-summary"></p>
+      <div class="rv-stats" id="h-stats"></div>
+      <p class="callout note" id="h-example"></p>
+    </header>
+
+    <section id="overview" class="rv-sec" data-toc-label="Overview">
+      <h2 class="h2 stitch">Why this change</h2>
+      <div class="rv-why-grid">
+        <div class="callout"><b>The problem</b><span id="i-why"></span></div>
+        <div class="panel"><div class="panel-head"><h3>What it does</h3></div><ul class="dots" id="i-does"></ul></div>
+      </div>
+      <div class="delta" style="margin-top:16px">
+        <div class="changes"><h4>What readers and authors notice</h4><ul id="i-changes"></ul></div>
+        <div class="stays"><h4>What stays the same</h4><ul id="i-stays"></ul></div>
+      </div>
+      <h3 class="h3 rv-sub">How to review it</h3>
+      <ol class="steps rv-how">
+        <li><div><h4>Look at the result</h4><p>Screenshots first, so the code has something to belong to.</p></div></li>
+        <li><div><h4>Read each change</h4><p id="i-focus"></p></div></li>
+        <li><div><h4>Confirm or overrule the decisions</h4><p>Each one says what was built and what else was possible.</p></div></li>
+        <li><div><h4>Send your verdict</h4><p>Everything you pick or write is saved for the agent as you go; the verdict tells it you are done.</p></div></li>
+      </ol>
+    </section>
+
+    <section id="screens" class="rv-sec" data-toc-label="Screenshots">
+      <h2 class="h2 stitch">What it looks like</h2>
+      <p class="muted rv-intro">Choose a screen on the left; the numbered notes say what to look at. Click an image to open it full size.</p>
+      <div id="gallery-main"></div>
+      <h3 class="h3 rv-sub" id="compare-title">Clean and Bold</h3>
+      <p class="muted rv-intro" id="compare-sub">Drag the divider. Same page, same markup; only the style differs.</p>
+      <div id="gallery-compare"></div>
+    </section>
+
+    <section id="changes" class="rv-sec" data-toc-label="Changes">
+      <h2 class="h2 stitch">The changes, one at a time</h2>
+      <p class="muted rv-intro">In reading order: each one only depends on the ones before it. Give every change a verdict as you go; diffs remember the view you pick.</p>
+      <ol class="rv-index" id="change-index"></ol>
+      <div id="change-list"></div>
+    </section>
+
+    <section id="decisions" class="rv-sec" data-toc-label="Decisions">
+      <h2 class="h2 stitch">Decisions for you</h2>
+      <p class="muted rv-intro">Calls made while building this that you may want differently. <b>Built</b> marks what the code does now; pick it to agree, or another option to have it changed.</p>
+      <div id="decision-list" class="rv-decisions"></div>
+    </section>
+
+    <section id="verdict" class="rv-sec" data-toc-label="Verdict">
+      <h2 class="h2 stitch">Your verdict</h2>
+      <div class="grid cols-2 rv-top">
+        <div class="panel">
+          <div class="panel-head"><h3>Changes reviewed</h3><span class="mono muted" id="progress-count"></span></div>
+          <div class="rv-bar" id="progress-bar" role="img"></div>
+          <div class="rv-legend" id="progress-legend"></div>
+        </div>
+        <div class="rv-overall" id="overall"></div>
+      </div>
+      <h3 class="h3 rv-sub">For the agent</h3>
+      <p class="muted rv-intro">Requested changes, questions and overruled decisions, collected from the whole review. Live.</p>
+      <div id="asks" class="rv-asks" aria-live="polite"></div>
+      <div class="rv-general" id="general"></div>
+      <div class="callout stitched rv-agent"><b>Agent: read this review</b><p>The first command prints every verdict, answer and comment, including replies in threads; <code>artifact wait</code> returns as soon as the reviewer sends something.</p>
+        <pre data-copy data-lang="sh">artifact feedback ref-code-review
+artifact wait ref-code-review</pre>
+      </div>
+    </section>
+
+    <footer class="foot-note" id="foot"></footer>
+  </main>
+</div>
+</body>
+</html>

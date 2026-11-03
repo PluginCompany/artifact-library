@@ -12,9 +12,10 @@ Every server starts with a collection of finished, polished artifacts, one per c
 | Build | `ref-live-run-log` | Show a long task as it happens (driven by `artifact data set`) | ✓ |
 | Build | `ref-debug-notebook` | Write up a bug investigation (hypotheses, evidence, root cause, fix) | ✓ |
 | Build | `ref-runbook` | Run an operational procedure together (shared ticks, rollback) | ✓ |
+| Review | `ref-code-review` | Explain a change for review: why, screenshots with notes, each change with its reasoning and a short diff, decisions to confirm, a verdict | ✓ |
 | Review | `ref-implementation-review` | Review finished work finding by finding (annotated screenshots, criteria, a verdict) | ✓ |
 | Review | `ref-results-evidence` | Hand finished work back with proof: criteria and their checks, before/after, evidence, sign-off | ✓ |
-| Review | `ref-code-walkthrough` | Walk a reviewer through a change by purpose, with a verdict per chapter | ✓ |
+| Review | `ref-code-walkthrough` | Walk a reviewer through a whole diff by purpose, with a verdict per chapter | ✓ |
 | Review | `ref-visual-regression` | Approve before/after screenshots with pixel diffs, screen by screen | ✓ |
 | Review | `ref-test-report` | Show tests and performance against budgets | ✓ |
 | Report | `ref-ops-report` | Report numbers across several pages (charts with table views, CSV) | |
@@ -40,7 +41,7 @@ ref-implementation-review/
 
 ## The kit
 
-`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme toggle, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md)) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
+`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme and style toggles, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`, lazy images, galleries, diffs and syntax colouring), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md)) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
 
 ### Blocks for explaining
 
@@ -56,18 +57,28 @@ Higher-level blocks so a page shows its structure instead of describing it. Each
 | Changes and what stays | `<div class="delta"><div class="changes">…</div><div class="stays">…</div></div>` | Reassuring readers about what does not change |
 | Steps with files | `<ol class="steps">` with `<p class="files"><code>src/x.ts</code></p>` in a step | Work plans that say which files each step touches |
 
+### Images and code
+
+| Block | Markup | Use it for |
+|---|---|---|
+| Lazy image | `<img data-src="shots/a.webp" width="1600" height="900" alt="…">` (`data-srcset`, `data-sizes` too) | Every screenshot below the first screen: it loads when it comes near the screen, keeps its place while loading, shows its path when the file is missing, and loads for printing |
+| Full-size viewer | `data-lightbox` on an `img`, the same `data-lightbox="<group>"` to page through several; `Kit.lightbox.open(items, index)` | Screenshots readers need to see at full size |
+| Gallery | `<div data-gallery="grid">` with `<figure><img …><figcaption><b>Title</b> caption</figcaption></figure>` children, JSON `{layout, items:[{src, thumb, title, caption, alt, w, h, tag, url, notes}], min, ratio, frame, start}`, `data-gallery-src` or `Kit.gallery(el, spec)` | Sets of screenshots: `grid`, `masonry` (mixed shapes), `strip` (a short sequence), `sidebar` (a numbered walkthrough), `annotated` (notes on the image), `compare` (a divider to drag); notes are `{x, y, title, text}` pins or `{x, y, w, h, …}` boxes in percent of the image |
+| Code diff | `<div data-diff='{"file":"src/x.ts","start":12}'>` with `<script type="text/plain" data-before>` / `data-after` (or `data-patch`) children, JSON `{before, after \| patch \| hunks, range, mode, notes, highlight, context, caption}` or `Kit.diff(el, spec)` | A change shown in a few lines: Unified, Split or Result view (the reader's choice holds across the server), word-level marks, notes under lines; `range` keeps a patch snippet tight |
+| Syntax colouring | `<pre data-lang="ts">`, or `Kit.highlight(text, lang)` | Code blocks in js, ts, py, sh, css, html, json, sql and more |
+
 The style guide (`kit.html` on the reference collection) shows every component with copyable HTML.
 
-## Themes: Bold and Clean
+## Themes: Clean and Bold
 
 Every kit page comes in two styles that share the same markup, scripts and saved data; light and dark mode work in both.
 
-- **Bold** (`kit/kit.css`, the default): heavy display type, dashed "stitch" rules, small mono uppercase labels, an indigo accent with a burnt-orange thread and coloured status strips.
-- **Clean** (`kit/themes/clean/clean.css`): a calm, professional documentation look: a flat white page, hairline borders, small radii, no gradients and no decorative shadows, Inter for text and semibold headings, Geist Mono for code, one blue accent for links and primary actions. Its fonts (SIL OFL) are bundled.
+- **Clean** (`kit/themes/clean/clean.css`, the default): a calm, professional documentation look: a flat white page, hairline borders, small radii, no gradients and no decorative shadows, Inter for text and semibold headings, Geist Mono for code, one blue accent for links and primary actions. Its fonts (SIL OFL) are bundled.
+- **Bold** (`kit/kit.css` alone): heavy display type, dashed "stitch" rules, small mono uppercase labels, an indigo accent with a burnt-orange thread and coloured status strips.
 
-**Readers choose.** `kit.js` puts a *Bold / Clean* button next to the light/dark toggle of every kit page and remembers the choice for every kit page on the server. Fully custom pages that don't load the kit get no button. Put `data-style-toggle` on a button of your own to place it yourself; `Kit.style.get()`, `Kit.style.set("clean")` and the `kit:style` event are there for scripts. After a switch the page also gets `kit:theme` and a `resize`, so charts and measured layouts redraw.
+**Readers choose.** `kit.js` puts a *Bold / Clean* button next to the light/dark toggle of every kit page and remembers the choice for every kit page on the server; a reader's choice wins over the page's default. Fully custom pages that don't load the kit get no button. Put `data-style-toggle` on a button of your own to place it yourself; `Kit.style.get()`, `Kit.style.set("bold")` and the `kit:style` event are there for scripts. After a switch the page also gets `kit:theme` and a `resize`, so charts and measured layouts redraw.
 
-**Authors pick the default.** A page defaults to Bold. Link Clean after every other stylesheet to make Clean the default:
+**Pages open in Clean.** Link Clean after every other stylesheet so it is there on the first paint (without the link, `kit.js` adds it, and the page may show Bold for a moment):
 
 ```html
 <link rel="stylesheet" href="kit/kit.css">
@@ -75,7 +86,7 @@ Every kit page comes in two styles that share the same markup, scripts and saved
 <link rel="stylesheet" href="kit/themes/clean/clean.css">
 ```
 
-or publish a reference with it: `KIT_THEME=clean ./publish.sh <dir>` (from `examples/reference/`) links the theme into every HTML page of the staged copy. `kit/themes/quiet/quiet.css` is an alias of Clean (its earlier name), so older pages keep working.
+Every reference does this. To open a page in Bold, leave the Clean link out and mark the page: `<html data-kit-style="bold">`. `KIT_THEME=bold ./publish.sh <dir>` (from `examples/reference/`) does both in every HTML page of the staged copy; `KIT_THEME=<name>` links another theme from `kit/themes/` last. Artifacts already published keep the kit they were published with, so the new default does not change them. `kit/themes/quiet/quiet.css` is an alias of Clean (its earlier name), so older pages keep working.
 
 Besides the colour, font and radius tokens, a theme sets these, which pages use for the kit's signature details:
 

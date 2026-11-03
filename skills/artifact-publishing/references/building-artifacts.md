@@ -20,9 +20,15 @@ Find the closest reference (table in SKILL.md, or `artifact search ref-`), then 
   - `.ba` with `figure.before` and `figure.after`: before/after side by side.
   - `.delta` with `.changes` and `.stays`: what changes and what stays the same.
   - `.steps` with `p.files` inside a step: the files each step touches.
+- Images and code (in `kit.js` and `kit.css`; markup in `writing.md` §5 and the style guide `kit.html`):
+  - `<img data-src="shots/a.webp" width="1600" height="900" alt="…">`: loads when it nears the screen, keeps its place, shows its path when the file is missing, loads everything for printing. Use it for every screenshot below the first screen; always give `width`/`height`. `artifact lint` loads all of them (a missing one is `missing-file`) and warns `eager-images` above 12 images loaded up front.
+  - `data-lightbox` on an image opens it full size; the same `data-lightbox="<group>"` pages through several. `Kit.lightbox.open(items, index)` from script.
+  - `[data-gallery]`: a layout name with `<figure><img><figcaption><b>Title</b> caption</figcaption></figure>` children, or JSON `{layout, items:[{src, title, caption, w, h, notes}]}` (`data-gallery-src` for a global in `data.js`, `Kit.gallery(el, spec)` from script). Layouts: `grid`, `masonry`, `strip`, `sidebar` (numbered walkthrough), `annotated` (notes on the image), `compare` (drag a divider). Notes are pins `{x, y, title, text}` or boxes `{x, y, w, h, …}` in percent of the image.
+  - `[data-diff]`: JSON `{file, start, before, after}` or `{patch, range}`, or `<script type="text/plain" data-before|data-after|data-patch>` children; `notes:[{line, side, title, text}]`, `highlight:[[a, b]]`, `mode: "unified"|"split"|"final"`. Readers switch Unified / Split / Result. Show only the lines that carry the change, a line or two of context, at most ~25 lines per snippet; split a bigger change into several snippets, each with a caption.
+  - `pre[data-lang="ts"]` (js, py, sh, css, html, json, sql, …) colours code; `Kit.highlight(text, lang)` returns the HTML.
 - `kit-data.js` — saving (below).
 - `fonts/` — self-hosted; pages work without internet.
-- `themes/clean/` — the Clean style: plain, professional documentation look (flat white page, hairline borders, small radii, semibold Inter headings, one blue accent). Readers switch between Bold (the default) and Clean with a button kit.js adds next to the light/dark toggle; make Clean a page's default with one line after every other stylesheet: `<link rel="stylesheet" href="kit/themes/clean/clean.css">`. Good for plans, specs, reviews and reports that should read like product docs.
+- `themes/clean/` — the Clean style, the default: plain, professional documentation look (flat white page, hairline borders, small radii, semibold Inter headings, one blue accent). Every reference links it after every other stylesheet (`<link rel="stylesheet" href="kit/themes/clean/clean.css">`) so it is there on the first paint; keep that line. Readers switch between Clean and Bold (the expressive kit.css look) with a button kit.js adds next to the light/dark toggle. To open a page in Bold, drop the Clean link and write `<html data-kit-style="bold">`.
 
 Keep bottom-anchored controls clear of the server's version toolbar with `var(--artifact-toolbar-space, 0px)`, and call `window.artifactToolbar?.hide(true)` while a full-screen view (player, lightbox) is open and `hide(false)` when it closes.
 
@@ -57,7 +63,7 @@ Store human-readable labels next to ids so `artifact feedback` output makes sens
 4. Plain language; no paragraph longer than about four lines; every major chapter has a table, diagram, chart, figure or structured list.
 5. `artifact lint <slug>` passes without errors; you looked at its screenshots.
 6. Example or invented content is labelled "Example content".
-7. Real evidence over claims: screenshots, numbers, commands that were actually run. Never fabricate test results.
+7. Real evidence over claims: screenshots, numbers, commands that were actually run. Never fabricate test results. Screenshots below the first screen load lazily (`img[data-src]` with `width`/`height`).
 8. Checked at 1440 px and 375–390 px, light and dark, with no horizontal scroll and no console errors (screenshot it with Playwright and look at the images).
 9. Prints sensibly; respects reduced motion; keyboard reachable.
 10. No external requests except the same server; fonts and libraries come from `kit/` or are inlined.
@@ -69,6 +75,8 @@ Store human-readable labels next to ids so `artifact feedback` output makes sens
 - A wall of markdown pasted into HTML — use structure: hero, stats, sections, cards.
 - Engineer shorthand ("Reacquire lock, check existence, requeue") — write full sentences for the named reader.
 - A process or comparison described in paragraphs — draw it with `[data-flow]` or `table.compare`.
+- A review that pastes the whole diff and says why nowhere — copy `ref-code-review`: each change with its reasoning and a short `[data-diff]` of the lines that matter (`ref-code-walkthrough` when the reviewer must read every line of a diff).
+- Thirty screenshots loaded with the page — `img[data-src]` or a `[data-gallery]` loads them as the reader scrolls.
 - Estimates where a measurement was possible — run it, count it, time it, and say how.
 - A long page without a chapter menu, or with the menu in the page body where it scrolls away — put `nav.topnav[data-toc]` in the sticky top bar.
 - Colour as the only signal, dual-axis charts, a number on every data point.

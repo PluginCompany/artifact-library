@@ -39,6 +39,7 @@
   .type-row>span{font:500 calc(11px*var(--label-scale)) var(--label);color:var(--muted);letter-spacing:calc(.06em*var(--label-k));text-transform:var(--label-case)}
   @media (max-width:620px){.type-row{grid-template-columns:1fr;gap:4px}}
 </style>
+<link rel="stylesheet" href="kit/themes/clean/clean.css">
 </head>
 <body>
 <header class="topbar">
@@ -79,6 +80,10 @@
     <a href="#risks"><b>18</b>Risk table</a>
     <a href="#ba"><b>19</b>Before &amp; after</a>
     <a href="#delta"><b>20</b>What changes</a>
+    <h5>Media &amp; code</h5>
+    <a href="#images"><b>21</b>Images</a>
+    <a href="#gallery"><b>22</b>Gallery</a>
+    <a href="#diff"><b>23</b>Code diff</a>
   </nav>
 
   <main class="main sg" id="main">
@@ -98,7 +103,7 @@
       <h3 class="h3" style="margin:22px 0 10px">Chart series (fixed order)</h3>
       <div class="sw-grid" data-tokens="s1 s2 s3 s4 s5"></div>
       <h3 class="h3" style="margin:22px 0 10px">Theme tokens</h3>
-      <p class="muted">The kit's signature details, as tokens so a theme in <code>kit/themes/</code> can restyle every page. Use them in page CSS too. Readers switch between Bold and Clean with the style button next to the light/dark toggle; link <code>kit/themes/clean/clean.css</code> after every other stylesheet to make Clean a page's default.</p>
+      <p class="muted">The kit's signature details, as tokens so a theme in <code>kit/themes/</code> can restyle every page. Use them in page CSS too. Pages open in Clean; readers switch to Bold with the style button next to the light/dark toggle. Link <code>kit/themes/clean/clean.css</code> after every other stylesheet so Clean is there on the first paint, or put <code>data-kit-style="bold"</code> on <code>&lt;html&gt;</code> to open a page in Bold.</p>
       <div class="table-wrap" style="margin-top:12px"><table class="table compact">
         <thead><tr><th>Token</th><th>Value here</th><th>Controls</th></tr></thead>
         <tbody>
@@ -243,6 +248,14 @@
         <pre data-copy>artifact publish ./output --slug my-report --json</pre>
         <p style="margin-top:12px">Inline <code>code</code> and keys like <kbd>Esc</kbd>.</p>
       </div></div>
+      <div class="demo-block"><header><b>Syntax colouring</b></header><div class="demo">
+        <pre data-lang="ts" data-copy>// Tokens come from the palette, so both styles and both modes recolour code.
+export async function publish(dir: string, slug = "my-report") {
+  const files = await collect(dir, { ignore: [".git", "node_modules"] });
+  return client.post(`/api/v1/artifacts/${slug}/versions`, files, 3);
+}</pre>
+      </div></div>
+      <p class="muted" style="margin-top:12px"><code>data-lang</code> takes a file extension or language name: js, ts, py, rb, go, rs, java, sh, yaml, toml, css, html, xml, json, sql and more. <code>Kit.highlight(text, lang)</code> returns the coloured HTML for your own markup.</p>
     </section>
 
     <section id="charts">
@@ -370,6 +383,118 @@ const stop = Kit.data.watch("state.", docs =&gt; render(docs));   // live update
           <div class="changes"><h4>What changes for readers</h4><ul><li>The search box says "Search titles, descriptions and page text".</li><li>Cards that matched inside the page show the matching line.</li></ul></div>
           <div class="stays"><h4>What stays the same</h4><ul><li>No new dependency, database or container.</li><li>Publishing, versions and saved answers are untouched.</li></ul></div>
         </div>
+      </div></div>
+    </section>
+
+    <section id="images">
+      <h2 class="stitch">Images</h2>
+      <p class="muted">Put the path in <code>data-src</code> instead of <code>src</code> and the image is fetched only when it comes near the screen, so a page with forty screenshots opens as fast as one with four. Give <code>width</code> and <code>height</code> (the file's pixel size) so the page keeps its place while images arrive. A missing file shows its path instead of a broken icon, and printing loads every image first. Add <code>data-lightbox</code> to open an image full size; images with the same <code>data-lightbox="name"</code> page through together.</p>
+      <div class="demo-block"><header><b>Lazy, zoomable screenshots</b></header><div class="demo">
+        <div class="grid cols-2">
+          <figure class="figure"><img data-src="shots/library.webp" width="1600" height="844" alt="The library with artifact cards" data-lightbox="sg" style="width:100%;height:auto;border-radius:8px;border:1px solid var(--line)"><figcaption>Loads when scrolled near; click to open full size.</figcaption></figure>
+          <figure class="figure"><img data-src="shots/missing.webp" width="1600" height="844" alt="A screenshot that was never captured" style="width:100%;height:auto"><figcaption>A missing file says so, with its path.</figcaption></figure>
+        </div>
+      </div></div>
+      <p class="muted" style="margin-top:12px"><code>data-srcset</code> and <code>data-sizes</code> work the same way. Plain <code>loading="lazy"</code> images get the placeholder and fade too. Images added later by a script: call <code>Kit.refresh()</code>. Open your own viewer with <code>Kit.lightbox.open([{src, title, caption, notes}], index)</code>.</p>
+    </section>
+
+    <section id="gallery">
+      <h2 class="stitch">Gallery</h2>
+      <p class="muted">A set of images in one of six layouts. Write <code>&lt;figure&gt;</code>s with an <code>&lt;img&gt;</code> and a <code>&lt;figcaption&gt;</code> (its <code>&lt;b&gt;</code> is the title) inside <code>&lt;div data-gallery="grid"&gt;</code>, or give JSON: <code>{layout, items:[{src, thumb, title, caption, alt, w, h, tag, url, notes}], min, ratio, frame, start}</code>. Thumbnails load lazily and every image opens full size with arrow keys, swipe and <kbd>Esc</kbd>. Notes are <code>{x, y, title, text}</code> pins or <code>{x, y, w, h, …}</code> boxes, in percent of the image. Point <code>data-gallery-src</code> at a global to keep the items in <code>data.js</code>.</p>
+      <div class="table-wrap" style="margin-top:14px"><table class="table compact">
+        <thead><tr><th>Layout</th><th>Use it for</th></tr></thead>
+        <tbody>
+          <tr><td><code>grid</code></td><td>Many screenshots of the same shape; tiles cropped to <code>ratio</code> (16/10), at least <code>min</code> (220 px) wide</td></tr>
+          <tr><td><code>masonry</code></td><td>Images of mixed shapes (phone and desktop) at their natural height</td></tr>
+          <tr><td><code>strip</code></td><td>One large image with thumbnails underneath: a short tour, a sequence of states</td></tr>
+          <tr><td><code>sidebar</code></td><td>A numbered list of screens beside the image, each with a sentence: walkthroughs, review evidence</td></tr>
+          <tr><td><code>annotated</code></td><td>Numbered notes on the image with the explanation beside it: what to look at and why</td></tr>
+          <tr><td><code>compare</code></td><td>Two images of the same size with a divider to drag: before and after, light and dark</td></tr>
+        </tbody>
+      </table></div>
+      <div class="demo-block"><header><b>Grid from markup</b></header><div class="demo">
+        <div data-gallery="grid">
+          <figure><img src="shots/library.webp" width="1600" height="844" alt="Library in grid view"><figcaption><b>Library</b> Every artifact as a card with a live preview.</figcaption></figure>
+          <figure><img src="shots/library-search.webp" width="1600" height="711" alt="Library search results"><figcaption><b>Search</b> Titles, descriptions and page text.</figcaption></figure>
+          <figure><img src="shots/list.webp" width="1600" height="689" alt="Library in list view"><figcaption><b>List view</b> Dense rows for long libraries.</figcaption></figure>
+          <figure><img src="shots/questionnaire.webp" width="1600" height="996" alt="A questionnaire artifact"><figcaption><b>Questionnaire</b> Answers saved for the agent.</figcaption></figure>
+        </div>
+      </div></div>
+      <div class="demo-block"><header><b>Masonry</b></header><div class="demo">
+        <div data-gallery='{"layout":"masonry","min":200,"items":[{"src":"shots/phone.webp","w":780,"h":1688,"title":"Phone","caption":"390 px, one column"},{"src":"shots/card-menu.webp","w":864,"h":850,"title":"Card menu"},{"src":"shots/verdict.webp","w":920,"h":480,"title":"Verdict"},{"src":"shots/comment.webp","w":800,"h":894,"title":"Comment thread"},{"src":"shots/list.webp","w":1600,"h":689,"title":"List view"}]}'></div>
+      </div></div>
+      <div class="demo-block"><header><b>Strip with a browser frame</b></header><div class="demo">
+        <div data-gallery='{"layout":"strip","frame":true,"items":[{"src":"shots/library.webp","w":1600,"h":844,"title":"Library","url":"artifacts.example.com/","caption":"Cards with previews, newest first."},{"src":"shots/library-search.webp","w":1600,"h":711,"title":"Search","url":"artifacts.example.com/?q=review","caption":"Matches inside pages show the matching line."},{"src":"shots/questionnaire.webp","w":1600,"h":996,"title":"Questionnaire","url":"artifacts.example.com/artifacts/ref-decision-questionnaire/","caption":"An artifact that asks several decisions at once."}]}'></div>
+      </div></div>
+      <div class="demo-block"><header><b>Sidebar</b></header><div class="demo">
+        <div data-gallery='{"layout":"sidebar","items":[{"src":"shots/library.webp","w":1600,"h":844,"title":"Open the library","caption":"Every artifact on the server, newest first, with a preview of its first screen."},{"src":"shots/library-search.webp","w":1600,"h":711,"title":"Search for a word","caption":"Search looks in titles, descriptions and the text of every page."},{"src":"shots/questionnaire.webp","w":1600,"h":996,"title":"Answer on the page","caption":"Pick an option per question; answers are saved for the agent as you go."},{"src":"shots/comment.webp","w":800,"h":894,"title":"Leave a comment","caption":"Threads sit next to the part they discuss; agents reply in the same thread."}]}'></div>
+      </div></div>
+      <div class="demo-block"><header><b>Annotated</b></header><div class="demo">
+        <div data-gallery='{"layout":"annotated","items":[{"src":"shots/library.webp","w":1600,"h":844,"title":"Library","notes":[{"x":7,"y":3,"w":15,"h":6.5,"title":"Brand","text":"The server name, set with LIBRARY_TITLE."},{"x":7.5,"y":17,"w":85,"h":8.5,"title":"Search","text":"Searches titles, descriptions and page text as you type."},{"x":21,"y":45,"title":"Card","text":"Every card shows a preview of the first screen."}]},{"src":"shots/questionnaire.webp","w":1600,"h":996,"title":"Questionnaire","notes":[{"x":30,"y":30,"title":"Question","text":"Each decision has options with trade-offs and a recommended default."},{"x":70,"y":55,"text":"Answers save as the reader picks; no submit button needed."}]}]}'></div>
+      </div></div>
+      <div class="demo-block"><header><b>Compare</b></header><div class="demo">
+        <div data-gallery='{"layout":"compare","items":[{"src":"shots/light.webp","w":1600,"h":622,"title":"Light","caption":"The default for most readers."},{"src":"shots/dark.webp","w":1600,"h":622,"title":"Dark","caption":"Follows the system setting unless the reader picks one."}]}'></div>
+      </div></div>
+    </section>
+
+    <section id="diff">
+      <h2 class="stitch">Code diff</h2>
+      <p class="muted">Show a change as a small, readable diff instead of a wall of patch. Give the code before and after (the kit works out what changed, down to the word), a unified diff from <code>git diff</code>, or hunks. Readers switch between <b>Unified</b>, <b>Split</b> (side by side; phones get unified) and <b>Result</b> (the code after the change, with changed lines marked); their choice holds for every diff on the page and the next. Long unchanged runs fold away. <code>notes</code> put a remark under a line, <code>highlight</code> marks lines to look at.</p>
+      <div class="table-wrap" style="margin-top:14px"><table class="table compact">
+        <thead><tr><th>Field</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>before</code>, <code>after</code></td><td>The code on each side; or <code>&lt;script type="text/plain" data-before&gt;</code> / <code>data-after</code> children so code needs no escaping. Leave one out for a new or deleted file.</td></tr>
+          <tr><td><code>patch</code></td><td>A unified diff (<code>git diff</code> output, one or more files), or a <code>&lt;script type="text/plain" data-patch&gt;</code> child</td></tr>
+          <tr><td><code>file</code>, <code>lang</code></td><td>Path in the header; the language comes from its extension unless <code>lang</code> says otherwise</td></tr>
+          <tr><td><code>start</code></td><td>Line number of the first line of a before/after snippet (<code>startBefore</code>/<code>startAfter</code> when they differ)</td></tr>
+          <tr><td><code>range</code></td><td><code>[from, to]</code>: show only these lines of a patch, to keep a snippet tight</td></tr>
+          <tr><td><code>mode</code>, <code>modes</code></td><td>The first view (<code>unified</code>, <code>split</code>, <code>final</code>) and which views to offer</td></tr>
+          <tr><td><code>notes</code></td><td><code>[{line, side: "new"|"old", title, text, tone: "warn"|"bad"|"good"}]</code>: a remark under that line</td></tr>
+          <tr><td><code>highlight</code>, <code>context</code>, <code>collapse</code></td><td>Lines to mark (<code>[[12, 14]]</code>); unchanged lines kept around changes (3); <code>false</code> to never fold</td></tr>
+        </tbody>
+      </table></div>
+      <div class="demo-block"><header><b>Before and after, with a note</b></header><div class="demo">
+        <div data-diff='{"file":"src/limits.ts","start":12,"notes":[{"line":16,"title":"Why","text":"An empty value in a .env file means the default, not zero; zero is the explicit way to turn a limit off."}]}'>
+          <script type="text/plain" data-before>
+            export function limitFrom(env: string | undefined, fallback: number) {
+              if (env === undefined) return fallback;
+              const value = Number(env);
+              return value;
+            }
+          </script>
+          <script type="text/plain" data-after>
+            export function limitFrom(env: string | undefined, fallback: number) {
+              if (env === undefined || env.trim() === "") return fallback;
+              const value = Number(env);
+              if (!Number.isFinite(value) || value < 0) throw new Error(`Not a limit: ${env}`);
+              return value;
+            }
+          </script>
+        </div>
+      </div></div>
+      <div class="demo-block"><header><b>From git diff, opening side by side</b></header><div class="demo">
+        <div data-diff='{"mode":"split","highlight":[[42,43]]}'>
+          <script type="text/plain" data-patch>
+diff --git a/src/catalog.ts b/src/catalog.ts
+--- a/src/catalog.ts
++++ b/src/catalog.ts
+@@ -38,9 +38,10 @@ export function list(options: ListOptions) {
+   const limit = Math.min(options.limit ?? 50, 200);
+   const rows = all.filter((a) => matches(a, options.query));
+-  rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+-  return rows.slice(0, limit);
++  const archived = options.archived ?? "exclude";
++  const shown = rows.filter((a) => archived === "include" || (archived === "only") === a.archived);
++  shown.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
++  return shown.slice(0, limit);
+ }
+ 
+ export function count() {
+          </script>
+        </div>
+      </div></div>
+      <div class="demo-block"><header><b>A new file</b></header><div class="demo">
+        <div data-diff='{"file":"compose.yaml","after":"services:\n  artifacts:\n    image: ghcr.io/plugincompany/artifact-library:0.9\n    ports: [\"3000:3000\"]\n    volumes:\n      - ./data:/data\n    environment:\n      ARTIFACT_TOKEN: ${ARTIFACT_TOKEN}"}'></div>
       </div></div>
     </section>
   </main>

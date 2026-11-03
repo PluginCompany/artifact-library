@@ -4,6 +4,22 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-03
+
+### Added
+- **Lazy images**: `<img data-src="…" width height alt>` loads when it comes near the screen (`data-srcset`/`data-sizes` too), with a placeholder while loading and a labelled "Image not found" box with its path when the file is missing. Printing loads every image first (`Kit.images.loadAll()`); `img[loading=lazy]` gets the same placeholder and fade.
+- **Full-size viewer**: `img[data-lightbox]` opens an image full size; images with the same `data-lightbox="<group>"` page through together, with arrow keys, swipe and Esc. Scripts open it with `Kit.lightbox.open(items, index)`.
+- **Galleries** (`[data-gallery]`, `Kit.gallery(el, spec)`) in six layouts: grid, masonry, strip, sidebar, annotated and compare. Write `<figure>`s with an image and a caption, or give JSON (or `data-gallery-src` pointing at a global) with titles, captions, tags and notes: pins or boxes placed in percent of the image.
+- **Code diffs** (`[data-diff]`, `Kit.diff(el, spec)`) from before/after code, a `git diff` patch or hunks, with word-level change marks, folded unchanged runs, notes and highlighted lines. Readers switch between Unified, Split and Result; the choice holds for every diff on the server, and phones get unified. `range` cuts a patch down to the lines that matter.
+- **Syntax colouring** for `pre[data-lang="ts"]` and other languages (js, py, sh, css, html, json, sql, …), and `Kit.highlight(text, lang)` for your own markup. All four blocks are documented with live examples in the style guide.
+- **New reference `ref-code-review`**: a change explained for a reviewer: why it exists, screenshots of the result in a gallery with notes, each change with its reasoning and short hand-picked diffs, alternatives and tests, decisions the reviewer confirms or overrules, and a verdict per change and overall, all saved for the agent. Unlike `ref-code-walkthrough`, which renders a whole diff by chapter, every snippet is chosen and trimmed by hand.
+- `artifact lint` warns with `eager-images` when more than 12 images load with the page, and counts galleries and diffs as visuals.
+
+### Changed
+- **Clean is the default style.** Every kit page opens in Clean; put `data-kit-style="bold"` on `<html>` to open a page in Bold. Readers still switch with the Bold / Clean button, and a style they picked before still wins. The references link `kit/themes/clean/clean.css` in their pages so Clean is there on the first paint. Artifacts already published keep the kit they were published with, so they don't change.
+- `publish.sh`: `KIT_THEME=bold ./publish.sh <dir>` publishes a reference that opens in Bold; `KIT_THEME=clean` is no longer needed (it does nothing); other theme names still link `kit/themes/<name>/<name>.css` last.
+- `artifact lint` loads every lazy image before checking, so a missing image is reported as `missing-file` wherever it sits on the page.
+
 ## [0.8.0] - 2026-10-30
 
 ### Added

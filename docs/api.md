@@ -51,7 +51,7 @@ Receipts: `{slug, version, revision, unchanged, url, versionUrl}`. Archive paths
 | Severity | Check | Finds |
 |---|---|---|
 | error | `script-error` | Uncaught exceptions and console errors |
-| error | `missing-file` | Requests for files that are not in the version |
+| error | `missing-file` | Requests for files that are not in the version (lazy images are loaded first, so a missing one anywhere on the page counts) |
 | error | `horizontal-overflow` | Sideways scrolling at a width, with the element that causes it |
 | error | `no-global-nav` | Three or more chapters (visible `h2`) and no menu linking at least half of them |
 | error | `nav-not-sticky` | The chapters are linked, but only from the page body, so the menu scrolls away: move it into the sticky top bar or a sticky side nav |
@@ -59,10 +59,11 @@ Receipts: `{slug, version, revision, unchanged, url, versionUrl}`. Archive paths
 | warning | `chapters-not-in-nav` | Five or more chapters while the menu only links other pages |
 | warning | `heading-without-id` | Chapter headings that cannot be linked (no id on the heading or a section around it) |
 | warning | `wall-of-text` | Paragraphs or list items over 110 words |
-| warning | `chapter-without-visual` | Chapters over 300 words with no table, diagram, chart, list, code, figure or steps |
+| warning | `chapter-without-visual` | Chapters over 300 words with no table, diagram, chart, gallery, diff, list, code, figure or steps |
 | warning | `paragraph-run` | More than six paragraphs in a row with nothing in between |
 | warning | `small-text` | Body text under 12 px |
 | warning | `image-without-alt` | Images without an `alt` attribute |
+| warning | `eager-images` | More than 12 images load with the page: give them `data-src` (or `loading="lazy"`) and `width`/`height` |
 | warning | `missing-description` | No `<meta name="description">` |
 | warning | `external-request-failed` | Requests to other sites that failed (bundle assets instead) |
 

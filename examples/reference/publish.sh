@@ -2,7 +2,8 @@
 # Publish (or update) one reference artifact with the shared kit bundled in.
 #
 #   ./publish.sh <artifact-dir> ["update message"]
-#   KIT_THEME=clean ./publish.sh <artifact-dir>     # default to a theme from kit/themes/
+#   KIT_THEME=bold ./publish.sh <artifact-dir>      # open in Bold instead of Clean (the default)
+#   KIT_THEME=<name> ./publish.sh <artifact-dir>    # default to another theme from kit/themes/
 #
 # <artifact-dir>/artifact.json holds slug, title and description.
 # The directory is staged to a temp folder, ./kit is copied in (the server
@@ -22,7 +23,12 @@ stage="$(mktemp -d)"; trap 'rm -rf "$stage"' EXIT
 cp -R "$src/." "$stage/"
 rm -f "$stage/artifact.json"
 rm -rf "$stage/kit" && cp -R "$here/kit" "$stage/kit"
-if [ -n "${KIT_THEME:-}" ]; then
+if [ "${KIT_THEME:-}" = "bold" ]; then
+  # Drop the Clean link and mark the page, so it opens in Bold without a flash of Clean.
+  find "$stage" -name '*.html' -not -path "$stage/kit/*" | while read -r f; do
+    sed -i -E '/<link rel="stylesheet" href="[^"]*themes\/(clean\/clean|quiet\/quiet)\.css">/d; 0,/<html( |>)/s//<html data-kit-style="bold"\1/' "$f"
+  done
+elif [ -n "${KIT_THEME:-}" ] && [ "$KIT_THEME" != "clean" ]; then
   [ -f "$here/kit/themes/$KIT_THEME/$KIT_THEME.css" ] || { echo "no theme kit/themes/$KIT_THEME" >&2; exit 1; }
   # Link the theme last in every page so it wins over the page's own styles.
   find "$stage" -name '*.html' -not -path "$stage/kit/*" | while read -r f; do

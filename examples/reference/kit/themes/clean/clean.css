@@ -7,11 +7,14 @@
    links, primary actions and selection; status colours only where they carry
    meaning. Structure comes from spacing and thin rules, not from boxes.
 
-   Bold (kit.css alone) is the default. Make Clean a page's default by linking it after
-   every other stylesheet; readers can switch styles with the kit's style toggle.
+   Clean is the default style of every kit page. Link it after every other
+   stylesheet so it is there on the first paint (kit.js adds it otherwise, which
+   can show Bold for a moment); readers can switch styles with the style toggle.
      <link rel="stylesheet" href="kit/kit.css">
      <link rel="stylesheet" href="style.css">
      <link rel="stylesheet" href="kit/themes/clean/clean.css">
+   To open a page in Bold (kit.css alone), leave this link out and write
+   <html data-kit-style="bold">.
 
    Make another theme: copy this folder, change the tokens in section 1, and
    keep component overrides (section 2) to what tokens cannot express.

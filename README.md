@@ -53,7 +53,7 @@ For common jobs there is a polished reference on the server that agents copy and
 |---|---|---|
 | **Planning** | A plan deck, open questions you answer with a click, options weighed in a decision record, scope cut to fit | `ref-plan-deck`, `ref-decision-questionnaire`, `ref-decision-record`, `ref-scope-slicer`, `ref-prototype-variants` |
 | **Progress tracking** | A live run log the agent updates while it works; blockers you answer on the page | `ref-live-run-log`, `ref-runbook`, `ref-debug-notebook` |
-| **Code review** | Findings on annotated screenshots, a walkthrough with a verdict per chapter, before/after diffs to approve | `ref-implementation-review`, `ref-code-walkthrough`, `ref-visual-regression` |
+| **Code review** | A change explained with its reasoning, screenshots and short diffs, decisions to confirm and a verdict; findings on annotated screenshots; a walkthrough with a verdict per chapter; before/after diffs to approve | `ref-code-review`, `ref-implementation-review`, `ref-code-walkthrough`, `ref-visual-regression` |
 | **Results and evidence** | The agent's proof of done: criteria linked to the checks that prove them, before/after, what was restored, and your sign-off | `ref-results-evidence` |
 | **Reporting** | Multi-page reports with charts and table views, test and performance results against budgets, a weekly digest | `ref-ops-report`, `ref-test-report`, `ref-weekly-digest` |
 | **Feature tours and showcases** | A guided tour of a product or a release: real screenshots with callouts, paths per role, a player that walks every feature | `ref-feature-tour` |
@@ -135,19 +135,20 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 
 <img src="docs/media/collection.webp" alt="The reference collection hub" width="100%">
 
-Every server ships **21 polished reference artifacts**, one per common job. Agents download the closest one, swap the content and publish; the plumbing (saving answers, comment threads, charts, print, phones) is already done.
+Every server ships **22 polished reference artifacts**, one per common job. Agents download the closest one, swap the content and publish; the plumbing (saving answers, comment threads, charts, print, phones) is already done.
 
 | Phase | References |
 |---|---|
 | **Plan** | Plan deck · Decision questionnaire · Prototype variants · Scope slicer · Decision record |
 | **Build** | Live run log · Debug notebook · Runbook |
-| **Review** | Implementation review · Results and evidence · Code walkthrough · Visual regression · Test report |
+| **Review** | Code review · Implementation review · Results and evidence · Code walkthrough · Visual regression · Test report |
 | **Report** | Multi-page report · Weekly digest |
 | **Explain** | Feature tour · User guide · Architecture tour · Codebase map |
 | **Start here** | Guide for agents · CLI and skill install page |
 
 - **One design system** (`kit/`) behind all of them, with its own style guide on the collection hub: light and dark mode, charts with table views, comment threads, self-hosted fonts.
-- **Two styles, Bold and Clean**: the expressive default and a plain documentation look (hairline borders, semibold Inter, one blue accent). Readers switch with a button on every kit page; authors pick the default.
+- **Two styles, Clean and Bold**: a plain documentation look (hairline borders, semibold Inter, one blue accent), the default, and an expressive one. Readers switch with a button on every kit page; authors can open a page in Bold.
+- **Images, galleries and diffs built in**: lazy screenshots with a full-size viewer, galleries in six layouts with notes on the image, code diffs in unified, split or result view, and syntax colouring.
 - **Seeded on every server** and updated with new releases, without overwriting your own edits.
 
 [See the collection →](docs/reference-collection.md)
@@ -235,7 +236,7 @@ Compose file, reverse proxy and Tailscale examples, backups and upgrades: [docs/
 | [CLI reference](docs/cli.md) | Every command, configuration, profiles, exit codes |
 | [Agents](docs/agents.md) | Skill, MCP server, the feedback loop |
 | [Saved data](docs/saved-data.md) | Answers, comments and live state from pages and agents |
-| [Reference collection](docs/reference-collection.md) | The 21 references, the shared kit and its themes |
+| [Reference collection](docs/reference-collection.md) | The 22 references, the shared kit and its themes |
 | [Deployment](docs/deployment.md) | Docker, Compose, TLS, backups, upgrades |
 | [HTTP API](docs/api.md) | Routes, headers, errors |
 | [Release process](docs/release-process.md) | How releases are built and published |
