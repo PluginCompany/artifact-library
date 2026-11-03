@@ -87,11 +87,13 @@ test('seeding creates missing artifacts, updates untouched seeds, and never over
     await writeFile(path.join(seed, slug, 'files', 'index.html'), `<!doctype html><body>${body}</body>`);
   }
   await write('guide', 'one'); await write('cli', 'one');
+  let seededAt = '';
   {
     const { app } = await fixture(t, seed, data);
     const listed = (await app.inject('/api/v1/artifacts')).json().artifacts.map((a: { slug: string }) => a.slug).sort();
     assert.deepEqual(listed, ['cli', 'guide']);
     assert.equal((await app.inject('/api/v1/artifacts/guide')).json().title, 'GUIDE');
+    seededAt = (await app.inject('/api/v1/artifacts/guide')).json().updatedAt;
     // Someone edits "cli" after it was seeded.
     const edit = await app.inject({ method: 'POST', url: '/api/v1/artifacts/cli/versions', headers: { 'content-type': 'application/gzip', 'x-expected-revision': '1' }, payload: await archive([{ name: 'index.html', content: 'mine' }]) });
     assert.equal(edit.statusCode, 201, edit.body);
@@ -100,7 +102,9 @@ test('seeding creates missing artifacts, updates untouched seeds, and never over
   await write('guide', 'two'); await write('cli', 'two');
   {
     const { app } = await fixture(t, seed, data);
-    assert.equal((await app.inject('/api/v1/artifacts/guide')).json().latestVersion, 2);
+    const guide = (await app.inject('/api/v1/artifacts/guide')).json();
+    assert.equal(guide.latestVersion, 2);
+    assert.equal(guide.updatedAt, seededAt, 'an upgrade that re-seeds keeps updatedAt, so references do not jump to the top');
     assert.match((await app.inject('/artifacts/guide/_versions/2/')).body, /two/);
     assert.equal((await app.inject('/api/v1/artifacts/cli')).json().latestVersion, 2);
     assert.match((await app.inject('/api/v1/artifacts/cli/versions/2/files/index.html')).body, /mine/);

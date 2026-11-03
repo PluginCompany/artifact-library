@@ -16,6 +16,9 @@ export interface PublishOptions {
   message?: string;
   notice?: boolean;
   expectedRevision?: number;
+  /** Keep the artifact's updatedAt (seeding: new reference content shipped with the server is not an update by
+   *  anyone, so it must not move the artifact to the top of the library). A new artifact still gets the time now. */
+  keepUpdatedAt?: boolean;
   operationKey: string;
 }
 interface Operation { fingerprint: string; result: Publication | Artifact }
@@ -180,7 +183,7 @@ export class Storage {
           if (options.update && current!.revision !== options.expectedRevision) throw new ArtifactError('REVISION_CONFLICT', `Expected revision ${options.expectedRevision}, current revision is ${current!.revision}`, 409);
           if (current && (await this.version(slug!, current.latestVersion)).digest === contentDigest) {
             const changed = (options.title !== undefined && options.title !== current.title) || (options.description !== undefined && options.description !== current.description);
-            const artifact = changed ? { ...current, title: options.title ?? current.title, description: options.description ?? current.description, revision: current.revision + 1, updatedAt: new Date().toISOString() } : current;
+            const artifact = changed ? { ...current, title: options.title ?? current.title, description: options.description ?? current.description, revision: current.revision + 1, updatedAt: options.keepUpdatedAt ? current.updatedAt : new Date().toISOString() } : current;
             const result = { slug: slug!, version: current.latestVersion, revision: artifact.revision, unchanged: true, ...this.urls(slug!, current.latestVersion) };
             if (changed) {
               const transaction = { artifact, operationId, operation: { fingerprint, result } };
@@ -198,7 +201,7 @@ export class Storage {
           const version: Version = { version: number, createdAt: now, entry, notice, message: options.message, digest: contentDigest, files, title, description, publicationRevision };
           await atomicJson(path.join(stage, 'version.json'), version);
           await syncDirectory(path.join(this.root, 'staging'));
-          const artifact: Artifact = { slug: slug!, title, description, createdAt: current?.createdAt ?? now, updatedAt: now, latestVersion: number, revision: publicationRevision };
+          const artifact: Artifact = { slug: slug!, title, description, createdAt: current?.createdAt ?? now, updatedAt: options.keepUpdatedAt && current ? current.updatedAt : now, latestVersion: number, revision: publicationRevision };
           const result: Publication = { slug: slug!, version: number, revision: artifact.revision, unchanged: false, ...this.urls(slug!, number) };
           const transaction: Transaction = { artifact, version: number, stage: stageId, operationId, operation: { fingerprint, result } };
           await atomicJson(path.join(this.artifactDir(slug!), 'pending.json'), transaction);

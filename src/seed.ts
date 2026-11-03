@@ -14,7 +14,9 @@ import type { Storage } from './storage.js';
      - a missing slug is created;
      - a slug the server seeded earlier, whose latest version is still the seeded
        one, is updated when the image ships new content;
-     - anything else (published or edited by someone) is left alone. */
+     - anything else (published or edited by someone) is left alone.
+   Updating a seed adds a version but keeps the artifact's updatedAt: a server upgrade is not an update by
+   anyone, so it must not move every reference to the top of the library. */
 
 interface SeedMeta { slug: string; title: string; description: string; entry?: string }
 interface SeedState { [slug: string]: { version: number; digest: string; release: string } | { purged: true; at: string } }
@@ -56,7 +58,7 @@ export async function seedArtifacts(storage: Storage, seedDir: string): Promise<
         results.push({ slug, action: 'skipped', reason: seeded ? 'changed after seeding' : 'not created by seeding' });
         continue;
       }
-      const result = await storage.publish(packArchive(path.join(dir, 'files'), files), { ...options, update: true, expectedRevision: current.revision, operationKey: key + ':update:' + current.revision });
+      const result = await storage.publish(packArchive(path.join(dir, 'files'), files), { ...options, update: true, keepUpdatedAt: true, expectedRevision: current.revision, operationKey: key + ':update:' + current.revision });
       state[slug] = { version: result.version, digest: (await storage.version(slug, result.version)).digest, release: APP_VERSION };
       results.push({ slug, action: result.unchanged ? 'unchanged' : 'updated', version: result.version });
       await atomicJson(stateFile, state);

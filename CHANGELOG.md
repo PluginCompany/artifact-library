@@ -4,6 +4,11 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-04
+
+### Fixed
+- **Server upgrades no longer move the reference collection to the top of the library.** Re-seeding a reference with the new release's content adds a version as before, but keeps the artifact's "updated" date, because an upgrade is not an update by anyone. Before, every upgrade stamped all seeded artifacts with the upgrade time, so they pushed the real work down in the library's newest-first order. A reference created for the first time still gets the time it was created.
+
 ## [0.12.0] - 2026-11-03
 
 ### Added
