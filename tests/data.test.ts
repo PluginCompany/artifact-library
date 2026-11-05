@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { buildApp } from '../src/app.js';
 import { archive } from './helpers.js';
+import { feedbackText, type DataDoc } from '../src/operations.js';
 
 async function fixture(t: test.TestContext, seedDir?: string, root?: string) {
   root ??= await mkdtemp(path.join(os.tmpdir(), 'artifact-data-'));
@@ -216,4 +217,63 @@ test('a reader with instant sync off saves held changes; sends and agent writes 
   assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/answer.q2', headers: { cookie: 'artifact_sync=instant' }, payload: { value: 1 } })).json().held, undefined);
   // A body cannot claim to be held; only the reader's cookie can.
   assert.equal((await app.inject({ method: 'PUT', url: '/api/v1/artifacts/plan/data/answer.q3', payload: { value: 1, hold: true } })).json().held, undefined);
+});
+
+test('shared libraries: served from the libs directory, entries revalidated, chunks immutable, no escapes', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'artifact-libs-'));
+  const libs = path.join(root, 'libs');
+  await mkdir(path.join(libs, 'chunks'), { recursive: true });
+  await writeFile(path.join(libs, 'diagram.js'), 'export const version = "1";');
+  await writeFile(path.join(libs, 'chunks', 'flow-abc123.js'), 'export default 1;');
+  const app = await buildApp({ dataDir: path.join(root, 'data'), publicUrl: 'https://artifacts.test', libsDir: libs });
+  t.after(async () => { await app.close(); await rm(root, { recursive: true, force: true }); });
+  const entry = await app.inject({ url: '/_artifact/libs/diagram.js' });
+  assert.equal(entry.statusCode, 200);
+  assert.match(String(entry.headers['content-type']), /^text\/javascript/);
+  assert.equal(entry.headers['cache-control'], 'no-cache');
+  assert.equal(entry.body, 'export const version = "1";');
+  const again = await app.inject({ url: '/_artifact/libs/diagram.js', headers: { 'if-none-match': String(entry.headers.etag) } });
+  assert.equal(again.statusCode, 304);
+  const chunk = await app.inject({ url: '/_artifact/libs/chunks/flow-abc123.js' });
+  assert.equal(chunk.statusCode, 200);
+  assert.match(String(chunk.headers['cache-control']), /immutable/);
+  for (const url of ['/_artifact/libs/missing.js', '/_artifact/libs/chunks', '/_artifact/libs/..%2F..%2Fetc%2Fpasswd', '/_artifact/libs/%2e%2e/data']) {
+    assert.equal((await app.inject({ url })).statusCode, 404, url);
+  }
+  const none = await buildApp({ dataDir: path.join(root, 'data2'), publicUrl: 'https://artifacts.test' });
+  t.after(async () => { await none.close(); });
+  assert.equal((await none.inject({ url: '/_artifact/libs/diagram.js' })).statusCode, 404);
+});
+
+test('feedback text: annotations show each mark with its region, replies under their mark', () => {
+  const text = feedbackText('demo', [{
+    key: 'annotations.shots-login', revision: 3, createdAt: '2026-11-05T10:00:00.000Z', updatedAt: '2026-11-05T10:02:00.000Z', author: 'Ana', role: 'human',
+    value: { image: { src: 'shots/login.webp', w: 1600, h: 900, title: 'Login', page: 'index.html' }, items: [
+      { id: 'm1', role: 'human', author: 'Ana', createdAt: '2026-11-05T10:00:00.000Z', text: 'Button is cut off', shape: 'box', x: 10, y: 20, w: 25, h: 10, n: 1 },
+      { id: 'm2', role: 'human', author: 'Ana', createdAt: '2026-11-05T10:01:00.000Z', text: 'Wrong icon', shape: 'pin', x: 50, y: 50, n: 2, resolved: true },
+      { id: 'r1', role: 'agent', author: 'Claude Code', createdAt: '2026-11-05T10:02:00.000Z', text: 'Fixed in v2', replyTo: 'm1' },
+    ] },
+  } as DataDoc]);
+  assert.match(text, /Image: shots\/login\.webp \(1600×900 px\) "Login", on index\.html/);
+  assert.match(text, /- #1 box x 10–35%, y 20–30% \(px 160,180 → 560,270\) \[human · Ana · 2026-11-05 10:00\] id=m1\n {2}Button is cut off\n {2}- reply \[agent · Claude Code · 2026-11-05 10:02\] id=r1\n {4}Fixed in v2/);
+  assert.match(text, /- #2 point x 50%, y 50% \(px 800,450\) \[human · Ana · 2026-11-05 10:01 · resolved\] id=m2/);
+  assert.match(text, /artifact data append demo annotations\.shots-login --item/);
+});
+
+test('remove an item: the item and its replies go, others stay; unknown ids are 404', async t => {
+  const { app } = await fixture(t);
+  await publish(app, 'shots');
+  const url = '/api/v1/artifacts/shots/data/annotations.login/items';
+  const add = async (item: object) => JSON.parse((await app.inject({ method: 'POST', url, payload: { item, author: 'Ana' } })).body).item.id as string;
+  const mark = await add({ text: 'Cut off', shape: 'box', x: 1, y: 2, w: 3, h: 4, n: 1 });
+  const other = await add({ text: 'Wrong icon', shape: 'pin', x: 5, y: 6, n: 2 });
+  const reply = await add({ text: 'Fixed', replyTo: mark });
+  const removed = await app.inject({ method: 'DELETE', url: `${url}/${mark}?author=Ana` });
+  assert.equal(removed.statusCode, 200, removed.body);
+  const body = JSON.parse(removed.body);
+  assert.deepEqual(body.removed.sort(), [mark, reply].sort());
+  assert.deepEqual(body.document.value.items.map((i: { id: string }) => i.id), [other]);
+  assert.equal(body.document.revision, 4);
+  assert.equal((await app.inject({ method: 'DELETE', url: `${url}/${mark}` })).statusCode, 404);
+  assert.equal((await app.inject({ method: 'DELETE', url: `${url}/${other}?role=robot` })).statusCode, 400);
 });

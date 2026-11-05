@@ -19,6 +19,7 @@ import { missing } from './fs.js';
 import { ArtifactData, DATA_WAIT, type ListOptions, type Writer } from './data.js';
 import { markPurged, seedArtifacts } from './seed.js';
 import { media } from './media-assets.js';
+import { registerLibs } from './libs.js';
 
 export interface AppOptions {
   dataDir: string; publicUrl: string; logger?: boolean; previews?: boolean; seedDir?: string;
@@ -26,6 +27,8 @@ export interface AppOptions {
   token?: string;
   /** Upload limits; defaults to 500 MB and 10,000 files. 0 = unlimited. */
   limits?: Limits;
+  /** Shared browser libraries served at /_artifact/libs/ (libs/dist, built by scripts/build-libs.mjs). */
+  libsDir?: string;
 }
 declare module 'fastify' { interface FastifyContextConfig { auth?: boolean } }
 function header(request: FastifyRequest, key: string) {
@@ -256,6 +259,10 @@ export async function buildApp(options: AppOptions) {
     const input = body(request);
     return noStore(reply, await data.updateItem(request.params.slug, request.params.key, request.params.id, input.changes, { author: input.author, role: input.role, hold: hold(request) }));
   });
+  app.delete<{ Params: DataParams & { id: string }; Querystring: { author?: string; role?: string } }>('/api/v1/artifacts/:slug/data/:key/items/:id', async (request, reply) => {
+    const { author, role } = request.query;
+    return noStore(reply, await data.removeItem(request.params.slug, request.params.key, request.params.id, { author, role: role as Writer['role'], hold: hold(request) }));
+  });
   app.get<{ Params: { slug: string; version: string } }>('/api/v1/artifacts/:slug/versions/:version', async request => storage.version(request.params.slug, versionNumber(request.params.version)));
   app.get<{ Params: { slug: string; version: string } }>('/api/v1/artifacts/:slug/versions/:version/download', async (request, reply) => {
     const { slug, version } = request.params;
@@ -269,6 +276,7 @@ export async function buildApp(options: AppOptions) {
     const before = await storage.version(request.params.slug, from), after = await storage.version(request.params.slug, to);
     return { from, to, changes: compareFiles(before.files, after.files), entryChanged: before.entry !== after.entry, noticeChanged: before.notice !== after.notice };
   });
+  registerLibs(app, options.libsDir ? path.resolve(options.libsDir) : undefined);
   app.get('/_artifact/notice.js', (_request, reply) => reply.type('application/javascript; charset=utf-8').header('Cache-Control', 'no-cache').send(noticeScript));
   app.route<{ Params: { slug: string; '*': string } }>({ method: ['GET', 'HEAD'], url: '/artifacts/:slug/*', handler: async (request, reply) => {
     const { slug, '*': relative } = request.params;

@@ -183,6 +183,26 @@ export class ArtifactData {
     });
   }
 
+  /** Remove one item, and the items that reply to it (replyTo: id), e.g. a reader deleting a mark on a screenshot. */
+  async removeItem(slug: string, key: string, id: string, options: Writer = {}) {
+    validateKey(key);
+    const who = writer(options, key);
+    return this.storage.locked(`data:${slug}:${key}`, async () => {
+      await this.storage.get(slug);
+      const current = await this.read(slug, key);
+      const items = current && Array.isArray((current.value as { items?: unknown })?.items) ? (current.value as { items: DataItem[] }).items : undefined;
+      if (!current || !items || !items.some(i => i.id === id)) throw new ArtifactError('DATA_NOT_FOUND', `No item ${id} under ${key}`, 404);
+      const removed = items.filter(i => i.id === id || (i as { replyTo?: unknown }).replyTo === id).map(i => i.id);
+      const now = new Date().toISOString();
+      const next = { ...(current.value as object), items: items.filter(i => !removed.includes(i.id)) };
+      const { held: _held, ...kept } = current;
+      const document: DataDocument = { ...kept, value: next, revision: current.revision + 1, updatedAt: now, ...who };
+      await atomicJson(this.file(slug, key), document);
+      this.changed(slug, document);
+      return { document, removed };
+    });
+  }
+
   private expect(current: DataDocument | undefined, expected?: number) {
     if (expected === undefined) return;
     if (!Number.isSafeInteger(expected) || expected < 0) throw new ArtifactError('INVALID_DATA', 'expectedRevision must be a non-negative integer');

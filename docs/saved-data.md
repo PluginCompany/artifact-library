@@ -17,6 +17,7 @@ Agents rely on these key prefixes; keep them.
 | `comments.<anchor>` | `{ items: [{ id, author, role, createdAt, text, resolved }] }` | `Kit.comments`, `artifact data append` |
 | `answer.<question>` | `{ questionId, question, choice, choiceLabel, recommended, recommendedLabel, followsRecommendation, note }` | the kit's questions block (`[data-questions]`), picks |
 | `review.<item>` | `{ verdict: "approved" \| "changes" \| "question", note }` | review pages |
+| `annotations.<image>` | `{ image: { src, title, w, h, page }, items: [{ id, author, role, createdAt, text, resolved, shape: "box" \| "pin", x, y, w, h, n }] }` (x/y/w/h in % of the image); replies are items with `replyTo` | readers marking a screenshot (`kit-data.js`), `artifact data append` |
 | `state.checklist` | `{ runId, title, startedAt, startedBy, steps: { <id>: { done, by, at, note, noteBy, noteAt } } }` | the kit's steps block (`[data-steps]`), ticks and notes |
 | `state.checklist.<runId>` | an archived run: the same, plus `archivedAt`, `archivedBy` | the steps block's "Start a new run" |
 | `state.<name>` | anything | live pages (run logs) and agents |
@@ -34,6 +35,19 @@ The switch is in the toolbar's ⋯ menu on every artifact. It is one setting per
 For decisions, use the kit's questions block rather than writing answers yourself: `<div data-questions-src="PLAN.questions"></div>` (or `[data-questions]` with JSON, or `Kit.questions(el, spec)`) saves `answer.<id>` per question and `state.submitted` on "I'm done", exactly as above, and fires `kit:answers` on the element whenever answers change. `ref-decision-questionnaire` and the decisions in `ref-code-review` use it; in a code review `recommended` is what was built and `followsRecommendation` means the reviewer agrees with it. The agent answers on a question in `comments.q-<id>` (`artifact data append <slug> comments.q-<id> --item '{"text":"…"}' --author "Claude Code"`): open pages show it under the question within about 10 s, without a new version, and resolved items are hidden.
 
 For steps the reader takes or a procedure you run together, use the kit's steps block: `<div data-steps-src="PLAN.todo"></div>` (or `[data-steps]` with JSON, or `Kit.steps(el, spec)`) saves the current run in `state.checklist` (ticks with who and when, and a note per step, keyed by step id) and, on "Start a new run", archives it as `state.checklist.<runId>`. It fires `kit:steps` (`{done, total, run}`) on the element. `ref-runbook` uses it, in the same format it always saved; a second list on one page needs its own `key` (for example `state.todo`). The agent adds a note on a step in `comments.s-<id>` (`artifact data append <slug> comments.s-<id> --item '{"text":"…"}' --author "Claude Code"`), shown under the step within about 10 s.
+
+Readers mark issues on screenshots: with `kit-data.js` loaded, every image opened in the kit's viewer has an **Annotate** button (or A), and `img[data-annotate]` shows the marks on the page with an Annotate button. A drag draws a box, a tap drops a point, then the reader writes what is wrong. Each image is one thread, `annotations.<id>` (`data-annotate="<id>"`, default the image path), so marks are appended atomically and the agent replies in it. `artifact feedback` prints every mark with its region:
+
+```text
+## annotations.shots-login  (rev 4, 2026-11-05 10:02, Ana)
+Image: shots/login.webp (1600×900 px) "Login", on index.html
+- #1 box x 10–35%, y 20–30% (px 160,180 → 560,270) [human · Ana · 2026-11-05 10:00] id=m1
+  Button is cut off
+  - reply [agent · Claude Code · 2026-11-05 10:02] id=r1
+    Fixed in v2
+```
+
+The agent answers under a mark with `artifact data append <slug> annotations.<id> --item '{"text":"…","replyTo":"<mark id>"}' --author "Claude Code"` (shown under it on open pages within about 10 s) and resolves it with `artifact data update-item <slug> annotations.<id> <mark id> --changes '{"resolved":true}'`. Readers delete their own marks (Delete, then confirm); that removes the mark and its replies (`artifact data remove-item`, `Kit.data.removeItem(key, id)`).
 
 Store readable labels next to ids so `artifact feedback` makes sense without the page. Use a top-level `items` array only for threads: `artifact feedback` prints any `value.items` as comments.
 
@@ -59,7 +73,7 @@ document.addEventListener("kit:ready", async () => {
 | `Kit.data.get(key)` / `set(key, value, {expectedRevision})` / `remove(key)` | One document |
 | `Kit.data.update(key, value => next)` | Read-modify-write that retries on conflicts |
 | `Kit.data.list(prefix)` | Documents with a prefix |
-| `Kit.data.append(key, item)` / `updateItem(key, id, changes)` | Threads, atomically on the server |
+| `Kit.data.append(key, item)` / `updateItem(key, id, changes)` / `removeItem(key, id)` | Threads, atomically on the server (`removeItem` also removes replies to the item) |
 | `Kit.data.watch(prefix, callback, {interval})` | Poll for changes; returns `stop()` |
 | `Kit.comments(element, {key, title, placeholder, compact})` | A complete comment thread with resolve/reopen |
 | `Kit.data.author()` / `askAuthor()` / `personKey()` | The reader's name (asked once, remembered per server in the browser) and a stable per-person key suffix |
@@ -74,7 +88,7 @@ artifact data update-item q3-review comments.finding-F2 <id> --changes '{"resolv
 artifact data set release-run state.run --file run.json   # a live page picks it up within seconds
 ```
 
-Over MCP the same operations are the `feedback`, `wait_for_feedback`, `data_get`, `data_set`, `data_append` and `data_update_item` tools.
+Over MCP the same operations are the `feedback`, `wait_for_feedback`, `data_get`, `data_set`, `data_append`, `data_update_item` and `data_remove_item` tools.
 
 ## Rules and limits
 

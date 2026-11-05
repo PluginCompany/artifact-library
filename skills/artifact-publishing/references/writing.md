@@ -96,6 +96,7 @@ When a chapter explains something with a shape, draw the shape. Use these kit bl
 | Content | Use | Markup |
 |---|---|---|
 | A process, pipeline or data flow | Flow diagram | `<div data-flow='{"steps":[…]}'></div>` |
+| Branches, loops, who-talks-to-whom, states, data models, architecture, schedules | Mermaid diagram | `<div data-diagram>` with a `<script type="text/plain">` child |
 | Options compared on the same criteria | Comparison table with the recommended row marked | `<table class="table compare">…<tr class="rec">` |
 | Numbers that matter | Stat tiles, or a chart with a table view | `.stats > .stat`, `Kit.chart.*` in a `.chart-card` |
 | Risks | Risk table with likelihood | `<div data-risks='[…]'></div>` |
@@ -104,6 +105,8 @@ When a chapter explains something with a shape, draw the shape. Use these kit bl
 | Work in steps | Numbered steps with the files each touches | `<ol class="steps">` with `<p class="files">` |
 | Several screenshots | Gallery (grid, sidebar walkthrough, notes on the image, compare) | `<div data-gallery="grid">` with `<figure>`s, or JSON |
 | A code change | A short diff of the lines that carry it, with notes | `<div data-diff='{…}'>` with `data-before`/`data-after` scripts |
+| Code to read (an excerpt, a config, a command) | A code block, the lines that matter marked | `<pre data-lang="ts" data-numbers data-lines="4-6">` |
+| Screenshots you want feedback on | Images readers mark up (boxes and points with a comment) | `<img data-annotate …>`; every image in the viewer works too |
 | Open decisions | Questions with options, a default and trade-offs | `<div data-questions='{…}'>` or `data-questions-src` |
 | Steps the reader takes, or a procedure run together | A shared checklist with ticks, notes and progress | `<div data-steps='{…}'>` or `data-steps-src` |
 
@@ -169,6 +172,29 @@ Several lanes: `{"rows": [{"label": "Publishing", "steps": [...]}, {"label": "Se
 ```
 
 Layouts: `grid`, `masonry`, `strip`, `sidebar` (a numbered walkthrough), `annotated`, `compare` (drag a divider between two images).
+
+**Mermaid diagram** — anything with branches, loops or more than one actor. `[data-flow]` stays the better choice for a short linear process where each step names its files; everything else is Mermaid: `flowchart`, `sequenceDiagram`, `stateDiagram-v2`, `erDiagram`, `classDiagram`, `gantt`, `timeline`, `mindmap`, `sankey-beta`, `architecture-beta`, `quadrantChart`, `xychart-beta`, `gitGraph`, `block-beta` and more. Put the text in a `<script type="text/plain">` child so `<`, `>` and `&` stay as written. Big graphs read better with `data-layout="elk"`. Keep one idea per diagram (about 15 nodes at most); split a bigger picture into several, each with a caption. The kit colours it from the page's tokens, redraws it in dark mode and gives readers zoom, full screen, the source and an SVG download. A syntax error shows in place with its line and is a console error, so `artifact lint` reports it.
+
+```html
+<div data-diagram data-caption="A reader's note reaches the agent without a new version.">
+  <script type="text/plain">
+    sequenceDiagram
+      participant R as Reader
+      participant S as Server
+      participant A as Agent
+      R->>S: save a mark on a screenshot
+      A->>S: artifact wait
+      S-->>A: feedback
+      A->>S: artifact data append (reply)
+  </script>
+</div>
+```
+
+Diagrams and the richer code colouring come from the artifact server (`/_artifact/libs/`), not from `kit/`: the page stays small, and opened from disk a diagram shows its source instead. For a one-off visual nothing else covers (a force graph, treemap, chord), `const d3 = await Kit.libs.load("d3")`, colours from `Kit.libs.color("--accent")`, redrawn on `kit:theme`. Prefer a kit chart or a diagram whenever one fits.
+
+**Code blocks:** `pre[data-lang]` colours 230+ languages on the server (VS Code grammars). `data-numbers` adds line numbers (`data-start="120"` when the excerpt starts mid-file), `data-lines="4-6,9"` marks the lines the text talks about.
+
+**Screenshots readers mark up:** with `kit/kit-data.js` loaded, every image opened in the viewer has an **Annotate** button: readers drag a box or tap a point and say what is wrong. `<img data-annotate src="shots/login.webp" width="1600" height="900" alt="…">` also shows the marks on the page with an Annotate button; `data-annotate="login"` names the saved document (default: the image path). Read the marks with `artifact feedback` (each with its region in percent and pixels, so you can crop the spot) and answer under a mark with `artifact data append <slug> annotations.<id> --item '{"text":"Fixed in version 3","replyTo":"<mark id>"}' --author "Claude Code"`.
 
 **Code changes:** show the lines that carry the change, not the whole file. One snippet is at most about 25 lines; a bigger change becomes several snippets, each with a sentence on why. A note under a line explains the line a reviewer would ask about.
 

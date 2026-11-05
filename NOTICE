@@ -13,4 +13,10 @@ Third-party components
 - Bricolage Grotesque, Noto Sans and JetBrains Mono fonts, bundled in
   examples/reference/kit/fonts/, are licensed under the SIL Open Font License 1.1
   (see examples/reference/kit/fonts/OFL.txt).
+- The shared browser libraries the server serves at /_artifact/libs/ (Mermaid,
+  the ELK layout via elkjs, Shiki with its TextMate grammars, d3 and their
+  dependencies) are bundled by scripts/build-libs.mjs from the packages in
+  package.json. Each keeps its own licence (MIT, ISC, Apache-2.0, BSD-3-Clause,
+  MPL-2.0 or Apache-2.0, EPL-2.0 for elkjs); the full texts are written to
+  libs/dist/LICENSES.txt and served at /_artifact/libs/LICENSES.txt.
 - Runtime dependencies are listed in package.json and keep their own licences.

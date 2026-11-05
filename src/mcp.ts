@@ -67,6 +67,9 @@ export function createMcpServer(api: Client) {
   tool('data_update_item', 'Change fields of one thread item, e.g. mark a comment resolved with {"resolved": true}.',
     { slug, key, id: z.string().describe('Item id from feedback or data_get'), changes: z.record(z.string(), z.any()), author: z.string().optional() },
     async a => api.request(dataPath(a.slug, a.key) + '/items/' + encodeURIComponent(a.id), json('PATCH', { changes: a.changes, author: author(a.author), role: 'agent' })));
+  tool('data_remove_item', 'Remove one thread item and the items that reply to it (replyTo), e.g. a mark on a screenshot.',
+    { slug, key, id: z.string().describe('Item id from feedback or data_get') },
+    async a => api.request(dataPath(a.slug, a.key) + '/items/' + encodeURIComponent(a.id) + '?role=agent', { method: 'DELETE' }));
   tool('publish', 'Publish a local directory (with index.html) as a new artifact. Always give a title that says what it is and a description that says what the reader gets. Returns the stable url to share. Fails if the slug exists — use update for new versions.',
     { directory: z.string().describe('Absolute path of the folder to publish'), slug: z.string().optional().describe('Readable slug; generated if omitted'), title: z.string().optional(), description: z.string().optional(), message: z.string().optional().describe('Publication message'), entry: z.string().optional().describe('Entry page (default index.html)') },
     async a => api.publish(a.directory, { slug: a.slug, title: a.title, description: a.description, message: a.message, entry: a.entry ?? 'index.html', notice: true, excludes: [] }));

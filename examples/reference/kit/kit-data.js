@@ -12,6 +12,7 @@
      comments.<anchor>   { items: [{ id, author, role, createdAt, text, resolved? }] }
      answer.<question>   { choice, note }            one per question
      review.<item>       { verdict: approved|changes|question, note }
+     annotations.<image> { image, items: [{ text, shape: box|pin, x, y, w, h, n, replyTo? }] }   marks on a screenshot
      state.<name>        anything the page or the agent keeps live
    Reserve a top-level `items` array for threads: `artifact feedback` prints any
    value.items as comments, so name other lists differently (tasks, steps, …).
@@ -19,12 +20,14 @@
    API (all async, all return the saved document):
      Kit.data.get(key) · set(key, value, {expectedRevision}) · remove(key)
      Kit.data.update(key, value => next)    merge safely; retries on conflicts
-     Kit.data.list(prefix) · append(key, item) · updateItem(key, id, changes)
+     Kit.data.list(prefix) · append(key, item) · updateItem(key, id, changes) · removeItem(key, id)
      Kit.data.watch(prefix, callback, {interval}) → stop()   polls for changes
      Kit.data.mode → "server" | "local" (opened from disk or another host)
      Kit.comments(element, {key, title, placeholder, compact})
      Kit.questions(element, spec)   decisions with options; also [data-questions] (see "Questions" below)
      Kit.steps(element, spec)       a shared checklist (runbook, to-dos); also [data-steps] (see "Steps" below)
+     Kit.annotations                readers mark issues on screenshots in the viewer and on img[data-annotate]
+                                    → annotations.<image> (see "Image annotations" below)
      Kit.data.author() / Kit.data.askAuthor() / Kit.data.personKey()
    Markup hooks: [data-save-status] shows save state, [data-author-chip] the name.
    ========================================================================== */
@@ -182,6 +185,15 @@
         dlg.showModal();
         const input = dlg.querySelector("input"); input.focus(); input.select();
       });
+    },
+    /* Remove one item and its replies (replyTo: id); resolves to {document, removed}. */
+    async removeItem(key, id) {
+      return track((async () => {
+        if ((await ready) === "server") return http("DELETE", "/" + encodeURIComponent(key) + "/items/" + encodeURIComponent(id) + (Data.author() ? "?author=" + encodeURIComponent(Data.author()) : ""));
+        const cur = local.all()[key]; if (!cur) throw new Error("Not found");
+        const removed = cur.value.items.filter((i) => i.id === id || i.replyTo === id).map((i) => i.id);
+        return { document: local.write(key, { ...cur.value, items: cur.value.items.filter((i) => !removed.includes(i.id)) }), removed };
+      })());
     },
     async ensureAuthor() { if (!Data.author() && !ls.get("kit-author-skipped")) await Data.askAuthor(); return Data.author(); },
   };
@@ -682,6 +694,207 @@
     return { el, next, paint };
   }
   Kit.steps = steps;
+
+  /* ---------- Image annotations (screenshots in the viewer, img[data-annotate]) ----------
+     Readers mark what is wrong on a screenshot: drag a box or tap a point, write what they see. Every image
+     opened in the kit's viewer can be annotated (its "Annotate" button, or A); img[data-annotate] also shows
+     the marks on the page with an "Annotate" button. data-annotate="<id>" names the document (default: the
+     image path); data-annotate="off", a gallery item's annotate:false or <html data-annotate="off"> turns it off.
+     Saves one thread per image (artifact feedback prints each mark with its region):
+       annotations.<id>  { image: {src, title, w, h, page}, items: [{ id, author, role, createdAt, text, resolved,
+                           shape: "box"|"pin", x, y, w, h, n }] }      x/y/w/h in % of the image, n = the mark's number
+     The agent replies under a mark (shown under it within about 10 s, without a new version):
+       artifact data append <slug> annotations.<id> --item '{"text":"Fixed in v4","replyTo":"<mark id>"}' --author "Claude Code"
+     Kit.annotations.key(item) → the key for an image item; Kit.annotations.open(img) opens it ready to mark. */
+  const ANN_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5l1-3.5 7.5-7.5 2.5 2.5-7.5 7.5zM9.5 4l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const annDocs = new Map(); // key -> document (null: nothing saved yet)
+  const annViews = new Set(); // repaint functions of everything showing annotations
+  let annWatch = null;
+  const annOff = () => document.documentElement.getAttribute("data-annotate") === "off";
+  function annKey(it) {
+    if (!it || annOff() || it.annotate === false || it.annotate === "off") return null;
+    const raw = typeof it.annotate === "string" && it.annotate !== "true" && it.annotate ? it.annotate
+      : String(it.full || it.src || "").split(/[?#]/)[0].replace(/^(?:[a-z]+:)?\/\/[^/]+/i, "").replace(/^(\.\.?\/)+/, "").replace(/\.[a-z0-9]{2,5}$/i, "");
+    const id = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^[^a-z0-9]+|-+$/g, "").slice(-112);
+    return id && !/^data[.:-]/.test(id) ? "annotations." + id.replace(/^[^a-z0-9]+/, "") : null;
+  }
+  const annItems = (key) => { const d = annDocs.get(key); return (d && d.value && Array.isArray(d.value.items) && d.value.items) || []; };
+  const annMarks = (key) => annItems(key).filter((i) => !i.replyTo && i.shape);
+  const annPaint = () => annViews.forEach((fn) => fn());
+  async function annLoad(key) {
+    if (!key || annDocs.has(key)) return;
+    annDocs.set(key, null);
+    try { annDocs.set(key, await Data.get(key)); } catch (e) { /* keep empty */ }
+    annPaint();
+    if (!annWatch) annWatch = Data.watch("annotations.", (docs) => { docs.forEach((d) => annDocs.set(d.key, d)); annPaint(); }, { interval: 10000 });
+  }
+  const pct = (v) => Math.round(Math.max(0, Math.min(100, v)) * 10) / 10;
+  const markHtml = (m, opts = {}) => {
+    const box = m.shape === "box", style = `left:${pct(m.x)}%;top:${pct(m.y)}%` + (box ? `;width:${pct(m.w)}%;height:${pct(m.h)}%` : "");
+    const tag = opts.buttons ? "button" : "span";
+    return `<${tag}${opts.buttons ? ' type="button"' : ""} class="kit-ann-mark${box ? " box" : " pin"}${m.resolved ? " resolved" : ""}${m.draft ? " draft" : ""}" data-ann="${esc(m.id || "draft")}" style="${style}"${opts.buttons ? ` aria-label="Mark ${esc(m.n || "")}: ${esc(m.text || "")}"` : ' aria-hidden="true"'} title="${esc(m.text || "")}"><i>${m.draft ? "+" : esc(m.n || "•")}</i></${tag}>`;
+  };
+  // A reader may skip naming themselves; the agent still sees "Anonymous".
+  async function annSave(key, it, img, draft, text) {
+    await Data.ensureAuthor();
+    if (!(annDocs.get(key) && annDocs.get(key).value && annDocs.get(key).value.image)) {
+      const image = { src: it.full || it.src, title: it.title || it.alt || "", w: img.naturalWidth || it.w || undefined, h: img.naturalHeight || it.h || undefined, page: location.pathname.replace(/^\/artifacts\/[^/]+\/(_versions\/\d+\/)?/, "") || "index.html" };
+      annDocs.set(key, await Data.update(key, (v) => (v && v.image ? v : { ...(v || {}), image, items: (v && v.items) || [] })));
+    }
+    const n = annMarks(key).reduce((m, i) => Math.max(m, +i.n || 0), 0) + 1;
+    const mark = { text, shape: draft.shape, x: pct(draft.x), y: pct(draft.y), n };
+    if (draft.shape === "box") { mark.w = pct(draft.w); mark.h = pct(draft.h); }
+    const r = await Data.append(key, mark);
+    annDocs.set(key, r.document); annPaint();
+    return r.item;
+  }
+
+  // The viewer: an Annotate button, marks over the image, drawing, and the list of marks under it.
+  const viewer = { on: false, draft: null, focus: null, armed: false, saving: false };
+  Kit.lightbox && Kit.lightbox.extend && Kit.lightbox.extend({
+    mount(ctx) {
+      ctx.bar.querySelector('[data-lb="zoom"]').insertAdjacentHTML("beforebegin", `<button type="button" class="icon-btn" data-lb-ann aria-pressed="false" title="Mark an issue on the image (A)">${ANN_ICON}<span>Annotate</span></button>`);
+      ctx.fig.insertAdjacentHTML("beforeend", '<div class="kit-ann-layer"></div>');
+      const layer = ctx.fig.querySelector(".kit-ann-layer"), btn = ctx.bar.querySelector("[data-lb-ann]");
+      const setMode = (on) => { viewer.on = on; if (!on) viewer.draft = null; ctx.busy = on; ctx.repaint(); };
+      viewer.setMode = setMode;
+      btn.addEventListener("click", () => setMode(!viewer.on));
+      ctx.el.addEventListener("keydown", (e) => {
+        if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target.closest && e.target.closest("textarea, input")) && !btn.hidden) { e.preventDefault(); setMode(!viewer.on); }
+      });
+      // Draw: drag a box, or tap/click for a point. Coordinates are % of the image, whatever its zoom.
+      let start = null;
+      const at = (e) => { const r = ctx.img.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100, r }; };
+      layer.addEventListener("pointerdown", (e) => {
+        if (!viewer.on || e.button > 0 || e.target.closest(".kit-ann-mark:not(.draft)")) return;
+        e.preventDefault(); layer.setPointerCapture(e.pointerId);
+        start = at(e); viewer.draft = { shape: "pin", x: pct(start.x), y: pct(start.y) }; ctx.repaint();
+      });
+      layer.addEventListener("pointermove", (e) => {
+        if (!start) return;
+        const p = at(e), dx = Math.abs(p.x - start.x) * start.r.width / 100, dy = Math.abs(p.y - start.y) * start.r.height / 100;
+        if (dx < 6 && dy < 6) return;
+        viewer.draft = { shape: "box", x: pct(Math.min(p.x, start.x)), y: pct(Math.min(p.y, start.y)), w: pct(Math.abs(p.x - start.x)), h: pct(Math.abs(p.y - start.y)) };
+        const d = layer.querySelector(".kit-ann-mark.draft");
+        if (d && d.classList.contains("box")) Object.assign(d.style, { left: viewer.draft.x + "%", top: viewer.draft.y + "%", width: viewer.draft.w + "%", height: viewer.draft.h + "%" });
+        else ctx.repaint();
+      });
+      const done = () => { if (!start) return; start = null; ctx.repaint(); const ta = ctx.cap.querySelector(".kit-ann-form textarea"); if (ta) ta.focus({ preventScroll: true }); };
+      layer.addEventListener("pointerup", done); layer.addEventListener("pointercancel", done);
+      // Marks and list items point at each other.
+      const focus = (id) => { viewer.focus = id; ctx.el.querySelectorAll("[data-ann]").forEach((n) => n.classList.toggle("on", n.dataset.ann === id)); };
+      ctx.el.addEventListener("pointerover", (e) => { const n = e.target.closest("[data-ann]"); if (n && n.dataset.ann !== "draft") focus(n.dataset.ann); });
+      ctx.el.addEventListener("pointerout", (e) => { if (e.target.closest("[data-ann]")) focus(null); });
+      ctx.el.addEventListener("click", async (e) => {
+        const mark = e.target.closest(".kit-ann-mark:not(.draft)");
+        if (mark) { focus(mark.dataset.ann); const li = ctx.cap.querySelector(`li[data-ann="${mark.dataset.ann}"]`); if (li) li.scrollIntoView({ block: "nearest", behavior: "smooth" }); return; }
+        const res = e.target.closest("[data-ann-resolve]"), cancel = e.target.closest("[data-ann-cancel]"), del = e.target.closest("[data-ann-delete]");
+        const key = annKey(ctx.item);
+        if (del && key) {
+          const id = del.dataset.annDelete;
+          if (viewer.confirm !== id) { // first click asks, a second one within 4 s deletes
+            viewer.confirm = id; ctx.repaint();
+            clearTimeout(viewer.confirmTimer); viewer.confirmTimer = setTimeout(() => { if (viewer.confirm === id) { viewer.confirm = null; ctx.repaint(); } }, 4000);
+            return;
+          }
+          viewer.confirm = null; del.disabled = true;
+          try { const r = await Data.removeItem(key, id); annDocs.set(key, r.document); annPaint(); ctx.el.focus({ preventScroll: true }); }
+          catch (err) { del.disabled = false; }
+          return;
+        }
+        if (cancel) { viewer.draft = null; viewer.text = ""; ctx.repaint(); ctx.el.focus({ preventScroll: true }); }
+        else if (res && key) {
+          const id = res.dataset.annResolve, item = annItems(key).find((i) => i.id === id);
+          res.disabled = true;
+          try { const r = await Data.updateItem(key, id, { resolved: !item.resolved }); annDocs.set(key, r.document); annPaint(); } catch (err) { res.disabled = false; }
+        }
+      });
+      const submit = async (form) => {
+        const key = annKey(ctx.item), ta = form.querySelector("textarea"), text = ta.value.trim();
+        if (!key || !viewer.draft || !text || viewer.saving) { if (!text) ta.focus(); return; }
+        viewer.saving = true; form.querySelector("[type=submit]").disabled = true;
+        let saved = false;
+        try { await annSave(key, ctx.item, ctx.img, viewer.draft, text); viewer.draft = null; viewer.text = ""; saved = true; }
+        catch (err) { /* the save status shows the error; keep the text */ }
+        finally { viewer.saving = false; ctx.repaint(); }
+        // The form is gone: keep keyboard focus in the viewer so A and Esc still work.
+        if (saved) ctx.el.focus({ preventScroll: true });
+      };
+      ctx.cap.addEventListener("submit", (e) => { const f = e.target.closest(".kit-ann-form"); if (f) { e.preventDefault(); submit(f); } });
+      ctx.cap.addEventListener("keydown", (e) => { const f = e.target.closest(".kit-ann-form"); if (f && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(f); } });
+      ctx.cap.addEventListener("input", (e) => { if (e.target.closest(".kit-ann-form")) viewer.text = e.target.value; });
+      // Live updates repaint the viewer, but never while the reader is typing a mark.
+      annViews.add(() => { if (!ctx.el.hidden && !(document.activeElement && document.activeElement.closest && document.activeElement.closest(".kit-ann-form"))) ctx.repaint(); });
+    },
+    paint(ctx) {
+      const it = ctx.item, key = annKey(it), btn = ctx.bar.querySelector("[data-lb-ann]"), layer = ctx.fig.querySelector(".kit-ann-layer");
+      btn.hidden = !key;
+      if (!key) { viewer.on = false; ctx.busy = false; layer.innerHTML = ""; ctx.el.classList.remove("annotating"); return; }
+      if (viewer.armed) { viewer.armed = false; viewer.on = true; }
+      if (viewer.key !== key) { viewer.key = key; viewer.draft = null; viewer.text = ""; }
+      annLoad(key);
+      ctx.busy = viewer.on;
+      btn.setAttribute("aria-pressed", String(viewer.on));
+      ctx.el.classList.toggle("annotating", viewer.on);
+      const marks = annMarks(key), items = annItems(key);
+      layer.innerHTML = marks.map((m) => markHtml(m, { buttons: true })).join("") + (viewer.draft ? markHtml({ ...viewer.draft, draft: true }) : "");
+      if (!viewer.on && !marks.length) return;
+      const open = marks.filter((m) => !m.resolved).length;
+      const replies = (id) => items.filter((i) => i.replyTo === id);
+      const who = (i) => `${esc(i.author || (i.role === "agent" ? "Agent" : "Anonymous"))}${i.role === "agent" ? ' <span class="tag accent">Agent</span>' : ""} · <time datetime="${esc(i.createdAt)}">${Kit.ago(i.createdAt)}</time>`;
+      const general = items.filter((i) => !i.replyTo && !i.shape);
+      // Readers delete their own marks (the name they comment under); resolving is for everyone's.
+      const mine = (i) => i.role !== "agent" && (i.author || "") === (Data.author() || "");
+      const del = (i) => mine(i) ? `<button type="button" class="btn ghost kit-ann-delete${viewer.confirm === i.id ? " confirm" : ""}" data-ann-delete="${esc(i.id)}">${viewer.confirm === i.id ? "Delete mark?" : "Delete"}</button>` : "";
+      ctx.cap.insertAdjacentHTML("beforeend", `<section class="kit-ann" aria-label="Annotations">
+        <div class="kit-ann-head"><b>Annotations</b>${marks.length ? `<span>${marks.length} · ${open} open</span>` : ""}<span class="spacer"></span>${viewer.on ? `<span class="kit-ann-hint">${viewer.draft ? "Say what is wrong here" : "Drag a box or tap a point on the image"}</span>` : ""}</div>
+        ${viewer.draft ? `<form class="kit-ann-form"><label class="sr-only" for="kit-ann-text">What is wrong here?</label><textarea id="kit-ann-text" rows="2" placeholder="What is wrong here, or what should change?">${esc(viewer.text || "")}</textarea>
+          <div class="kit-ann-actions"><button class="author-chip" type="button" data-author-chip></button><span class="spacer"></span><span class="hint">Ctrl + Enter</span><button class="btn ghost" type="button" data-ann-cancel>Cancel</button><button class="btn primary" type="submit">Save mark</button></div></form>` : ""}
+        ${marks.length || general.length ? `<ol class="kit-ann-list">${marks.map((m) => `<li data-ann="${esc(m.id)}" class="${m.resolved ? "resolved" : ""}${viewer.focus === m.id ? " on" : ""}">
+          <span class="kit-ann-n">${esc(m.n || "•")}</span><div><p>${esc(m.text)}</p><small>${who(m)}${m.resolved ? ' · <span class="tag good dot">Resolved</span>' : ""}</small>
+          ${replies(m.id).map((r) => `<div class="kit-ann-reply ${r.role === "agent" ? "agent" : ""}"><p>${esc(r.text)}</p><small>${who(r)}</small></div>`).join("")}
+          <span class="kit-ann-btns"><button type="button" class="btn ghost kit-ann-resolve" data-ann-resolve="${esc(m.id)}">${m.resolved ? "Reopen" : "Resolve"}</button>${del(m)}</span></div></li>`).join("")}
+          ${general.map((g) => `<li class="kit-ann-general"><span class="kit-ann-n">–</span><div><p>${esc(g.text)}</p><small>${who(g)}</small>${del(g) ? `<span class="kit-ann-btns">${del(g)}</span>` : ""}</div></li>`).join("")}</ol>` : ""}</section>`);
+      paintAuthor();
+    },
+    escape(ctx) {
+      if (viewer.draft) { viewer.draft = null; viewer.text = ""; ctx.repaint(); ctx.el.focus({ preventScroll: true }); return true; }
+      if (viewer.on) { viewer.setMode(false); return true; }
+      return false;
+    },
+    close(ctx) { viewer.on = false; viewer.draft = null; ctx.busy = false; },
+  });
+
+  // img[data-annotate]: the marks on the page, and a button that opens the image ready to mark.
+  function wireAnnotated(root = document) {
+    root.querySelectorAll("img[data-annotate]").forEach((img) => {
+      if (img.dataset.annWired || img.dataset.annotate === "off") return;
+      img.dataset.annWired = "1";
+      if (!img.hasAttribute("data-lightbox")) img.setAttribute("data-lightbox", "");
+      const host = document.createElement("span");
+      host.className = "kit-ann-host";
+      img.replaceWith(host); host.appendChild(img);
+      host.insertAdjacentHTML("beforeend", `<span class="kit-ann-layer"></span><button type="button" class="kit-ann-open">${ANN_ICON}<span>Annotate</span></button>`);
+      const it = () => ({ src: img.dataset.full || img.dataset.src || img.getAttribute("src"), annotate: img.dataset.annotate || true, title: img.title || img.alt });
+      const key = annKey(it());
+      if (!key) { host.querySelector(".kit-ann-open").remove(); return; }
+      const paint = () => {
+        const marks = annMarks(key), open = marks.filter((m) => !m.resolved).length;
+        host.querySelector(".kit-ann-layer").innerHTML = marks.filter((m) => !m.resolved).map((m) => markHtml(m)).join("");
+        host.querySelector(".kit-ann-open span").textContent = marks.length ? `${open} open · Annotate` : "Annotate";
+      };
+      annViews.add(paint);
+      host.querySelector(".kit-ann-open").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); Kit.annotations.open(img); });
+      annLoad(key).then(paint);
+    });
+  }
+  Kit.annotations = {
+    key: annKey,
+    open(img) { viewer.armed = true; img.click(); if (viewer.armed) viewer.armed = false; },
+    wire: wireAnnotated,
+  };
+  document.addEventListener("kit:ready", () => wireAnnotated());
+
   function wireQuestions() {
     let added = false;
     [["questions", questions, "These questions"], ["steps", steps, "These steps"]].forEach(([name, fn, what]) => {
@@ -700,7 +913,7 @@
   }
   document.addEventListener("kit:ready", wireQuestions);
   const refreshBefore = Kit.refresh;
-  Kit.refresh = () => { if (refreshBefore) refreshBefore(); wireQuestions(); };
+  Kit.refresh = () => { if (refreshBefore) refreshBefore(); wireQuestions(); wireAnnotated(); };
 
   document.addEventListener("DOMContentLoaded", () => { paintAuthor(); emit(); });
 })();

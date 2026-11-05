@@ -1,6 +1,6 @@
 {
   "name": "@plugincompany/artifact-library",
-  "version": "0.12.1",
+  "version": "0.13.0",
   "description": "Self-hosted library for HTML artifacts made by people and AI agents: stable links, immutable versions, server-side previews and on-page feedback agents can read.",
   "keywords": [
     "artifacts",
@@ -56,6 +56,7 @@
     "build:binary": "npm run build && bun scripts/build-binary.ts",
     "build:binaries": "npm run build && bun scripts/build-binary.ts --all",
     "build:seed": "node scripts/build-seed.mjs",
+    "build:libs": "node scripts/build-libs.mjs",
     "release:local": "node scripts/release.mjs"
   },
   "dependencies": {
@@ -71,10 +72,15 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@mermaid-js/layout-elk": "^1.0.2",
     "@types/diff": "^7.0.2",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^22.18.0",
     "@types/tar-stream": "^3.1.4",
+    "d3": "^7.9.2",
+    "esbuild": "^0.28.2",
+    "mermaid": "^12.3.0",
+    "shiki": "^4.6.0",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }

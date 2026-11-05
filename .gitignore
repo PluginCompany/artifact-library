@@ -13,3 +13,6 @@ __pycache__/
 
 # The intro film is published as a release asset (see docs/video/README.md)
 docs/media/intro.mp4
+
+# Built by `npm run build:libs` (scripts/build-libs.mjs); served at /_artifact/libs/.
+libs/dist/

@@ -4,6 +4,20 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-05
+
+### Added
+- **Diagrams** (`[data-diagram]`, `pre.mermaid`, `Kit.diagram(el, spec)`): Mermaid text drawn on the page: flowchart, sequence, state, ER, class, gantt, timeline, mindmap, sankey, architecture, quadrant, xy chart, git graph, block and more, with the ELK layout for big graphs (`data-layout="elk"`). Coloured from kit tokens in Clean and Bold, light and dark, and redrawn when readers switch. Readers zoom (buttons, Ctrl + wheel, keys), drag to pan, open it full screen, view and copy the source and download the SVG. A syntax error shows in place with its line and logs a console error, so `artifact lint` reports it. `Kit.diagram.render(text)` returns an SVG for custom layouts.
+- **Syntax colouring with Shiki**: on the artifact server, `pre[data-lang]` and `[data-diff]` are upgraded to VS Code's grammars (230+ languages) after the built-in colouring has drawn them, coloured with kit tokens (new `--syn-t`, `--syn-o`, `--syn-p`, `--syn-r`, `--syn-tag`). `data-numbers` (with `data-start`) adds line numbers and `data-lines="4-6,9"` marks lines, with either colouring. `Kit.highlightAsync(text, lang)`.
+- **Image annotations** (`kit/kit-data.js`): readers mark issues on screenshots. Every image opened in the kit's viewer has an Annotate button (or A): drag a box or tap a point, write what is wrong. `img[data-annotate]` also shows the marks on the page with an Annotate button. Saved as one thread per image, `annotations.<id>`; `artifact feedback` prints each mark with its number and region in percent and pixels, with replies under it. Agents answer with `artifact data append … --item '{"text":"…","replyTo":"<mark id>"}'`, shown under the mark on open pages within about 10 s.
+- **Deleting items**: `DELETE /api/v1/artifacts/:slug/data/:key/items/:id`, `artifact data remove-item`, MCP `data_remove_item` and `Kit.data.removeItem(key, id)` remove one thread item and the items replying to it. Readers use it to delete their own marks on a screenshot (Delete, then confirm).
+- **Shared browser libraries** at `/_artifact/libs/`: Mermaid + ELK, Shiki and d3, bundled by `npm run build:libs` (`scripts/build-libs.mjs`) into `libs/dist/` and shipped in the Docker image (`LIBS_DIR`). They are served once instead of being copied into every artifact's `kit/`, and kit.js loads only what a page uses; entry files are revalidated so upgrades reach published pages, chunks are immutable. `Kit.libs.load("d3")` gives d3 for one-off visuals and `Kit.libs.color("--accent")` a kit colour as hex. Without them (opened from disk, another host, `<html data-kit-libs="off">`) diagrams show their source and code keeps the built-in colouring. Licences in `/_artifact/libs/LICENSES.txt`.
+- The style guide, the agent guide, the skill and the docs show when to use a diagram, the code options and annotations.
+
+### Changed
+- The kit's viewer takes extensions (`Kit.lightbox.extend`), used by the annotations.
+- `artifact lint` counts diagrams as visuals.
+
 ## [0.12.1] - 2026-11-04
 
 ### Fixed

@@ -19,6 +19,9 @@ RUN npm run build
 COPY examples/reference ./examples/reference
 COPY release ./release
 RUN node scripts/build-seed.mjs
+# Shared browser libraries served at /_artifact/libs/ (Mermaid + ELK, Shiki, d3).
+COPY libs/src ./libs/src
+RUN node scripts/build-libs.mjs
 
 # Production dependencies only; shared by both images.
 FROM node:22-bookworm-slim AS deps
@@ -45,6 +48,7 @@ LABEL org.opencontainers.image.title="Artifact Library (slim)" \
 ENV NODE_ENV=production PORT=3000 DATA_DIR=/data PREVIEWS=false
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/seed ./seed
+COPY --from=build /app/libs/dist ./libs/dist
 RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 3000
@@ -65,6 +69,7 @@ LABEL org.opencontainers.image.title="Artifact Library" \
 ENV NODE_ENV=production PORT=3000 DATA_DIR=/data PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/seed ./seed
+COPY --from=build /app/libs/dist ./libs/dist
 RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 3000

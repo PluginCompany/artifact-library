@@ -49,6 +49,7 @@ try {
   assert.equal(put.status, 201, 'readers can save feedback without a token: ' + await put.text());
   assert.equal((await (await request(origin + '/api/v1/artifacts/agent-guide/data/comments.smoke')).json()).value.items[0].text, 'smoke');
   assert.equal((await request(origin + '/favicon.ico')).headers.get('content-type'), 'image/x-icon');
+  for (const lib of ['diagram.js', 'highlight.js', 'd3.js', 'manifest.json', 'LICENSES.txt']) assert.equal((await request(origin + '/_artifact/libs/' + lib)).status, 200, 'shared library missing from the image: ' + lib);
   console.log(`Seeded ${catalog.artifacts.length} default artifacts; reads and saved data are open; brand assets respond.`);
 
   // Publishing requires the token.

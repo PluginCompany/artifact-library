@@ -113,6 +113,7 @@ artifact data list q3-review [--prefix comments.] [--since 1h]
 artifact data get q3-review answer.toolbar
 artifact data append q3-review comments.finding-F2 --item '{"text":"Fixed in v4"}' --author "Claude Code"
 artifact data update-item q3-review comments.finding-F2 <id> --changes '{"resolved":true}'
+artifact data remove-item q3-review annotations.shots-login <id>   # the item and its replies
 artifact data set release-run state.run --file run.json [--expected-revision 3]
 artifact data delete release-run state.run
 ```

@@ -56,6 +56,8 @@ window.GUIDE = {
     { dont: "A long page without a chapter menu, or a menu in the page body that scrolls away.", instead: "`<nav class=\"topnav\" data-toc>` inside the sticky `header.topbar` links every chapter and highlights the current one." },
     { dont: "Paste a 200-line answer into chat when the user will read it more than once.", instead: "Publish it and send the link with a two-line summary." },
     { dont: "Ask the human to copy answers back into the terminal.", instead: "Save answers on the page; read them with `artifact feedback`." },
+    { dont: "Paste a diagram as a PNG or draw it in ASCII art.", instead: "Write Mermaid in a `[data-diagram]` block: sharp, themed, and editable in the next version." },
+    { dont: "Ask the reader to describe where on a screen something is wrong.", instead: "Show the screenshot with `data-annotate` (or in the viewer); they mark the spot and `artifact feedback` gives you the region." },
     { dont: "Publish a new slug for every revision.", instead: "`artifact update <slug>` keeps the link and the history." },
     { dont: "Invent numbers, screenshots or test results to fill a template.", instead: "Use real output, or label it Sample data — never pass it off as real." },
     { dont: "Hard-code hex colours, fonts from a CDN, or a new design per page.", instead: "Use the kit: tokens, components, self-hosted fonts." },
@@ -89,6 +91,7 @@ window.GUIDE = {
     ] },
     { group: "Write back", rows: [
       ["artifact data append <slug> comments.<anchor> --item '{\"text\":\"Fixed in v4\"}' --author \"Claude Code\"", "Reply in a thread (race-free)."],
+      ["artifact data append <slug> annotations.<image> --item '{\"text\":\"Fixed in v4\",\"replyTo\":\"<mark id>\"}' --author \"Claude Code\"", "Reply under a mark a reader drew on a screenshot."],
       ["artifact data update-item <slug> comments.<anchor> <id> --changes '{\"resolved\":true}'", "Resolve or edit one comment."],
       ["artifact data set <slug> state.run --file run.json --author \"Claude Code\"", "Replace live state the page renders."],
       ["artifact data set <slug> <key> --value '{…}' --expected-revision 3", "Only if nobody changed it since revision 3."],

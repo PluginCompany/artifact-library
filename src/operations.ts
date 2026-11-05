@@ -137,6 +137,31 @@ export async function waitForFeedback(api: Client, slug: string, options: WaitOp
 export const lastSent = (documents: DataDoc[]) => newest(documents.filter(d => SEND_KEYS.includes(d.key)));
 
 /* Human-readable digest of everything readers saved, grouped by convention. */
+/* Marks readers drew on a screenshot (kit-data.js, annotations.<image>): each with its number, its region in
+   percent of the image and, when the image size is known, in pixels, so an agent can crop the spot it is about.
+   Replies (items with replyTo) are listed under their mark; items without a shape are notes on the whole image. */
+function annotationLines(slug: string, key: string, value: Record<string, unknown>, items: Record<string, unknown>[], when: (iso?: string) => string) {
+  const image = (value.image ?? {}) as { src?: string; title?: string; w?: number; h?: number; page?: string };
+  const W = Number(image.w) || 0, H = Number(image.h) || 0, n = (v: unknown) => Number(v) || 0;
+  const px = (p: number, size: number) => Math.round((p / 100) * size);
+  const out = [`Image: ${image.src ?? '(unknown)'}${W && H ? ` (${W}×${H} px)` : ''}${image.title ? ` "${image.title}"` : ''}${image.page ? `, on ${image.page}` : ''}`];
+  const head = (item: Record<string, unknown>) => `[${item.role ?? 'human'}${item.author ? ' · ' + item.author : ''} · ${when(item.createdAt as string)}${item.resolved ? ' · resolved' : ''}] id=${item.id}`;
+  const text = (item: Record<string, unknown>, indent: string) => indent + String(item.text ?? '').replace(/\n/g, '\n' + indent);
+  const replies = (id: unknown) => items.filter(i => i.replyTo === id);
+  for (const item of items.filter(i => !i.replyTo)) {
+    const x = n(item.x), y = n(item.y), w = n(item.w), h = n(item.h);
+    const where = item.shape === 'box'
+      ? `box x ${x}–${+(x + w).toFixed(1)}%, y ${y}–${+(y + h).toFixed(1)}%${W && H ? ` (px ${px(x, W)},${px(y, H)} → ${px(x + w, W)},${px(y + h, H)})` : ''}`
+      : item.shape === 'pin' ? `point x ${x}%, y ${y}%${W && H ? ` (px ${px(x, W)},${px(y, H)})` : ''}` : 'whole image';
+    out.push(`- #${item.n ?? '?'} ${where} ${head(item)}`, text(item, '  '));
+    for (const reply of replies(item.id)) out.push(`  - reply ${head(reply)}`, text(reply, '    '));
+  }
+  const orphans = items.filter(i => i.replyTo && !items.some(t => t.id === i.replyTo));
+  for (const reply of orphans) out.push(`- reply to ${reply.replyTo} ${head(reply)}`, text(reply, '  '));
+  out.push(`  Reply under a mark: artifact data append ${slug} ${key} --item '{"text":"…","replyTo":"<id>"}'`);
+  return out;
+}
+
 export function feedbackText(slug: string, documents: DataDoc[], sentAt: string | null = lastSent(documents)) {
   const when = (iso?: string) => (iso ? iso.replace('T', ' ').slice(0, 16) : '');
   const lines: string[] = [];
@@ -145,7 +170,8 @@ export function feedbackText(slug: string, documents: DataDoc[], sentAt: string 
     const items = value && typeof value === 'object' && Array.isArray(value.items) ? value.items as Record<string, unknown>[] : undefined;
     const draft = d.held && (!sentAt || d.updatedAt > sentAt);
     lines.push(`## ${d.key}  (rev ${d.revision}, ${when(d.updatedAt)}${d.author ? ', ' + d.author : ''}${draft ? ', not sent yet: the reader is still working on it' : ''})`);
-    if (items) {
+    if (items && d.key.startsWith('annotations.')) lines.push(...annotationLines(slug, d.key, value!, items, when));
+    else if (items) {
       for (const item of items) {
         const head = `[${item.role ?? 'human'}${item.author ? ' · ' + item.author : ''} · ${when(item.createdAt as string)}${item.resolved ? ' · resolved' : ''}] id=${item.id}`;
         const rest = Object.fromEntries(Object.entries(item).filter(([k]) => !['id', 'role', 'author', 'createdAt', 'updatedAt', 'text', 'resolved'].includes(k)));

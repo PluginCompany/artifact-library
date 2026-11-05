@@ -32,7 +32,8 @@
                            Give width/height so the page does not jump. img[loading=lazy] gets the
                            same placeholder and fade. Printing loads every image first.
      img[data-lightbox]    opens full size on click; images with the same data-lightbox="group"
-                           page through together — Kit.lightbox.open(items, index)
+                           page through together — Kit.lightbox.open(items, index). With kit-data.js
+                           loaded, readers can annotate any image in the viewer (see kit-data.js)
      [data-gallery]        image gallery: a layout name with <figure>/<img> children, or JSON
                            {layout, items:[{src, thumb, title, caption, alt, w, h, tag, notes}], min, ratio, frame}
                            layouts: grid · masonry · strip · sidebar · annotated · compare
@@ -41,8 +42,22 @@
                            mode:"unified"|"split"|"final", notes:[{line, side, text}], highlight:[[a,b]],
                            context, caption} or <script type="text/plain" data-before|data-after|data-patch>
                            children. Readers switch modes; the choice holds for every diff — Kit.diff(el, spec)
-     pre[data-lang]        syntax colouring for a code block (js, ts, py, sh, css, html, json, sql, …)
-                           — Kit.highlight(text, lang) returns the HTML
+     pre[data-lang]        syntax colouring for a code block: built in for js, ts, py, sh, css, html, json, sql, …;
+                           on the artifact server upgraded to Shiki (230+ languages, VS Code grammars), diffs too.
+                           data-numbers (data-start="12") shows line numbers, data-lines="3-5,9" marks lines
+                           — Kit.highlight(text, lang) returns the built-in HTML, Kit.highlightAsync(text, lang) the best
+     [data-diagram]        Mermaid diagram (flowchart, sequence, class, state, ER, gantt, mindmap, timeline, sankey,
+                           architecture, …) from a <script type="text/plain"> child, the element's text, JSON
+                           {source, caption, title, layout:"elk", look:"handDrawn"} or window[data-diagram-src];
+                           also pre.mermaid / div.mermaid. data-caption, data-layout="elk" (big graphs), data-look.
+                           Kit colours, redrawn on theme/style changes; zoom, full screen, source, SVG download.
+                           A syntax error shows in place with its line — Kit.diagram(el, spec), Kit.diagram.render(text)
+
+   Shared libraries (served once by the artifact server at /_artifact/libs/, not part of kit/):
+     Kit.libs.load("diagram" | "highlight" | "d3") → Promise of the module; d3: const d3 = await Kit.libs.load("d3")
+     Kit.libs.color("--accent") → "#rrggbb" for the current style and mode (for d3 and canvas drawing)
+     Opened from disk or another host they are missing: diagrams show their source, code keeps the built-in colouring.
+     <html data-kit-libs="off"> keeps a page on the built-in renderers.
 
    Charts (all theme-aware, hover tooltips, legend for ≥2 series,
    and a table view when wrapped in .chart-card with a .as-table button):
@@ -177,6 +192,36 @@
   function fmtFn(f) { return typeof f === "function" ? f : Kit.fmt[f] || Kit.fmt.int; }
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   Kit.esc = esc;
+
+  /* ---------- Shared libraries (/_artifact/libs/ on the artifact server) ----------
+     Mermaid + ELK (diagram), Shiki (highlight) and d3 ship once with the server instead of inside every
+     kit/ copy, and load only on pages that use them. Opened from disk or another host they are missing:
+     diagrams then show their source and code keeps the built-in colouring. <html data-kit-libs="off">
+     turns them off for a page. Kit.libs.load(name) resolves to the module (d3: the d3 namespace). */
+  const libCache = {};
+  let colorProbe = null, colorCtx = null;
+  Kit.libs = {
+    get available() { return /^https?:$/.test(location.protocol) && document.documentElement.getAttribute("data-kit-libs") !== "off"; },
+    load(name) {
+      if (!libCache[name]) {
+        libCache[name] = Kit.libs.available ? import(location.origin + "/_artifact/libs/" + encodeURIComponent(name) + ".js")
+          : Promise.reject(new Error("shared libraries load only from the artifact server"));
+        libCache[name].catch(() => {});
+      }
+      return libCache[name];
+    },
+    // A kit token ("--accent") or any CSS colour as #rrggbb, resolved for the current style and mode.
+    color(value) {
+      if (!colorProbe) { colorProbe = document.createElement("i"); colorProbe.style.cssText = "position:absolute;width:0;height:0;visibility:hidden"; }
+      document.body.appendChild(colorProbe);
+      colorProbe.style.color = ""; colorProbe.style.color = String(value).startsWith("--") ? `var(${value})` : value;
+      const css = getComputedStyle(colorProbe).color; colorProbe.remove();
+      if (!colorCtx) { const c = document.createElement("canvas"); c.width = c.height = 1; colorCtx = c.getContext("2d", { willReadFrequently: true }); }
+      colorCtx.clearRect(0, 0, 1, 1); colorCtx.fillStyle = "#000"; colorCtx.fillStyle = css; colorCtx.fillRect(0, 0, 1, 1);
+      const d = colorCtx.getImageData(0, 0, 1, 1).data;
+      return "#" + [d[0], d[1], d[2]].map((n) => n.toString(16).padStart(2, "0")).join("");
+    },
+  };
 
   // Side nav: opens on small screens, and highlights the section being read.
   // Links are read fresh each time, so links rendered later by the page work too.
@@ -884,7 +929,8 @@
     const fig = img.closest("figure"), cap = fig && $("figcaption", fig);
     let notes; try { notes = img.dataset.notes ? JSON.parse(img.dataset.notes) : undefined; } catch (e) { console.warn("Bad data-notes JSON", img); }
     return { src: img.dataset.full || img.dataset.src || img.getAttribute("src"), alt: img.alt, title: img.title || "",
-      caption: cap ? cap.textContent.trim() : "", w: num(img.getAttribute("width")), h: num(img.getAttribute("height")), notes };
+      caption: cap ? cap.textContent.trim() : "", w: num(img.getAttribute("width")), h: num(img.getAttribute("height")), notes,
+      annotate: img.dataset.annotate != null ? img.dataset.annotate || true : undefined };
   };
   const fullOf = (it) => it.full || it.src;
   // Pins (x, y) and boxes (x, y, w, h) over an image, numbered in note order.
@@ -897,6 +943,11 @@
   const notesListHtml = (notes, cls) => notes && notes.length ? `<ol class="${cls}">${notes.map((n, k) => `<li data-note="${k}"><span class="kit-pin-n">${k + 1}</span><span>${n.title ? `<b>${ex(n.title)}</b> ` : ""}${ex(n.text)}</span></li>`).join("")}</ol>` : "";
 
   let lb = null;
+  /* Viewer extensions (kit-data.js adds reader annotations): {mount(ctx), paint(ctx), escape(ctx) → true if handled,
+     close(ctx)}; ctx = {el, img, fig, bar, cap, item, index, zoomed, busy, repaint}. Set ctx.busy while an extension
+     owns the pointer (drawing on the image): clicks then neither zoom nor close and swipes do not page. */
+  const lbHooks = [];
+  let lbCtx = null;
   function lightbox() {
     if (lb) return lb;
     const el = document.createElement("div");
@@ -916,6 +967,8 @@
     img.addEventListener("error", () => { if (img.getAttribute("src")) el.classList.add("missing"); });
     $(".kit-lb-fig", el).insertAdjacentHTML("beforeend", '<span class="kit-img-missing kit-lb-missing">Image not found</span>');
     const s = { items: [], i: 0, zoom: false, pins: true, last: null };
+    const ctx = lbCtx = { el, img, fig: $(".kit-lb-fig", el), bar: $(".kit-lb-bar", el), cap: $(".kit-lb-cap", el), busy: false,
+      get item() { return s.items[s.i]; }, get index() { return s.i; }, get zoomed() { return s.zoom; }, repaint: () => paint() };
     const paint = () => {
       const it = s.items[s.i], many = s.items.length > 1, notes = (it.notes || []).length;
       img.src = fullOf(it); img.alt = it.alt || it.title || "";
@@ -924,7 +977,8 @@
       $(".kit-lb-title", el).textContent = it.title || it.alt || "";
       $(".kit-lb-pins", el).innerHTML = pinsHtml(it.notes);
       $(".kit-lb-cap", el).innerHTML = (it.caption ? `<p>${ex(it.caption)}</p>` : "") + (s.pins ? notesListHtml(it.notes, "kit-lb-notes") : "");
-      $(".kit-lb-cap", el).hidden = !it.caption && !(s.pins && notes);
+      lbHooks.forEach((h) => h.paint && h.paint(ctx));
+      $(".kit-lb-cap", el).hidden = !$(".kit-lb-cap", el).children.length;
       btn("pins").hidden = !notes; btn("pins").setAttribute("aria-pressed", String(s.pins));
       btn("open").href = /^\s*javascript:/i.test(fullOf(it)) ? "#" : fullOf(it);
       el.classList.remove("missing");
@@ -934,6 +988,7 @@
     };
     const go = (d) => { if (s.items.length < 2) return; s.i = (s.i + d + s.items.length) % s.items.length; s.zoom = false; paint(); stage.scrollTo(0, 0); };
     const close = () => {
+      lbHooks.forEach((h) => h.close && h.close(ctx));
       el.hidden = true; img.removeAttribute("src"); document.documentElement.classList.remove("kit-lb-open");
       if (window.artifactToolbar) window.artifactToolbar.hide(false);
       if (s.last && s.last.focus) s.last.focus({ preventScroll: true });
@@ -943,11 +998,13 @@
       if (k === "close") close(); else if (k === "prev") go(-1); else if (k === "next") go(1);
       else if (k === "zoom") { s.zoom = !s.zoom; paint(); }
       else if (k === "pins") { s.pins = !s.pins; paint(); }
+      else if (ctx.busy) return;
       else if (e.target === img) { s.zoom = !s.zoom; paint(); }
       else if (e.target === stage) close();
     });
     el.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") { e.preventDefault(); close(); }
+      if (e.key === "Escape") { e.preventDefault(); if (!lbHooks.some((h) => h.escape && h.escape(ctx))) close(); }
+      else if (e.target.closest && e.target.closest("textarea, input, [contenteditable]")) return;
       else if (e.key === "ArrowLeft" && !s.zoom) { e.preventDefault(); go(-1); }
       else if (e.key === "ArrowRight" && !s.zoom) { e.preventDefault(); go(1); }
       else if ((e.key === "z" || e.key === "Z") && !e.ctrlKey && !e.metaKey) { s.zoom = !s.zoom; paint(); }
@@ -958,9 +1015,10 @@
       }
     });
     let sx = null; // swipe between images when not zoomed
-    stage.addEventListener("pointerdown", (e) => { sx = s.zoom || e.pointerType === "mouse" ? null : e.clientX; });
+    stage.addEventListener("pointerdown", (e) => { sx = s.zoom || ctx.busy || e.pointerType === "mouse" ? null : e.clientX; });
     stage.addEventListener("pointerup", (e) => { if (sx != null && Math.abs(e.clientX - sx) > 50) go(e.clientX < sx ? 1 : -1); sx = null; });
     stage.addEventListener("pointercancel", () => { sx = null; });
+    lbHooks.forEach((h) => h.mount && h.mount(ctx));
     lb = {
       open(items, index = 0) {
         if (!items || !items.length) return;
@@ -974,7 +1032,11 @@
     };
     return lb;
   }
-  Kit.lightbox = { open: (items, index) => lightbox().open(items, index), close: () => lb && lb.close() };
+  Kit.lightbox = {
+    open: (items, index) => lightbox().open(items, index), close: () => lb && lb.close(),
+    extend(hook) { lbHooks.push(hook); if (lb && hook.mount) hook.mount(lbCtx); },
+    get ctx() { return lbCtx; },
+  };
   function openFromImg(img) {
     const group = img.dataset.lightbox;
     const imgs = group ? $$("img[data-lightbox]").filter((x) => x.dataset.lightbox === group) : [img];
@@ -1162,7 +1224,7 @@
         const on = inMark(pos + start);
         let end = start + 1;
         while (end < tk.t.length && inMark(pos + end) === on) end++;
-        const piece = esc(tk.t.slice(start, end)), inner = tk.c ? `<span class="tk-${tk.c}">${piece}</span>` : piece;
+        const piece = esc(tk.t.slice(start, end)), inner = tk.c ? `<span class="tk-${tk.c}">${piece}</span>` : tk.s ? `<span style="${tk.s}">${piece}</span>` : piece;
         html += on ? `<mark class="kd-w">${inner}</mark>` : inner;
         start = end;
       }
@@ -1174,13 +1236,39 @@
     const g = LANGS(lang), st = {};
     return String(text).split("\n").map((l) => tokensHtml(tokenize(l, g, st))).join("\n");
   };
+  // Shiki tokens ({t, color, italic, bold}) as kit tokens ({t, s: inline style}).
+  const shikiTokens = (line) => (line || []).map((tk) => ({ t: tk.t, s: (tk.color && /^var\(--[\w-]+\)$|^#[\da-f]{3,8}$/i.test(tk.color) ? `color:${tk.color};` : "") + (tk.italic ? "font-style:italic;" : "") + (tk.bold ? "font-weight:600;" : "") }));
+  // The best colouring available: Shiki from the server's shared libraries (230+ languages, VS Code grammars),
+  // else the built-in one. Resolves to HTML, one line per source line.
+  Kit.highlightAsync = (text, lang) => Kit.libs.load("highlight").then((hl) => hl.html(String(text), lang)).catch(() => null).then((html) => html == null ? Kit.highlight(text, lang) : html);
+  // "3-5, 9" → [[3,5],[9,9]]
+  const lineRanges = (spec) => String(spec || "").split(",").map((p) => p.trim().split(/\s*[-–]\s*/).map(Number)).filter((r) => r[0] > 0).map((r) => [r[0], r[1] >= r[0] ? r[1] : r[0]]);
+  function codeLines(html, pre) {
+    const marks = lineRanges(pre.dataset.lines), numbers = pre.hasAttribute("data-numbers"), start = Math.round(+pre.dataset.start) || 1;
+    if (!marks.length && !numbers) return html;
+    pre.classList.add("kit-code-lines"); pre.classList.toggle("kit-numbered", numbers);
+    const lines = html.split("\n"), w = String(start + lines.length - 1).length;
+    if (numbers) pre.style.setProperty("--ln-w", w + "ch");
+    return lines.map((l, i) => `<span class="kit-ln${marks.some(([a, b]) => start + i >= a && start + i <= b) ? " on" : ""}"${numbers ? ` data-n="${start + i}"` : ""}>${l}</span>`).join("\n");
+  }
+  function setCode(pre, html) {
+    const copy = $(".copy", pre); if (copy) copy.remove();
+    pre.innerHTML = codeLines(html, pre);
+    if (copy) pre.appendChild(copy);
+  }
   function wireCode(root = document) {
     $$("pre[data-lang]", root).forEach((pre) => {
       if (pre.dataset.hl) return;
       pre.dataset.hl = "1";
       const copy = $(".copy", pre); if (copy) copy.remove();
-      pre.innerHTML = Kit.highlight(pre.textContent.replace(/^\n/, ""), pre.dataset.lang);
+      const text = pre.textContent.replace(/^\n/, "").replace(/\n$/, "");
       if (copy) pre.appendChild(copy);
+      setCode(pre, Kit.highlight(text, pre.dataset.lang));
+      if (!Kit.libs.available) return;
+      Kit.libs.load("highlight").then((hl) => hl.html(text, pre.dataset.lang)).then((html) => {
+        if (html == null || !pre.isConnected) return;
+        setCode(pre, html); pre.dataset.hl = "shiki";
+      }).catch((e) => { if (!/load|fetch|import/i.test(String(e && e.message))) console.warn("Kit: highlighting failed", pre.dataset.lang, e); });
     });
   }
 
@@ -1462,9 +1550,204 @@
     let wasNarrow = null;
     if ("ResizeObserver" in window) new ResizeObserver(() => { const nw = narrow(); if (nw !== wasNarrow) { wasNarrow = nw; render(); } }).observe(body);
     render();
+    // Upgrade to Shiki when the server has it: each side is tokenised as one text, so strings and comments
+    // spanning lines colour correctly; word marks and notes stay as they are.
+    const lang = langOf({ lang: spec.lang, file: f.file });
+    if (lang && Kit.libs.available) Kit.libs.load("highlight").then(async (hl) => {
+      const oldRows = rows.filter((r) => r.kind !== "add"), newRows = rows.filter((r) => r.kind !== "del");
+      const [o, n] = await Promise.all([hl.tokens(oldRows.map((r) => r.text).join("\n"), lang), hl.tokens(newRows.map((r) => r.text).join("\n"), lang)]);
+      if (!o || !n) return;
+      oldRows.forEach((r, i) => { r.tokO = o.lines[i] ? shikiTokens(o.lines[i]) : [{ c: "", t: r.text }]; });
+      newRows.forEach((r, i) => { r.tokN = n.lines[i] ? shikiTokens(n.lines[i]) : [{ c: "", t: r.text }]; });
+      node.dataset.hl = "shiki";
+      render();
+    }).catch(() => {});
     return { node, setMode(m) { if (modes.includes(m)) { mode = m; render(); } } };
   }
   Kit.diff = diff;
+
+  /* ---------- Diagrams ([data-diagram], .mermaid) ----------
+     Mermaid text drawn by the server's shared libraries (Mermaid + ELK layout), coloured from kit tokens and
+     redrawn when the style or mode changes. Readers zoom, open it full screen, view and copy the source and
+     download the SVG. A syntax error says what and where in place (and in the console, so artifact lint
+     reports it); without the shared libraries the source shows as code. */
+  const DG_ICON = {
+    minus: svgIcon("M3.5 8h9"), plus: svgIcon("M3.5 8h9M8 3.5v9"), fit: svgIcon("M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"),
+    code: svgIcon("M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5"), save: svgIcon("M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"),
+  };
+  const dedentText = (text) => dedent(String(text || "").replace(/\t/g, "  ")).join("\n");
+  const hexMix = (a, b, t) => "#" + [1, 3, 5].map((i) => Math.round(parseInt(a.substr(i, 2), 16) * t + parseInt(b.substr(i, 2), 16) * (1 - t)).toString(16).padStart(2, "0")).join("");
+  const luma = (h) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  // Mermaid themeVariables from the kit's tokens, so diagrams match the page in Clean and Bold, light and dark.
+  function diagramTheme() {
+    const c = Kit.libs.color, t = (k) => c("--" + k);
+    const ink = t("ink"), panel = t("panel"), soft = t("soft"), line = t("line"), strong = t("line-strong"), muted = t("muted"),
+      accent = t("accent"), aSoft = t("accent-soft"), thread = t("thread"), tSoft = t("thread-soft"), good = t("good"), warn = t("warn"), bad = t("bad"),
+      series = [1, 2, 3, 4, 5].map((i) => t("s" + i));
+    const dark = luma(panel) < 0.45, tint = (x) => hexMix(x, panel, dark ? 0.34 : 0.2);
+    const vars = {
+      background: panel, mainBkg: aSoft, primaryColor: aSoft, primaryBorderColor: accent, primaryTextColor: ink, nodeBorder: accent, nodeTextColor: ink,
+      secondaryColor: tSoft, secondaryBorderColor: thread, secondaryTextColor: ink, tertiaryColor: soft, tertiaryBorderColor: strong, tertiaryTextColor: ink,
+      lineColor: muted, textColor: ink, titleColor: ink, edgeLabelBackground: panel, clusterBkg: soft, clusterBorder: strong,
+      noteBkgColor: t("warn-soft"), noteBorderColor: warn, noteTextColor: ink,
+      actorBkg: aSoft, actorBorder: accent, actorTextColor: ink, actorLineColor: strong, signalColor: ink, signalTextColor: ink,
+      labelBoxBkgColor: soft, labelBoxBorderColor: strong, labelTextColor: ink, loopTextColor: ink, activationBkgColor: soft, activationBorderColor: strong, sequenceNumberColor: panel,
+      sectionBkgColor: soft, altSectionBkgColor: panel, sectionBkgColor2: aSoft, taskBkgColor: aSoft, taskBorderColor: accent, taskTextColor: ink,
+      taskTextDarkColor: ink, taskTextLightColor: ink, taskTextOutsideColor: ink, taskTextClickableColor: accent,
+      activeTaskBkgColor: tint(series[0]), activeTaskBorderColor: series[0], doneTaskBkgColor: t("good-soft"), doneTaskBorderColor: good,
+      critBkgColor: t("bad-soft"), critBorderColor: bad, todayLineColor: thread, gridColor: line, excludeBkgColor: soft,
+      errorBkgColor: t("bad-soft"), errorTextColor: bad, classText: ink, labelColor: ink, altBackground: soft,
+      relationColor: muted, relationLabelColor: ink, relationLabelBackground: panel, attributeBackgroundColorOdd: panel, attributeBackgroundColorEven: soft,
+      pieStrokeColor: panel, pieOuterStrokeColor: strong, pieTitleTextColor: ink, pieSectionTextColor: dark ? t("ground") : "#ffffff", pieLegendTextColor: ink, pieStrokeWidth: "1.5px", pieOpacity: "1",
+      quadrant1Fill: tint(series[0]), quadrant2Fill: tint(series[2]), quadrant3Fill: soft, quadrant4Fill: tint(series[3]),
+      quadrant1TextFill: ink, quadrant2TextFill: ink, quadrant3TextFill: ink, quadrant4TextFill: ink, quadrantPointFill: accent, quadrantPointTextFill: ink,
+      quadrantXAxisTextFill: muted, quadrantYAxisTextFill: muted, quadrantInternalBorderStrokeFill: strong, quadrantExternalBorderStrokeFill: strong, quadrantTitleFill: ink,
+      xyChart: { backgroundColor: panel, titleColor: ink, xAxisLabelColor: muted, xAxisTitleColor: ink, xAxisTickColor: strong, xAxisLineColor: strong,
+        yAxisLabelColor: muted, yAxisTitleColor: ink, yAxisTickColor: strong, yAxisLineColor: strong, plotColorPalette: series.join(",") },
+      fontSize: "14px",
+    };
+    for (let i = 0; i < 12; i++) {
+      const base = series[i % 5];
+      vars["cScale" + i] = tint(base); vars["cScalePeer" + i] = base; vars["cScaleLabel" + i] = ink; vars["cScaleInv" + i] = panel;
+      vars["pie" + (i + 1)] = base; vars["fillType" + (i % 8)] = tint(base); vars["surface" + (i % 5)] = tint(base); vars["surfacePeer" + (i % 5)] = base;
+    }
+    for (let i = 0; i < 8; i++) { vars["git" + i] = series[i % 5]; vars["gitBranchLabel" + i] = dark ? t("ground") : "#ffffff"; vars["gitInv" + i] = panel; }
+    vars.commitLabelColor = ink; vars.commitLabelBackground = soft; vars.tagLabelColor = ink; vars.tagLabelBackground = aSoft; vars.tagLabelBorder = accent;
+    return { vars, dark, font: getComputedStyle(document.body).fontFamily };
+  }
+  function diagramSpec(el) {
+    const src = el.getAttribute("data-diagram-src"), raw = (el.getAttribute("data-diagram") || "").trim();
+    let spec = src ? src.split(".").reduce((o, k) => (o ? o[k] : undefined), window) : raw[0] === "{" ? JSON.parse(raw) : null;
+    if (src && spec == null) throw new Error(`nothing at window.${src}`);
+    spec = typeof spec === "string" ? { source: spec } : { ...(spec || {}) };
+    if (!spec.source) { const s = $(':scope > script[type="text/plain"], :scope > script[type="text/x-mermaid"]', el); spec.source = s ? s.textContent : el.textContent; }
+    for (const k of ["layout", "look", "caption", "title", "name"]) if (spec[k] == null && el.dataset[k]) spec[k] = el.dataset[k];
+    if (spec.look === "hand" || spec.look === "sketch") spec.look = "handDrawn";
+    return spec;
+  }
+  const diagramsLive = new Set();
+  let diagramRedraw = null;
+  const redrawDiagrams = () => { clearTimeout(diagramRedraw); diagramRedraw = setTimeout(() => diagramsLive.forEach((d) => (d.node.isConnected ? d.draw() : diagramsLive.delete(d))), 60); };
+  document.addEventListener("kit:theme", redrawDiagrams);
+  document.addEventListener("kit:style", redrawDiagrams);
+  if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redrawDiagrams);
+  function diagram(el, spec) {
+    spec = spec || diagramSpec(el);
+    const source = dedentText(spec.source);
+    if (!source.trim()) throw new Error('no diagram text: put the Mermaid text inside the element, in a <script type="text/plain"> child, or in {source}');
+    let node = el;
+    if (/^(PRE|CODE)$/.test(el.tagName)) { node = document.createElement("figure"); if (el.id) node.id = el.id; el.replaceWith(node); }
+    node.dataset.wired = "1";
+    node.classList.add("kit-diagram");
+    const label = spec.title || spec.caption || "Diagram";
+    node.innerHTML = `<div class="kit-dg-view" tabindex="0" role="group" aria-label="${ex(label)}"><div class="kit-dg-canvas"><p class="kit-dg-wait">Drawing the diagram…</p></div></div>
+      <div class="kit-dg-tools" role="toolbar" aria-label="Diagram">
+        <button type="button" class="kd-btn" data-dg="out" aria-label="Zoom out" title="Zoom out (−)">${DG_ICON.minus}</button><button type="button" class="kd-btn" data-dg="fit" aria-label="Fit" title="Fit (0)">${DG_ICON.fit}</button><button type="button" class="kd-btn" data-dg="in" aria-label="Zoom in" title="Zoom in (+)">${DG_ICON.plus}</button>
+        <button type="button" class="kd-btn" data-dg="full" aria-pressed="false" aria-label="Full screen" title="Full screen (F)">${ICON.expand}</button>
+        <button type="button" class="kd-btn" data-dg="source" aria-pressed="false" aria-label="Source" title="Show the Mermaid source">${DG_ICON.code}</button>
+        <button type="button" class="kd-btn" data-dg="save" aria-label="Download SVG" title="Download SVG">${DG_ICON.save}</button></div>
+      <pre class="kit-dg-src" data-lang="mermaid" data-copy hidden></pre>
+      ${spec.caption ? `<figcaption>${ex(spec.caption)}</figcaption>` : ""}`;
+    const view = $(".kit-dg-view", node), canvas = $(".kit-dg-canvas", node), pre = $(".kit-dg-src", node), btn = (k) => $(`[data-dg="${k}"]`, node);
+    pre.textContent = source;
+    const st = { z: 1, w: 0, h: 0, full: false, gen: 0, svg: null };
+    const fitScale = () => {
+      if (!st.w) return 1;
+      const cs = getComputedStyle(view), px = (k) => parseFloat(cs[k]) || 0; // clientWidth includes the padding
+      const vw = view.clientWidth - px("paddingLeft") - px("paddingRight") - 2, vh = st.full ? view.clientHeight - px("paddingTop") - px("paddingBottom") - 2 : Infinity;
+      return Math.min(1, vw / st.w, vh / st.h);
+    };
+    const zoom = (z, keepCenter = true) => {
+      if (!st.svg) return;
+      const cx = (view.scrollLeft + view.clientWidth / 2) / Math.max(1, view.scrollWidth), cy = (view.scrollTop + view.clientHeight / 2) / Math.max(1, view.scrollHeight);
+      st.z = Math.max(0.25, Math.min(8, z));
+      const w = st.w * fitScale() * st.z;
+      st.svg.style.width = w + "px"; st.svg.style.height = (w * st.h) / st.w + "px";
+      node.classList.toggle("kit-dg-pan", view.scrollWidth > view.clientWidth + 2 || view.scrollHeight > view.clientHeight + 2);
+      if (keepCenter) { view.scrollLeft = cx * view.scrollWidth - view.clientWidth / 2; view.scrollTop = cy * view.scrollHeight - view.clientHeight / 2; }
+      btn("fit").setAttribute("aria-pressed", String(Math.abs(st.z - 1) < 0.01));
+    };
+    const showSource = (show) => { pre.hidden = !show; btn("source").setAttribute("aria-pressed", String(show)); if (show) { wireCode(node); wireCopy(); } };
+    const full = (on) => {
+      st.full = on; node.classList.toggle("kit-dg-max", on); document.documentElement.classList.toggle("kit-lb-open", on);
+      btn("full").setAttribute("aria-pressed", String(on));
+      if (window.artifactToolbar) window.artifactToolbar.hide(on);
+      zoom(1, false); if (on) view.focus({ preventScroll: true });
+    };
+    async function draw() {
+      const gen = ++st.gen;
+      let lib;
+      try { lib = await Kit.libs.load("diagram"); }
+      catch (e) {
+        node.dataset.state = "source";
+        canvas.innerHTML = `<p class="kit-dg-note">Diagrams are drawn by the artifact server; this copy shows the Mermaid source.</p>`;
+        showSource(true); return;
+      }
+      try {
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        const theme = diagramTheme();
+        const r = await lib.render(source, { vars: theme.vars, dark: theme.dark, font: theme.font, look: spec.look, layout: spec.layout });
+        if (gen !== st.gen) return;
+        canvas.innerHTML = r.svg;
+        const svg = $("svg", canvas), vb = svg && svg.viewBox && svg.viewBox.baseVal;
+        if (!svg) throw new Error("Mermaid returned no drawing");
+        st.svg = svg; st.w = vb && vb.width ? vb.width : svg.getBBox().width; st.h = vb && vb.height ? vb.height : svg.getBBox().height;
+        svg.removeAttribute("height"); svg.style.maxWidth = "none";
+        svg.setAttribute("role", "img"); if (!svg.getAttribute("aria-label") && !svg.querySelector("title")) svg.setAttribute("aria-label", label);
+        node.dataset.state = "ready"; node.dataset.type = r.type || "";
+        zoom(st.z, false);
+        node.dispatchEvent(new CustomEvent("kit:diagram", { bubbles: true, detail: { type: r.type, svg } }));
+      } catch (e) {
+        if (gen !== st.gen) return;
+        node.dataset.state = "error"; st.svg = null;
+        canvas.innerHTML = `<p class="kit-block-error">This diagram could not be drawn${e.line ? ` (line ${e.line})` : ""}: ${ex(e.message)}</p>`;
+        if (e.line) { pre.dataset.lines = String(e.line); delete pre.dataset.hl; }
+        showSource(true);
+        console.error(`Kit: diagram failed${e.line ? " at line " + e.line : ""}: ${e.message.split("\n")[0]}`);
+      }
+    }
+    node.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-dg]"); if (!b) return;
+      const k = b.dataset.dg;
+      if (k === "in") zoom(st.z * 1.25); else if (k === "out") zoom(st.z / 1.25); else if (k === "fit") zoom(1, false);
+      else if (k === "full") full(!st.full);
+      else if (k === "source") showSource(pre.hidden);
+      else if (k === "save" && st.svg) {
+        const clone = st.svg.cloneNode(true); clone.setAttribute("xmlns", "http://www.w3.org/2000/svg"); clone.setAttribute("width", st.w); clone.setAttribute("height", st.h); clone.style.cssText = "";
+        clone.insertAdjacentHTML("afterbegin", `<rect width="100%" height="100%" fill="${Kit.libs.color("--panel")}"/>`);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([clone.outerHTML], { type: "image/svg+xml" }));
+        a.download = String(spec.name || spec.title || "diagram").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".svg";
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      }
+    });
+    view.addEventListener("keydown", (e) => {
+      if (e.key === "+" || e.key === "=") { e.preventDefault(); zoom(st.z * 1.25); }
+      else if (e.key === "-") { e.preventDefault(); zoom(st.z / 1.25); }
+      else if (e.key === "0") { e.preventDefault(); zoom(1, false); }
+      else if (e.key === "f" || e.key === "F") { e.preventDefault(); full(!st.full); }
+    });
+    node.addEventListener("keydown", (e) => { if (e.key === "Escape" && st.full) { e.preventDefault(); full(false); } });
+    // Ctrl/⌘ + wheel or a pinch zooms; dragging pans once the drawing is larger than its frame.
+    view.addEventListener("wheel", (e) => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoom(st.z * (e.deltaY < 0 ? 1.12 : 1 / 1.12)); }, { passive: false });
+    let drag = null;
+    view.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "mouse" || e.button !== 0 || !node.classList.contains("kit-dg-pan") || e.target.closest("a")) return;
+      drag = { x: e.clientX, y: e.clientY, l: view.scrollLeft, t: view.scrollTop }; view.setPointerCapture(e.pointerId); node.classList.add("kit-dg-drag");
+    });
+    view.addEventListener("pointermove", (e) => { if (drag) { view.scrollLeft = drag.l - (e.clientX - drag.x); view.scrollTop = drag.t - (e.clientY - drag.y); } });
+    const end = () => { drag = null; node.classList.remove("kit-dg-drag"); };
+    view.addEventListener("pointerup", end); view.addEventListener("pointercancel", end);
+    let lastW = 0;
+    if ("ResizeObserver" in window) new ResizeObserver(() => { const w = view.clientWidth; if (w && Math.abs(w - lastW) > 1) { lastW = w; zoom(st.z, false); } }).observe(view);
+    const api = { node, draw, zoom: (z) => zoom(z), full, source: () => source, svg: () => st.svg };
+    diagramsLive.add(api);
+    draw();
+    return api;
+  }
+  Kit.diagram = diagram;
+  // Draw Mermaid text to an SVG string yourself (custom layouts): kit colours unless opts.vars says otherwise.
+  Kit.diagram.render = async (source, opts = {}) => { const lib = await Kit.libs.load("diagram"), th = diagramTheme(); return (await lib.render(dedentText(source), { vars: th.vars, dark: th.dark, font: th.font, ...opts })).svg; };
   Kit.diff.parse = parsePatch;
   Kit.diff.lines = (before, after) => rowsFromTexts(before, after);
 
@@ -1475,6 +1758,7 @@
     const safe = (el, name, fn) => { if (el.dataset.wired) return; try { fn(); } catch (e) { el.dataset.wired = "1"; el.innerHTML = `<p class="kit-block-error">This ${name} could not be shown: ${esc(e.message)}</p>`; console.error(`Kit: ${name} failed`, el, e); } };
     $$("[data-gallery], [data-gallery-src]").forEach((el) => safe(el, "gallery", () => gallery(el)));
     $$("[data-diff], [data-diff-src]").forEach((el) => safe(el, "diff", () => diff(el, specOf(el, "data-diff") || {})));
+    $$("[data-diagram], [data-diagram-src], pre.mermaid, div.mermaid").forEach((el) => safe(el, "diagram", () => diagram(el)));
     try { wireCode(); } catch (e) { console.error("Kit: code colouring failed", e); }
     wireImages();
     $$("table.compare tr.rec").forEach((tr) => {

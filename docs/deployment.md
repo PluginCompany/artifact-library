@@ -42,6 +42,7 @@ Compose binds to `127.0.0.1` by default. Set `BIND_ADDRESS=0.0.0.0` to listen on
 | `MAX_FILES` | `10000` | Per upload; `0` = unlimited |
 | `PREVIEWS` | `true` (full), `false` (slim) | Server-side preview screenshots |
 | `SEED` / `SEED_DIR` | on / `seed/` in the image | Default artifacts seeded on start |
+| `LIBS_DIR` | `libs/dist/` in the image | Shared browser libraries served at `/_artifact/libs/`: Mermaid + ELK (diagrams), Shiki (code colouring) and d3, built by `npm run build:libs`. Without them kit pages fall back to diagram source and the built-in colouring |
 | `DATA_DIR` | `/data` | Storage |
 | `PORT`, `HOST` | `3000`, `0.0.0.0` | Listener inside the container |
 | `LOG_LEVEL` | `info` | Server logging |
@@ -117,7 +118,7 @@ The volume name is `<compose project>_artifact-data` (`docker volume ls`). Resto
 
 ```bash
 npm ci && npm test
-npm run build:binary && npm run build:seed
+npm run build:binary && npm run build:seed && npm run build:libs
 docker build --target full -t artifact-library .    # or --target slim
 ```
 

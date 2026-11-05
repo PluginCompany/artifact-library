@@ -81,6 +81,7 @@ Small JSON documents beside an artifact (never inside its versions). Open to rea
 | DELETE | `/api/v1/artifacts/:slug/data/:key?expectedRevision=` | Delete |
 | POST | `/api/v1/artifacts/:slug/data/:key/items` | Append to `value.items`: `{item, author?, role?}` (atomic) |
 | PATCH | `/api/v1/artifacts/:slug/data/:key/items/:id` | Merge `{changes}` into one item |
+| DELETE | `/api/v1/artifacts/:slug/data/:key/items/:id` | Remove one item and the items replying to it (`replyTo: id`); `?author=&role=` record who. Returns `{document, removed}` |
 
 With `wait`, a list that finds nothing changed after `since` holds the request until a matching document is written (same artifact, prefix and role), then answers with it and anything written in the next 300 ms; after `wait` seconds it answers with an empty list. Use the newest `updatedAt` as the next `since`.
 

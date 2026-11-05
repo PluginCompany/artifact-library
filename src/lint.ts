@@ -38,7 +38,7 @@ const contentChecks = () => {
     const cls = typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
     return el.tagName.toLowerCase() + id + cls;
   };
-  const VISUAL = 'table, svg, img, picture, video, canvas, figure, pre, [data-flow], [data-chart], [data-gallery], [data-diff], .kit-gallery, .kit-diff-set, .chart, .chart-card, .ba, .delta, .stats, .steps, .timeline, .flow, .cards, details, [role="radiogroup"], .grid, .cols-2, .cols-3, .cols-4, .auto-grid';
+  const VISUAL = 'table, svg, img, picture, video, canvas, figure, pre, [data-flow], [data-chart], [data-diagram], .mermaid, .kit-diagram, [data-gallery], [data-diff], .kit-gallery, .kit-diff-set, .chart, .chart-card, .ba, .delta, .stats, .steps, .timeline, .flow, .cards, details, [role="radiogroup"], .grid, .cols-2, .cols-3, .cols-4, .auto-grid';
   const isVisual = (el: Element) => el.matches(VISUAL) || ((el.matches('ul, ol')) && el.querySelectorAll(':scope > li').length >= 3);
 
   if (!document.title.trim()) findings.push({ severity: 'error', check: 'missing-title', message: 'The page has no <title>. Give it a name of a few words.' });

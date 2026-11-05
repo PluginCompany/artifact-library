@@ -5,12 +5,15 @@ import { limitsFromEnv } from './shared.js';
 const port = Number(process.env.PORT ?? 3000);
 // Default artifacts ship in ./seed next to dist/ (built by scripts/build-seed.mjs). SEED=false turns seeding off.
 const seedDir = process.env.SEED === 'false' ? undefined : process.env.SEED_DIR ?? fileURLToPath(new URL('../seed', import.meta.url));
+// Shared browser libraries (diagrams, highlighting, d3) in ./libs/dist next to dist/ (scripts/build-libs.mjs).
+const libsDir = process.env.LIBS_DIR ?? fileURLToPath(new URL('../libs/dist', import.meta.url));
 const app = await buildApp({
   dataDir: process.env.DATA_DIR ?? './data',
   publicUrl: process.env.PUBLIC_BASE_URL ?? `http://localhost:${port}`,
   logger: true,
   previews: process.env.PREVIEWS !== 'false',
   seedDir,
+  libsDir,
   // ARTIFACT_TOKEN protects publishing, metadata, archive and purge. Reading and saved answers/comments stay open.
   token: process.env.ARTIFACT_TOKEN || undefined,
   limits: limitsFromEnv()

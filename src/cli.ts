@@ -298,6 +298,11 @@ data.command('update-item').argument('<slug>').argument('<key>').argument('<id>'
     const changes = await jsonInput({ value: options.changes }, 'changes');
     output(await (await client(command)).request(dataPath(slug, key) + '/items/' + encodeURIComponent(id), json('PATCH', { changes, author: options.author, role: 'agent' })), command, `Updated item ${id} in ${key}`);
   });
+data.command('remove-item').argument('<slug>').argument('<key>').argument('<id>').description('Remove one item and its replies (items with replyTo: <id>), e.g. a mark on a screenshot')
+  .action(async (slug, key, id, _options, command) => {
+    const result = await (await client(command)).request<{ removed: string[] }>(dataPath(slug, key) + '/items/' + encodeURIComponent(id) + '?role=agent', { method: 'DELETE' });
+    output(result, command, `Removed ${result.removed.join(', ')} from ${key}`);
+  });
 data.command('delete').argument('<slug>').argument('<key>').option('--expected-revision <revision>')
   .action(async (slug, key, options, command) => {
     const query = options.expectedRevision === undefined ? '' : '?expectedRevision=' + Number(options.expectedRevision);

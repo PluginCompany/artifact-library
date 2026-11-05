@@ -41,7 +41,9 @@ ref-implementation-review/
 
 ## The kit
 
-`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme and style toggles, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`, lazy images, galleries, diffs and syntax colouring), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md), and the questions and steps blocks) and self-hosted fonts (SIL OFL). Pages built with it work offline, print sensibly and are checked at 390 px.
+`kit/` is a small design system shared by every reference: `kit.css` (tokens with light and dark mode, typography, components), `kit.js` (theme and style toggles, side-nav scroll spy, copy buttons, sortable tables, charts via `Kit.chart`, Mermaid diagrams, lazy images, galleries, diffs and syntax colouring), `kit-data.js` (saving answers and comments, see [saved-data.md](saved-data.md), the questions and steps blocks and image annotations) and self-hosted fonts (SIL OFL). Pages built with it print sensibly and are checked at 390 px.
+
+Diagrams, the richer code colouring and d3 come from **shared libraries the server ships once** at `/_artifact/libs/` (Mermaid with the ELK layout, Shiki, d3; built by `npm run build:libs`), not from `kit/`, so each artifact version stays small. kit.js loads only what a page uses. Pages still work without them: opened from disk or another host, a diagram shows its Mermaid source and code keeps the built-in colouring; `<html data-kit-libs="off">` asks for that on purpose.
 
 ### Blocks for explaining
 
@@ -50,6 +52,7 @@ Higher-level blocks so a page shows its structure instead of describing it. Each
 | Block | Markup | Use it for |
 |---|---|---|
 | Chapter menu | `<nav class="topnav" data-toc></nav>` inside the sticky `header.topbar`, or `<nav class="side" data-toc></nav>` in `.shell` | Every page with 3+ chapters: filled from top-level `section[id]` with an `h2` (nested sections are items of their chapter; `data-toc-skip` leaves one out), with scroll-spy; never in the page body |
+| Diagram | `<div data-diagram data-caption="…"><script type="text/plain">flowchart LR …</script></div>`, `pre.mermaid`, JSON `{source, caption, title, layout, look}`, `data-diagram-src` or `Kit.diagram(el, spec)`; `data-layout="elk"` for big graphs | Anything with branches, loops, several actors, states or a data model: Mermaid flowchart, sequence, state, ER, class, gantt, timeline, mindmap, sankey, architecture and more. Kit colours in both styles and modes; zoom, full screen, source and SVG download; a syntax error shows in place with its line |
 | Flow diagram | `<div data-flow='{"steps":[{"title":"…","text":"…","tag":"new","files":["src/x.ts"]}],"caption":"…"}'></div>`, `"direction":"down"`, `"rows":[{"label":"…","steps":[…]}]`, or `Kit.flow(el, spec)` | Processes, pipelines, data flow |
 | Comparison table | `<table class="table compare">` with `<tr class="rec">` on the recommended option | Options compared on the same criteria |
 | Risk table | `<div data-risks='[{"risk":"…","likelihood":"low\|medium\|high","impact":"…","plan":"…"}]'></div>` or `Kit.risks(el, rows)` | Risks with likelihood (word and colour) and what the plan does about each |
@@ -67,7 +70,8 @@ Higher-level blocks so a page shows its structure instead of describing it. Each
 | Full-size viewer | `data-lightbox` on an `img`, the same `data-lightbox="<group>"` to page through several; `Kit.lightbox.open(items, index)` | Screenshots readers need to see at full size |
 | Gallery | `<div data-gallery="grid">` with `<figure><img …><figcaption><b>Title</b> caption</figcaption></figure>` children, JSON `{layout, items:[{src, thumb, title, caption, alt, w, h, tag, url, notes}], min, ratio, frame, start}`, `data-gallery-src` or `Kit.gallery(el, spec)` | Sets of screenshots: `grid`, `masonry` (mixed shapes), `strip` (a short sequence), `sidebar` (a numbered walkthrough), `annotated` (notes on the image), `compare` (a divider to drag); notes are `{x, y, title, text}` pins or `{x, y, w, h, …}` boxes in percent of the image |
 | Code diff | `<div data-diff='{"file":"src/x.ts","start":12}'>` with `<script type="text/plain" data-before>` / `data-after` (or `data-patch`) children, JSON `{before, after \| patch \| hunks, range, mode, notes, highlight, context, caption}` or `Kit.diff(el, spec)` | A change shown in a few lines: Unified, Split or Result view (the reader's choice holds across the server), word-level marks, notes under lines; `range` keeps a patch snippet tight |
-| Syntax colouring | `<pre data-lang="ts">`, or `Kit.highlight(text, lang)` | Code blocks in js, ts, py, sh, css, html, json, sql and more |
+| Syntax colouring | `<pre data-lang="ts">`, `data-numbers` (`data-start`), `data-lines="4-6,9"`; `Kit.highlight(text, lang)`, `Kit.highlightAsync(text, lang)` | Code blocks: built-in colouring for common languages, upgraded on the server to Shiki (230+ languages, VS Code grammars), diffs included; line numbers and marked lines |
+| Image annotations | `<img data-annotate src="…" width height alt>` (`data-annotate="<id>"`); every image in the viewer has an Annotate button when `kit/kit-data.js` is loaded | Screenshots you want feedback on: readers drag a box or tap a point and say what is wrong. Saves `annotations.<id>`; `artifact feedback` prints each mark with its region in % and px ([saved-data.md](saved-data.md)) |
 
 The style guide (`kit.html` on the reference collection) shows every component with copyable HTML.
 

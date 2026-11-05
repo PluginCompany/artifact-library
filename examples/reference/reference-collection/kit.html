@@ -76,16 +76,18 @@
     <h5>Blocks</h5>
     <a href="#toc"><b>15</b>Chapter menu</a>
     <a href="#flow"><b>16</b>Flow diagram</a>
-    <a href="#compare"><b>17</b>Comparison table</a>
-    <a href="#risks"><b>18</b>Risk table</a>
-    <a href="#ba"><b>19</b>Before &amp; after</a>
-    <a href="#delta"><b>20</b>What changes</a>
+    <a href="#diagram"><b>17</b>Diagrams</a>
+    <a href="#compare"><b>18</b>Comparison table</a>
+    <a href="#risks"><b>19</b>Risk table</a>
+    <a href="#ba"><b>20</b>Before &amp; after</a>
+    <a href="#delta"><b>21</b>What changes</a>
     <h5>Media &amp; code</h5>
-    <a href="#images"><b>21</b>Images</a>
-    <a href="#gallery"><b>22</b>Gallery</a>
-    <a href="#diff"><b>23</b>Code diff</a>
-    <a href="#questions"><b>24</b>Questions</a>
-    <a href="#steps-block"><b>25</b>Steps &amp; to-dos</a>
+    <a href="#images"><b>22</b>Images</a>
+    <a href="#gallery"><b>23</b>Gallery</a>
+    <a href="#annotate"><b>24</b>Image annotations</a>
+    <a href="#diff"><b>25</b>Code diff</a>
+    <a href="#questions"><b>26</b>Questions</a>
+    <a href="#steps-block"><b>27</b>Steps &amp; to-dos</a>
   </nav>
 
   <main class="main sg" id="main">
@@ -257,7 +259,14 @@ export async function publish(dir: string, slug = "my-report") {
   return client.post(`/api/v1/artifacts/${slug}/versions`, files, 3);
 }</pre>
       </div></div>
-      <p class="muted" style="margin-top:12px"><code>data-lang</code> takes a file extension or language name: js, ts, py, rb, go, rs, java, sh, yaml, toml, css, html, xml, json, sql and more. <code>Kit.highlight(text, lang)</code> returns the coloured HTML for your own markup.</p>
+      <div class="demo-block"><header><b>Line numbers and marked lines</b></header><div class="demo">
+        <pre data-lang="py" data-numbers data-start="40" data-lines="42-43" data-copy>def publish(directory, slug=None):
+    files = collect(directory)
+    if not files:
+        raise ValueError(f"Nothing to publish in {directory}")
+    return client.post("/api/v1/artifacts", files, slug=slug)</pre>
+      </div></div>
+      <p class="muted" style="margin-top:12px"><code>data-lang</code> takes a file extension or language name. On the artifact server, code is coloured with Shiki (the grammars VS Code uses, 230+ languages: js, ts, py, go, rs, java, kotlin, swift, sh, yaml, toml, sql, graphql, terraform, dockerfile, mermaid and more), loaded once from the server's shared libraries; the kit's built-in colouring shows first and when the page is opened from disk. <code>data-numbers</code> adds line numbers, <code>data-start="40"</code> starts them at 40, <code>data-lines="42-43, 47"</code> marks lines (by their shown number). <code>Kit.highlight(text, lang)</code> returns the built-in coloured HTML at once; <code>Kit.highlightAsync(text, lang)</code> resolves to the best available.</p>
     </section>
 
     <section id="charts">
@@ -336,6 +345,64 @@ const stop = Kit.data.watch("state.", docs =&gt; render(docs));   // live update
       <div class="demo-block"><header><b>Two labelled rows</b></header><div class="demo">
         <div data-flow='{"rows":[{"label":"When a version is published","steps":[{"title":"Commit"},{"title":"Extract"},{"title":"Index"}]},{"label":"When someone searches","steps":[{"title":"Match metadata"},{"title":"Match content"},{"title":"Snippet","tag":"New","tagTone":"accent"}]}]}'></div>
       </div></div>
+    </section>
+
+    <section id="diagram">
+      <h2 class="stitch">Diagrams</h2>
+      <p class="muted">Anything with branches, loops or more than one actor: write <a href="https://mermaid.js.org/intro/">Mermaid</a> text and the kit draws it in the page's colours, in both styles and modes. Flowcharts, sequence, class, state and ER diagrams, Gantt charts, mind maps, timelines, git graphs, quadrant, sankey, XY charts, architecture and more. Readers zoom (buttons, <kbd>Ctrl</kbd> + wheel, <kbd>+</kbd>/<kbd>−</kbd>), open it full screen, view and copy the source and download an SVG. Put the text in a <code>&lt;script type="text/plain"&gt;</code> child so <code>&lt;</code> and <code>&gt;</code> need no escaping. Keep <code>[data-flow]</code> for a short linear process with the files each step touches.</p>
+      <div class="table-wrap" style="margin-top:14px"><table class="table compact">
+        <thead><tr><th>Attribute</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>data-diagram</code></td><td>Marks the block; the Mermaid text is its <code>&lt;script type="text/plain"&gt;</code> child or its text. <code>&lt;pre class="mermaid"&gt;</code> works too. JSON <code>{source, caption, layout, look, title, name}</code> or <code>data-diagram-src="PLAN.arch"</code> (a string or that object) keep it in <code>data.js</code>; <code>Kit.diagram(el, spec)</code> from a script</td></tr>
+          <tr><td><code>data-caption</code>, <code>data-title</code></td><td>A line under the drawing; the accessible name (and the SVG file name, or <code>data-name</code>)</td></tr>
+          <tr><td><code>data-layout="elk"</code></td><td>ELK layout for big or dense graphs: fewer crossings and straighter edges than the default</td></tr>
+          <tr><td><code>data-look="hand"</code></td><td>A hand-drawn look for sketches and early ideas</td></tr>
+        </tbody>
+      </table></div>
+      <div class="demo-block"><header><b>Flowchart with a caption</b></header><div class="demo">
+        <div data-diagram data-caption="A page goes back to the agent until lint passes and the reader is happy.">
+          <script type="text/plain">
+            flowchart LR
+              A[Agent writes the page] --> B{artifact lint}
+              B -- errors --> A
+              B -- clean --> C[(Version stored)]
+              C --> D[Reader comments and answers]
+              D -- artifact feedback --> A
+          </script>
+        </div>
+      </div></div>
+      <div class="demo-block"><header><b>A bigger graph with the ELK layout</b></header><div class="demo">
+        <div data-diagram data-layout="elk" data-title="Module dependencies">
+          <script type="text/plain">
+            flowchart TD
+              cli[cli.ts] --> client[client.ts] & ops[operations.ts] & tools[cli-tools.ts]
+              mcp[mcp.ts] --> client & ops
+              server[server.ts] --> app[app.ts]
+              app --> storage[storage.ts] & data[data.ts] & serving[serving.ts] & lint[lint.ts] & libs[libs.ts]
+              lint --> previews[previews.ts]
+              previews --> storage
+              data --> storage
+              serving --> storage
+          </script>
+        </div>
+      </div></div>
+      <div class="demo-block"><header><b>Sequence diagram</b></header><div class="demo">
+        <div data-diagram>
+          <script type="text/plain">
+            sequenceDiagram
+              participant R as Reader
+              participant S as Server
+              participant A as Agent
+              A->>S: artifact wait my-report
+              R->>S: marks an issue on a screenshot
+              S-->>A: annotations.shots-login
+              Note over A: fixes the page
+              A->>S: artifact update my-report
+              A->>S: reply under the mark
+          </script>
+        </div>
+      </div></div>
+      <p class="muted" style="margin-top:12px">Diagrams are drawn by Mermaid (with ELK) that the artifact server serves once at <code>/_artifact/libs/</code>, so it is not copied into every <code>kit/</code>. Opened from disk, a diagram shows its source. A syntax error shows what and where in place, and as a console error that <code>artifact lint</code> reports. For a one-off visual Mermaid cannot draw (a force graph, a treemap), <code>const d3 = await Kit.libs.load("d3")</code>; take colours from <code>Kit.libs.color("--accent")</code> and redraw on <code>kit:theme</code>.</p>
     </section>
 
     <section id="compare">
@@ -436,6 +503,22 @@ const stop = Kit.data.watch("state.", docs =&gt; render(docs));   // live update
       </div></div>
       <div class="demo-block"><header><b>Compare</b></header><div class="demo">
         <div data-gallery='{"layout":"compare","items":[{"src":"shots/light.webp","w":1600,"h":622,"title":"Light","caption":"The default for most readers."},{"src":"shots/dark.webp","w":1600,"h":622,"title":"Dark","caption":"Follows the system setting unless the reader picks one."}]}'></div>
+      </div></div>
+    </section>
+
+    <section id="annotate">
+      <h2 class="stitch">Image annotations</h2>
+      <p class="muted">Readers point at what is wrong on a screenshot: they drag a box or tap a point and say what they see. With <code>kit/kit-data.js</code> loaded, every image opened full size has an <i>Annotate</i> button (or <kbd>A</kbd>); <code>img[data-annotate]</code> also shows the open marks on the page with its own button. Each image's marks are saved as <code>annotations.&lt;image&gt;</code>; <code>artifact feedback</code> prints every mark with its number, its region in percent and pixels, who wrote it and the text, so the agent can crop the spot. The agent replies under a mark with <code>artifact data append &lt;slug&gt; annotations.&lt;image&gt; --item '{"text":"…","replyTo":"&lt;mark id&gt;"}'</code>, shown on the open page within seconds. Try it: these marks are live.</p>
+      <div class="table-wrap" style="margin-top:14px"><table class="table compact">
+        <thead><tr><th>Markup</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>data-annotate</code></td><td>Marks on the page and an <i>Annotate</i> button; the document is named after the image path (<code>shots/login.webp</code> → <code>annotations.shots-login</code>)</td></tr>
+          <tr><td><code>data-annotate="login-error"</code></td><td>Names the document yourself: <code>annotations.login-error</code></td></tr>
+          <tr><td><code>data-annotate="off"</code>, <code>annotate: false</code></td><td>No annotations for this image or gallery item; <code>&lt;html data-annotate="off"&gt;</code> for the whole page</td></tr>
+        </tbody>
+      </table></div>
+      <div class="demo-block"><header><b>A screenshot readers can mark</b></header><div class="demo">
+        <figure class="figure"><img data-annotate="style-guide-demo" src="shots/library.webp" width="1600" height="844" alt="The library with artifact cards" style="width:100%;height:auto;border-radius:8px;border:1px solid var(--line)"><figcaption>Click <i>Annotate</i>, then drag a box over something on the screenshot.</figcaption></figure>
       </div></div>
     </section>
 

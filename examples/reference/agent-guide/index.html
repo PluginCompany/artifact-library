@@ -193,6 +193,7 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
         <thead><tr><th>When the content is…</th><th>Use</th><th>Markup</th></tr></thead>
         <tbody>
           <tr><td>A process, pipeline or data flow</td><td>Flow diagram</td><td><code>&lt;div data-flow='{"steps":[…]}'&gt;</code> or <code>Kit.flow(el, spec)</code></td></tr>
+          <tr><td>Branches, loops, who calls whom, states, entities, a schedule</td><td>Mermaid diagram: flowchart, sequence, state, class, ER, Gantt, mind map, architecture</td><td><code>&lt;div data-diagram&gt;&lt;script type="text/plain"&gt;flowchart LR …&lt;/script&gt;&lt;/div&gt;</code></td></tr>
           <tr><td>Options compared on the same criteria</td><td>Comparison table, recommendation marked</td><td><code>&lt;table class="table compare"&gt;</code> with <code>&lt;tr class="rec"&gt;</code></td></tr>
           <tr><td>Numbers that matter</td><td>Stat tiles or a chart with a table view</td><td><code>.stats &gt; .stat</code>, <code>Kit.chart.*</code> in a <code>.chart-card</code></td></tr>
           <tr><td>Risks</td><td>Risk table with likelihood</td><td><code>&lt;div data-risks='[…]'&gt;</code> or <code>Kit.risks(el, rows)</code></td></tr>
@@ -200,6 +201,7 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
           <tr><td>What changes and what stays</td><td>Two lists side by side</td><td><code>.delta</code> with <code>.changes</code> and <code>.stays</code></td></tr>
           <tr><td>Work done in steps</td><td>Numbered steps with the files each touches</td><td><code>&lt;ol class="steps"&gt;</code> with <code>&lt;p class="files"&gt;</code></td></tr>
           <tr><td>Several screenshots</td><td>Gallery: grid, sidebar walkthrough, notes on the image, compare</td><td><code>&lt;div data-gallery="grid"&gt;</code> with <code>&lt;figure&gt;</code>s, or JSON</td></tr>
+          <tr><td>A screen you want the reader to check</td><td>A screenshot readers mark up: boxes and points with a comment each</td><td><code>&lt;img data-annotate src="shots/a.webp" …&gt;</code> (needs <code>kit/kit-data.js</code>)</td></tr>
           <tr><td>A code change</td><td>A short diff of the lines that carry it (about 25 at most), with notes</td><td><code>&lt;div data-diff='{…}'&gt;</code> with <code>data-before</code> / <code>data-after</code> scripts, or a patch</td></tr>
           <tr><td>Open decisions</td><td>Questions with options, trade-offs and a default</td><td><code>&lt;div data-questions='{…}'&gt;</code> or <code>data-questions-src</code></td></tr>
           <tr><td>Steps the reader takes, or a procedure run together</td><td>A shared checklist with ticks, notes and progress</td><td><code>&lt;div data-steps='{…}'&gt;</code> or <code>data-steps-src</code></td></tr>
@@ -227,6 +229,24 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
 ]'&gt;&lt;/div&gt;</pre>
           <p class="muted small"><code>likelihood</code> is <code>low</code>, <code>medium</code> or <code>high</code>, shown as a word and a colour.</p></div>
       </div>
+      <div class="grid cols-2 show-code">
+        <div><h3 class="h3">A Mermaid diagram</h3>
+          <pre data-copy>&lt;div data-diagram data-caption="How a reader's answer reaches the agent"&gt;
+&lt;script type="text/plain"&gt;
+sequenceDiagram
+  Reader->>Server: saves an answer
+  Agent->>Server: artifact wait my-plan
+  Server-->>Agent: answer.toolbar
+&lt;/script&gt;&lt;/div&gt;</pre>
+          <p class="muted small">Big or dense graphs: <code>data-layout="elk"</code>. The <code>&lt;script type="text/plain"&gt;</code> child keeps <code>&lt;</code> and <code>&gt;</code> safe.</p></div>
+        <div><h3 class="h3">Flow or diagram?</h3>
+          <ul class="dots">
+            <li><code>[data-flow]</code>: a short, linear process — a few steps in order, each with a sentence and the files it touches.</li>
+            <li><code>[data-diagram]</code>: anything with branches, loops or several actors — flowcharts, sequence, state, class and ER diagrams, Gantt charts, mind maps, timelines, architecture.</li>
+            <li>A syntax error shows in place with its line, and as a console error that <code>artifact lint</code> reports. Check the page after publishing.</li>
+            <li>Never paste a diagram as an image or ASCII art: text diagrams stay sharp, follow the theme and can be edited in the next version.</li>
+          </ul></div>
+      </div>
     </section>
 
     <!-- 07 -->
@@ -235,8 +255,8 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
       <p class="sub">One look for every artifact. The <a href="/artifacts/reference-collection/kit.html">style guide</a> shows each component live with HTML to copy.</p>
       <div class="grid cols-3 kit-files">
         <div class="panel"><code>kit/kit.css</code><p>Tokens for light and dark, typography, layout (top bar, hero, side nav), cards, stat tiles, callouts, tables, steps, timeline, charts, print.</p></div>
-        <div class="panel"><code>kit/kit.js</code><p>Theme toggle, side-nav scroll-spy, copy buttons, sortable tables, reveal-on-scroll and <code>Kit.chart</code>.</p></div>
-        <div class="panel"><code>kit/kit-data.js</code><p>Saving: <code>Kit.data</code>, <code>Kit.comments</code>, the save-status line and the reader's name.</p></div>
+        <div class="panel"><code>kit/kit.js</code><p>Theme toggle, side-nav scroll-spy, copy buttons, sortable tables, reveal-on-scroll, <code>Kit.chart</code>, diagrams, galleries, diffs and code colouring.</p></div>
+        <div class="panel"><code>kit/kit-data.js</code><p>Saving: <code>Kit.data</code>, <code>Kit.comments</code>, the questions and steps blocks, image annotations, the save-status line and the reader's name.</p></div>
       </div>
       <h3 class="h3 sub-h">The page skeleton</h3>
       <pre data-copy>&lt;link rel="stylesheet" href="kit/kit.css"&gt;
@@ -275,7 +295,14 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
         <li><code>data-lightbox</code> on an image opens it full size; the same <code>data-lightbox="name"</code> pages through several.</li>
         <li><code>[data-gallery]</code> in six layouts (grid, masonry, strip, sidebar, annotated, compare), with notes placed in percent of the image.</li>
         <li><code>[data-diff]</code> from before/after code or a <code>git diff</code>; readers switch between Unified, Split and Result. Keep each snippet to the lines that carry the change; for a whole review built that way, copy <code>ref-code-review</code>.</li>
-        <li><code>&lt;pre data-lang="ts"&gt;</code> colours code.</li>
+        <li><code>&lt;pre data-lang="ts"&gt;</code> colours code: on the artifact server with Shiki (VS Code's grammars, 230+ languages), else the kit's built-in colouring. <code>data-numbers</code> adds line numbers, <code>data-start="40"</code> starts them at 40, <code>data-lines="42-43"</code> marks the lines to look at.</li>
+        <li>Screenshots you want checked: with <code>kit/kit-data.js</code> loaded, every image opened full size has an <i>Annotate</i> button; readers drag a box or tap a point and write what is wrong. <code>&lt;img data-annotate …&gt;</code> also shows the marks on the page. They save as <code>annotations.&lt;image&gt;</code>; <code>artifact feedback</code> prints each mark with its region in percent and pixels, so you can crop the spot from the image. Reply under a mark: <code>artifact data append &lt;slug&gt; annotations.&lt;id&gt; --item '{"text":"…","replyTo":"&lt;mark id&gt;"}' --author "Claude Code"</code>.</li>
+      </ul>
+      <h3 class="h3 sub-h">Diagrams and shared libraries</h3>
+      <ul class="dots">
+        <li><code>&lt;div data-diagram&gt;</code> with the Mermaid text in a <code>&lt;script type="text/plain"&gt;</code> child (or <code>&lt;pre class="mermaid"&gt;</code>, or <code>data-diagram-src="PLAN.arch"</code>) draws it in the kit's colours; readers zoom, open it full screen, view the source and download an SVG. <code>data-caption</code> adds a line under it, <code>data-layout="elk"</code> lays out big graphs.</li>
+        <li>Mermaid, ELK, Shiki and d3 are served once by the artifact server at <code>/_artifact/libs/</code>, not inside <code>kit/</code>, and load only on pages that use them. Opened from disk, a diagram shows its source and code keeps the built-in colouring.</li>
+        <li>For a one-off visual Mermaid and <code>Kit.chart</code> cannot draw (a force graph, a treemap): <code>const d3 = await Kit.libs.load("d3")</code>. Take colours from <code>Kit.libs.color("--accent")</code> and redraw on <code>kit:theme</code>. Not for ordinary charts or diagrams.</li>
       </ul>
       <h3 class="h3 sub-h">Decisions</h3>
       <ul class="dots">
@@ -328,6 +355,7 @@ artifact update review-search-feature ./review-search-feature --message "Fixed F
               <tr><td><code>comments.&lt;anchor&gt;</code></td><td><code>{ items: [{ id, author, role, createdAt, text, resolved? }] }</code></td></tr>
               <tr><td><code>answer.&lt;question&gt;</code></td><td><code>{ questionId, question, choice, choiceLabel, note }</code> — one document per question; the questions block adds <code>recommended</code> and <code>followsRecommendation</code></td></tr>
               <tr><td><code>review.&lt;item&gt;</code></td><td><code>{ verdict: "approved" | "changes" | "question", note }</code></td></tr>
+              <tr><td><code>annotations.&lt;image&gt;</code></td><td><code>{ image: {src, w, h}, items: [{ id, author, text, shape: "box" | "pin", x, y, w, h, n, resolved?, replyTo? }] }</code> — marks on a screenshot, in percent of the image</td></tr>
               <tr><td><code>state.checklist</code></td><td><code>{ runId, title, startedAt, startedBy, steps: { &lt;id&gt;: { done, by, at, note } } }</code> — the steps block's ticks; archived runs in <code>state.checklist.&lt;runId&gt;</code></td></tr>
               <tr><td><code>state.&lt;name&gt;</code></td><td>Anything live: a run's progress, a chosen scope</td></tr>
             </tbody>
