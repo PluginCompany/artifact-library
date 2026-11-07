@@ -4,6 +4,20 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-11-07
+
+### Changed
+- **Agents repeat what they read back.** The skill, the agent guide and `docs/agents.md` tell agents to write out every question with the chosen answer and note, and every comment, mark and verdict, in their own reply before acting on it. Output of `artifact feedback`, `artifact wait` and MCP tools is often hidden from the user, and a permission check on the agent's next step only sees the conversation.
+- The skill's MCP list names every tool (`recent`, `versions`, `wait_for_feedback`, `lint`).
+- README: every feature through 0.13 (diagrams, annotations, Instant sync, the built-in blocks, Clean and Bold), with new screenshots in the default Clean style. `docs/video/screenshots.py` makes its own demo content, so they can be retaken on any fresh server.
+- Docs: current image tags, link references for every release in this changelog, `data-wait` in the API capabilities, exit code 4 in the CLI reference.
+
+### Fixed
+- **`artifact lint` read diagrams as prose.** Mermaid draws node labels as paragraphs inside the SVG, so a flowchart could raise `paragraph-run`, and a diagram's toolbar icons counted as extra diagrams. Text drawn inside an SVG is now part of the drawing, and an SVG inside a diagram, another SVG or a button counts once.
+- **Copies of references no longer call themselves a reference.** The "Reference" label next to the page name (code review, code walkthrough, implementation review, results and evidence, test report, visual regression) and the "Example content" tags of the plan deck and decision record are reference-only, so they are hidden on pages made from them.
+- Reference titles and descriptions no longer name old versions or the old Quiet theme.
+- `npm run build:seed` leaves out `__pycache__` and `.DS_Store` at any depth.
+
 ## [0.13.0] - 2026-11-05
 
 ### Added
@@ -194,5 +208,19 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 - Server-generated previews, catalogue metadata and revisions, idempotent uploads with retry, manifest diffs.
 - Standalone Linux CLI and an agent skill.
 
-[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.13.1...HEAD
+[0.13.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.13.1
+[0.13.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.13.0
+[0.12.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.12.1
+[0.12.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.12.0
+[0.11.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.11.0
+[0.10.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.10.0
+[0.9.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.9.0
+[0.8.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.8.0
+[0.7.2]: https://github.com/plugincompany/artifact-library/releases/tag/v0.7.2
+[0.7.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.7.1
+[0.7.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.7.0
+[0.6.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.6.0
+[0.5.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.5.1
+[0.5.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.5.0
 [0.4.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.4.0

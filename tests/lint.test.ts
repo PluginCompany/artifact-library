@@ -48,6 +48,10 @@ const bad = `<!doctype html><html><head><meta name="viewport" content="width=dev
 <h2>Two</h2><div style="width:900px">wide</div><h2>Three</h2><p style="font-size:10px">Tiny text that nobody can read comfortably.</p>
 <img src="missing.png"><img data-src="lazy-missing.png" alt="">${Array(13).fill('<img src="missing.png" alt="">').join('')}<script>notDefined()</script></body></html>`;
 
+// A Mermaid diagram puts its node labels in <foreignObject><p> and its toolbar has icon SVGs: one diagram, no prose.
+const labels = Array.from({ length: 8 }, (_, i) => `<foreignObject x="${i * 70}" y="10" width="60" height="30"><div xmlns="http://www.w3.org/1999/xhtml"><p>Node ${i}</p></div></foreignObject>`).join('');
+const diagram = clean.replace('<section id="how"><h2>How</h2>', `<section id="how"><h2>How</h2><div data-diagram><button type="button"><svg width="12" height="12"></svg> Zoom</button><svg viewBox="0 0 600 60" style="width:100%;max-width:600px">${labels}</svg></div>`);
+
 const scrolling = clean.replace('<nav style="position:sticky;top:0;background:#fff">', '<header style="position:sticky;top:0">Plan</header><nav>');
 
 test('lint renders the page and reports concrete problems', { skip: !browserAvailable && 'Chromium is not installed' }, async t => {
@@ -56,6 +60,7 @@ test('lint renders the page and reports concrete problems', { skip: !browserAvai
   await publish(app, 'clean', clean);
   await publish(app, 'bad', bad);
   await publish(app, 'scrolling', scrolling);
+  await publish(app, 'diagram', diagram);
 
   const good = await lint(app, 'clean', { screenshots: true, widths: [1024, 390] });
   assert.equal(good.statusCode, 200, good.body);
@@ -75,6 +80,11 @@ test('lint renders the page and reports concrete problems', { skip: !browserAvai
   const overflow = result.findings.find((f: { check: string }) => f.check === 'horizontal-overflow');
   assert.equal(overflow.width, 390);
   assert.equal(result.screenshots, undefined);
+
+  const drawing = (await lint(app, 'diagram')).json();
+  assert.deepEqual(drawing.findings.filter((f: { severity: string }) => f.severity !== 'info'), []);
+  assert.equal(drawing.stats.paragraphs, 1);
+  assert.equal(drawing.stats.diagrams, 1);
 
   // The same menu in the page body scrolls away: that is an error, not a pass.
   const moving = (await lint(app, 'scrolling')).json();

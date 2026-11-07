@@ -148,6 +148,7 @@ Checks Docker Compose and the port, detects Tailscale, and writes `compose.yaml`
 | 1 | Error, including `AUTH_REQUIRED` / `AUTH_INVALID` |
 | 2 | Conflict (`REVISION_CONFLICT`, `DATA_CONFLICT`, existing slug) |
 | 3 | `lint` found errors on the page |
+| 4 | `wait` timed out with nothing new |
 | 10 | `check` found a newer remote version |
 
 Errors print `CODE: message`; with `--json` they are `{"error":{"code","message"}}` on stderr.

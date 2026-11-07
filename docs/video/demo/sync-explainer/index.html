@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>How a reader's answer reaches the agent</title>
+<meta name="description" content="The path of one answer from the page to a waiting agent, with Instant sync on and off.">
+<link rel="stylesheet" href="kit/kit.css">
+<script src="kit/kit.js" defer></script>
+<link rel="stylesheet" href="kit/themes/clean/clean.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./"><i>S</i><span>Answer sync</span></a>
+  <nav class="topnav" aria-label="Chapters" data-toc></nav>
+  <span class="spacer"></span>
+  <button class="icon-btn" type="button" data-theme-toggle></button>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div class="eyebrow rise">Explainer · Artifact Library 0.13</div>
+    <h1 class="display rise" style="--i:1">How a reader's answer <em>reaches the agent</em></h1>
+    <p class="lead rise" style="--i:2">An answer is saved beside the artifact the moment the reader clicks. Whether a waiting agent hears about it straight away is the reader's choice.</p>
+  </div>
+</section>
+
+<main>
+  <section class="wrap section" id="path" data-toc-label="The path">
+    <h2 class="h2 stitch">The path of one answer</h2>
+    <p class="muted" style="margin-top:6px">Every save lands in the same place; the switch only decides when <code>artifact wait</code> returns.</p>
+    <div data-diagram data-caption="Held changes stay saved and visible on the page; only the agent waits for them.">
+      <script type="text/plain">
+        flowchart TD
+          R([Reader answers]) --> S{Instant sync?}
+          S -- on --> D[(Saved, sent)]
+          S -- off --> H[(Saved, held)]
+          H -- Send to agent --> D
+          D --> W[artifact wait returns]
+          W --> A[Agent replies]
+          A -. same thread .-> R
+      </script>
+    </div>
+  </section>
+
+  <section class="wrap section" id="sequence" data-toc-label="Step by step">
+    <h2 class="h2 stitch">Step by step</h2>
+    <p class="muted" style="margin-top:6px">The agent shares the link, starts a wait in the background and goes on working.</p>
+    <div data-diagram>
+      <script type="text/plain">
+        sequenceDiagram
+          participant A as Agent
+          participant S as Server
+          participant R as Reader
+          A->>S: artifact publish ./plan
+          A->>S: artifact wait plan (background)
+          R->>S: picks options, adds a note
+          R->>S: I'm done
+          S-->>A: 3 answers, 1 note
+          A->>S: artifact data append (reply)
+          S-->>R: reply shows under the question
+      </script>
+    </div>
+  </section>
+
+  <section class="wrap section" id="options" data-toc-label="Options">
+    <h2 class="h2 stitch">Options we weighed</h2>
+    <p class="muted" style="margin-top:6px">Three ways to let readers decide when the agent hears from them.</p>
+    <div class="table-wrap"><table class="table compare">
+      <thead><tr><th>Option</th><th>Reader effort</th><th>Agent wakes up</th><th>New moving parts</th></tr></thead>
+      <tbody>
+        <tr class="rec"><td>One switch per browser</td><td>Once, in the toolbar menu</td><td>On each save, or on Send</td><td>A cookie</td></tr>
+        <tr><td>A switch per artifact</td><td>On every page</td><td>On each save, or on Send</td><td>A setting per artifact</td></tr>
+        <tr><td>Always wait for "I'm done"</td><td>None</td><td>Only at the end</td><td>None, but slow feedback</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section class="wrap section" id="risks" data-toc-label="Risks">
+    <h2 class="h2 stitch">Risks</h2>
+    <p class="muted" style="margin-top:6px">What could go wrong and what the design does about it.</p>
+    <div data-risks='[{"risk":"A reader forgets to send held changes","likelihood":"medium","impact":"medium","plan":"The toolbar shows \"N changes not sent\" with a Send button until they go."},{"risk":"An agent reply wakes another agent","likelihood":"low","impact":"medium","plan":"Changes made by agents never end a wait."},{"risk":"The server restarts during a wait","likelihood":"low","impact":"low","plan":"The CLI retries and continues from its cursor."}]'></div>
+  </section>
+</main>
+
+<footer class="wrap foot-note">Prepared by Claude Code for the Artifact Library README · 7 Nov 2026 · based on src/notice.ts and src/data.ts.</footer>
+</body>
+</html>

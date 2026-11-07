@@ -10,7 +10,8 @@ const root = path.resolve(new URL('..', import.meta.url).pathname);
 const reference = path.join(root, 'examples/reference');
 const kit = path.join(reference, 'kit');
 const out = path.join(root, 'seed');
-const skip = new Set(['artifact.json', '.DS_Store']);
+const skip = new Set(['artifact.json', '.DS_Store', '__pycache__']);
+const junk = new Set(['.DS_Store', '__pycache__']); // local leftovers, at any depth
 
 async function exists(p) { try { await stat(p); return true; } catch { return false; } }
 async function copyArtifact(source, slug, meta, { exclude = () => false } = {}) {
@@ -18,7 +19,7 @@ async function copyArtifact(source, slug, meta, { exclude = () => false } = {}) 
   await mkdir(files, { recursive: true });
   for (const name of await readdir(source)) {
     if (skip.has(name) || name === 'kit' || exclude(name)) continue;
-    await cp(path.join(source, name), path.join(files, name), { recursive: true, dereference: true });
+    await cp(path.join(source, name), path.join(files, name), { recursive: true, dereference: true, filter: src => !junk.has(path.basename(src)) });
   }
   await cp(kit, path.join(files, 'kit'), { recursive: true });
   await writeFile(path.join(out, slug, 'artifact.json'), JSON.stringify(meta, null, 2) + '\n');

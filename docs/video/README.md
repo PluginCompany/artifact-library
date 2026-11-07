@@ -13,8 +13,8 @@ python3 docs/video/record.py --only hook,review   # some segments, for iterating
 FILM_SCREEN=0,0 python3 docs/video/record.py      # where the 3840×2160 monitor sits in the desktop layout
 CAPTURE=devtools python3 docs/video/record.py     # no monitor: headless, DevTools screencast in slow motion
 
-# 3. README stills and the answer clip
-python3 docs/video/screenshots.py
+# 3. README stills (on any fresh server, with or without step 2) and the answer clip
+ORIGIN=http://127.0.0.1:3000 python3 docs/video/screenshots.py
 cd docs/media
 ffmpeg -ss 11.9 -t 14.7 -i intro.mp4 -vf "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,fps=20,scale=1280:-1:flags=lanczos" \
   -c:v libwebp -quality 80 -compression_level 6 -loop 0 -an answer.webp
@@ -35,7 +35,8 @@ Why not something simpler: the DevTools screencast (`CAPTURE=devtools`) gives wh
 | `record.py` | Demo content, the segments, camera moves and the final encode plus poster |
 | `stage.html` | The stage: browser window (an iframe of the real server), agent terminal, captions, chapter rail, cards, zoom and an eased cursor |
 | `screencast.py` | The OBS recorder and marker detection; the DevTools screencast recorder for `CAPTURE=devtools` |
-| `screenshots.py` | README screenshots (`docs/media/*.webp`) |
+| `screenshots.py` | README screenshots (`docs/media/*.webp`): makes its own demo content through the CLI and a browser, in the default Clean style; `--only diagram,steps` reshoots some |
+| `demo/` | Pages made for the screenshots: an explainer with diagrams, a comparison and a risk table, and a rough first draft for `artifact lint` |
 | `terminal.html` | The terminal used for the `feedback` screenshot |
 
 Segments: **hook** (the first 30 seconds: Claude Code publishes a plan, you click an answer, Codex reads it, one library for every agent) · **plan** · **build** (live run log, a blocker answered on the page) · **review** (findings, a comment thread, a verdict per chapter) · **report** · **share** (versions, the hub, skill and MCP setup) · **end**.

@@ -40,6 +40,10 @@ const contentChecks = () => {
   };
   const VISUAL = 'table, svg, img, picture, video, canvas, figure, pre, [data-flow], [data-chart], [data-diagram], .mermaid, .kit-diagram, [data-gallery], [data-diff], .kit-gallery, .kit-diff-set, .chart, .chart-card, .ba, .delta, .stats, .steps, .timeline, .flow, .cards, details, [role="radiogroup"], .grid, .cols-2, .cols-3, .cols-4, .auto-grid';
   const isVisual = (el: Element) => el.matches(VISUAL) || ((el.matches('ul, ol')) && el.querySelectorAll(':scope > li').length >= 3);
+  // Text drawn inside an SVG (Mermaid puts node labels in <foreignObject><p>) is part of the drawing, not prose, and an
+  // SVG inside a diagram, another SVG or a button (an icon) is part of that thing: count the outer one only.
+  const drawn = (el: Element) => Boolean(el.parentElement?.closest('svg'));
+  const part = (el: Element) => Boolean(el.parentElement?.closest('svg, button, [data-diagram], .kit-diagram, .mermaid'));
 
   if (!document.title.trim()) findings.push({ severity: 'error', check: 'missing-title', message: 'The page has no <title>. Give it a name of a few words.' });
   if (!document.querySelector('meta[name="description"][content]')?.getAttribute('content')?.trim())
@@ -93,7 +97,7 @@ const contentChecks = () => {
   const unlinkable = chapters.filter(h => !anchorOf(h));
   if (unlinkable.length) findings.push({ severity: 'warning', check: 'heading-without-id', message: 'Chapter headings without an id (or a section with an id) cannot be linked or put in the navigation.', where: snippet(unlinkable[0]), count: unlinkable.length });
 
-  const paragraphs = Array.from(document.querySelectorAll('p, li')).filter(shown);
+  const paragraphs = Array.from(document.querySelectorAll('p, li')).filter(shown).filter(p => !drawn(p));
   const walls = paragraphs.filter(p => !p.querySelector('p, li') && words(p.textContent || '') > 110);
   if (walls.length) findings.push({ severity: 'warning', check: 'wall-of-text', message: `Paragraph of ${words(walls[0].textContent || '')} words: split it, or turn it into a list, table or diagram (aim for at most ~80 words).`, where: snippet(walls[0]), count: walls.length });
 
@@ -112,7 +116,7 @@ const contentChecks = () => {
   if (bare.length) findings.push({ severity: 'warning', check: 'chapter-without-visual', message: 'Long chapter with only text: show it as a table, diagram, chart, steps or a list.', where: bare[0], count: bare.length });
 
   // Runs of plain paragraphs with no heading, list or visual in between.
-  const blocks = Array.from(document.querySelectorAll('p, h1, h2, h3, h4, ul, ol, table, figure, pre, svg, img, .chart-card, .callout, details, .card, .panel')).filter(shown).filter(b => !b.closest('nav, .side, .topbar'));
+  const blocks = Array.from(document.querySelectorAll('p, h1, h2, h3, h4, ul, ol, table, figure, pre, svg, img, .chart-card, .callout, details, .card, .panel')).filter(shown).filter(b => !b.closest('nav, .side, .topbar') && !drawn(b));
   let run = 0, start: Element | undefined, longestRun = 0, longestStart: Element | undefined;
   for (const block of blocks) {
     if (block.matches('p') && !block.closest('li, td, .callout, .card, .panel')) { if (!run) start = block; run++; if (run > longestRun) { longestRun = run; longestStart = start; } }
@@ -127,12 +131,12 @@ const contentChecks = () => {
     .filter(el => words(el.textContent || '') >= 4 && parseFloat(getComputedStyle(el).fontSize) < 12);
   if (tiny.length) findings.push({ severity: 'warning', check: 'small-text', message: `Body text under 12 px (${getComputedStyle(tiny[0]).fontSize}) is hard to read.`, where: snippet(tiny[0]), count: tiny.length });
 
-  const visible = (selector: string) => Array.from(document.querySelectorAll(selector)).filter(shown).length;
+  const visible = (selector: string) => Array.from(document.querySelectorAll(selector)).filter(shown).filter(e => !part(e)).length;
   const longest = paragraphs.reduce((m, p) => Math.max(m, p.querySelector('p, li') ? 0 : words(p.textContent || '')), 0);
   const stats = {
     words: words(document.body.innerText || ''), chapters: chapters.length, paragraphs: visible('p'), longestParagraphWords: longest,
-    visuals: Array.from(document.querySelectorAll(VISUAL + ', ul, ol')).filter(v => isVisual(v) && shown(v)).length,
-    tables: visible('table'), images: visible('img, picture, video'), diagrams: visible('svg, canvas, [data-flow], .chart'),
+    visuals: Array.from(document.querySelectorAll(VISUAL + ', ul, ol')).filter(v => isVisual(v) && shown(v) && !part(v)).length,
+    tables: visible('table'), images: visible('img, picture, video'), diagrams: visible('svg, canvas, [data-flow], [data-diagram], .chart'),
     controls: visible('button, input, select, textarea'), navLinks: navTargets.size
   };
   return { findings, stats };

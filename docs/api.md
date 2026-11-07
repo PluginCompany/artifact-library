@@ -7,7 +7,7 @@ Version 1, under `/api/v1`. JSON in and out unless stated; errors are `{"error":
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/healthz` | Health check |
-| GET | `/api/v1/server` | `version`, `apiVersion`, `capabilities` (`catalog`, `metadata`, `version-toolbar`, `previews`, `data`, `archive`, `lint` when previews are on, `auth`), `previewsEnabled`, `auth` (`token` \| `none`), `limits` (`maxUploadBytes`, `maxFiles`; 0 = unlimited) |
+| GET | `/api/v1/server` | `version`, `apiVersion`, `capabilities` (`catalog`, `metadata`, `version-toolbar`, `previews`, `data`, `data-wait`, `archive`, `lint` when previews are on, `auth` when a token is set), `previewsEnabled`, `auth` (`token` \| `none`), `limits` (`maxUploadBytes`, `maxFiles`; 0 = unlimited) |
 | GET | `/api/v1/auth` | `{required, authenticated}` for the token sent with the request |
 
 ## Artifacts

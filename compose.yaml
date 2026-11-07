@@ -2,7 +2,7 @@
 # Settings come from the environment or a .env file next to this file (see .env.example).
 services:
   artifacts:
-    image: "${ARTIFACT_IMAGE:-ghcr.io/plugincompany/artifact-library:0.4.0}"
+    image: "${ARTIFACT_IMAGE:-ghcr.io/plugincompany/artifact-library:0.13.1}"
     # Uncomment to build from this checkout instead (run `npm run build:binary` first for the CLI page).
     # build: { context: ., target: full }
     restart: unless-stopped

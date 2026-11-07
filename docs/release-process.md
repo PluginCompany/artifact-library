@@ -99,7 +99,7 @@ docker run -d --name artifact-library --restart unless-stopped \
   -p 127.0.0.1:3000:3000 -v artifact-data:/data \
   -e PUBLIC_BASE_URL=https://artifacts.example.com \
   -e ARTIFACT_TOKEN="$(openssl rand -hex 32)" \
-  ghcr.io/plugincompany/artifact-library:0.4.0
+  ghcr.io/plugincompany/artifact-library:0.13.1
 ```
 
 Upgrade by changing the tag (or `ARTIFACT_IMAGE` in `.env`) and running

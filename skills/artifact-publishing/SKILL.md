@@ -122,7 +122,7 @@ artifact wait login-review --until submitted   # only an explicit "Send to agent
 
 Readers decide when their answers reach you. In the toolbar on every artifact (⋯ → **Instant sync to agent**, one setting for every artifact in their browser) instant sync is on by default and each save is sent at once. With it off, their saves are held until they press **Send to agent** in the toolbar (`state.sent`) or a page's "I'm done" (`state.submitted`), and a plain wait waits for that. When it returns you get everything readers saved since the start, held or not.
 
-- **Claude Code**: run `artifact wait <slug>` as a background command (Bash with `run_in_background`). You are told when it exits, so you can keep working or end your turn; then read its output and act on it.
+- **Claude Code**: run `artifact wait <slug>` as a background command (Bash with `run_in_background`). You are told when it exits, so you can keep working or end your turn; then read its output, repeat the questions and answers in your reply (see below) and act on it.
 - **Other agents that run commands in the background** do the same. Without background commands, run it in the foreground only when the user is about to answer, with `--timeout` below your shell tool's limit (e.g. `--timeout 9m`), or skip it and ask the user to say when they are done.
 - **MCP**: call `wait_for_feedback` (it waits up to 50 s); while it answers `waiting`, call it again with `since` set to the cursor it returns.
 
@@ -137,6 +137,8 @@ artifact feedback login-review              # readable digest of everything save
 artifact feedback login-review --since 2h   # only recent changes
 artifact data get login-review answer.toolbar --json
 ```
+
+**Repeat what you read in the conversation before you act on it.** Write out every question with the answer the reader chose (the option's label, not only its id) and their note, and every comment, mark and verdict with who wrote it, quoted or closely paraphrased. The output of `artifact feedback`, `artifact wait` or an MCP tool is often not shown to the user, and the permission model that reviews your next actions only sees what is in the conversation: when an answer is what allows a step ("Backfill now", "Approved", "deploy it"), the question and that answer must be there in your own message before you take the step. List them; "the reader answered all four questions" is not enough. Changes marked **not sent yet** go in a separate list, as drafts.
 
 Conventions: `comments.<anchor>` is a thread (`value.items[]` with `text`, `author`, `role`, `resolved`); `answer.<question>` holds `choice`, `choiceLabel`, `note` and, from the questions block, `recommended` and `followsRecommendation`; `review.<item>` holds `verdict` (approved | changes | question) and `note`; `state.checklist` holds the steps block's ticks and notes per step id (archived runs in `state.checklist.<runId>`); `state.<name>` is live page state.
 
@@ -187,7 +189,7 @@ Prefer `--profile` per command; `profile use` changes the default for every late
 
 ## MCP
 
-`artifact mcp` runs the same operations as an MCP server on stdio (search, info, feedback, data_*, publish, update, download, create_from_reference, archive), using the CLI's selected server and token. Register it in an agent, e.g. `claude mcp add artifact -- artifact mcp`.
+`artifact mcp` runs the same operations as an MCP server on stdio (search, recent, info, versions, feedback, wait_for_feedback, data_*, publish, update, download, create_from_reference, lint, archive), using the CLI's selected server and token. Register it in an agent, e.g. `claude mcp add artifact -- artifact mcp`.
 
 ## Retrieve and recover
 
