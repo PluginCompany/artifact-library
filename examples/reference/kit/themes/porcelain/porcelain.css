@@ -39,6 +39,7 @@
   --topbar:rgba(255,255,255,.9); --track:#f1f3f6; --thumb:#ffffff; --thumb-line:rgba(21,23,27,.09);
   --thumb-sh:0 0 0 1px var(--thumb-line),0 1px 2px rgba(21,23,27,.07),0 3px 10px rgba(21,23,27,.07);
   --accent-line:rgba(47,85,228,.35);
+  --field:#f7f8fa;
 
   --display:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
   --body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -67,6 +68,7 @@
     --topbar:rgba(8,9,11,.88); --track:#17191d; --thumb:#2a2e35; --thumb-line:rgba(255,255,255,.1);
     --thumb-sh:0 0 0 .5px rgba(255,255,255,.12),0 2px 8px rgba(0,0,0,.5);
     --accent-line:rgba(123,147,255,.45);
+    --field:#121418;
   }
 }
 :root[data-theme="dark"]{
@@ -88,6 +90,7 @@
   --topbar:rgba(8,9,11,.88); --track:#17191d; --thumb:#2a2e35; --thumb-line:rgba(255,255,255,.1);
   --thumb-sh:0 0 0 .5px rgba(255,255,255,.12),0 2px 8px rgba(0,0,0,.5);
   --accent-line:rgba(123,147,255,.45);
+  --field:#121418;
 }
 
 /* 2. Components ------------------------------------------------------------ */
@@ -165,6 +168,11 @@ pre{border-radius:var(--radius)}
 .kit-avatar{border-radius:8px}
 .kit-avatar.agent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .thread-items li{border-radius:var(--radius)}
+
+/* Text fields: the kit and pages paint them with --ground, which here is the grey page; inside a
+   white card that reads as a hole. Re-point --ground on the field itself so every field, the kit's and
+   each page's own, gets the lighter --field without fighting their selectors. */
+textarea,select,input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=button]):not([type=submit]):not([type=reset]){--ground:var(--field)}
 
 /* 3. Motion: the springy thumb of the dashboard, kept short ----------------- */
 @media (prefers-reduced-motion:reduce){.topnav a{transition:none}}
