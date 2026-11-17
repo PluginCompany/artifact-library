@@ -4,6 +4,11 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-17
+
+### Fixed
+- **Porcelain's chapter menu on single-page artifacts.** The current chapter only got Porcelain's raised white thumb on multi-page artifacts (`aria-current="page"`). On single-page artifacts the kit marks the chapter being read with `aria-current="location"` and `.cur`, which showed the kit's pale grey instead, nearly invisible on the grey pill. Both now get the thumb. Artifacts published with 0.14.0's kit keep their copy until they are republished.
+
 ## [0.14.0] - 2026-11-17
 
 ### Added
@@ -218,7 +223,8 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 - Server-generated previews, catalogue metadata and revisions, idempotent uploads with retry, manifest diffs.
 - Standalone Linux CLI and an agent skill.
 
-[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.1
 [0.14.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.0
 [0.13.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.13.1
 [0.13.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.13.0
