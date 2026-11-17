@@ -261,8 +261,8 @@ async def main():
             await shot(ctx, "sync", "/artifacts/search-decisions/", menu, clip={"x": W - 760, "y": H - 520, "width": 760, "height": 520})
             await ctx.clear_cookies()
 
-        # Bold and Clean, same page.
-        for style in ("clean", "bold"):
+        # Clean, Porcelain and Bold, same page.
+        for style in ("clean", "porcelain", "bold"):
             async def pick(pg, style=style):
                 await pg.evaluate("s => Kit.style.set(s)", style); await pg.wait_for_timeout(900)
             await shot(ctx, f"style-{style}", "/artifacts/workshop-report/", pick)

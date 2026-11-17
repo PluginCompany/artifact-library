@@ -3,7 +3,8 @@
 #
 #   ./publish.sh <artifact-dir> ["update message"]
 #   KIT_THEME=bold ./publish.sh <artifact-dir>      # open in Bold instead of Clean (the default)
-#   KIT_THEME=<name> ./publish.sh <artifact-dir>    # default to another theme from kit/themes/
+#   KIT_THEME=porcelain ./publish.sh <artifact-dir> # open in Porcelain
+#   KIT_THEME=<name> ./publish.sh <artifact-dir>    # always add another theme from kit/themes/
 #
 # <artifact-dir>/artifact.json holds slug, title and description.
 # The directory is staged to a temp folder, ./kit is copied in (the server
@@ -27,6 +28,11 @@ if [ "${KIT_THEME:-}" = "bold" ]; then
   # Drop the Clean link and mark the page, so it opens in Bold without a flash of Clean.
   find "$stage" -name '*.html' -not -path "$stage/kit/*" | while read -r f; do
     sed -i -E '/<link rel="stylesheet" href="[^"]*themes\/(clean\/clean|quiet\/quiet)\.css">/d; 0,/<html( |>)/s//<html data-kit-style="bold"\1/' "$f"
+  done
+elif [ "${KIT_THEME:-}" = "porcelain" ]; then
+  # Swap the Clean link for Porcelain and mark the page, so it opens in Porcelain; readers can still switch.
+  find "$stage" -name '*.html' -not -path "$stage/kit/*" | while read -r f; do
+    sed -i -E 's#(<link rel="stylesheet" href="[^"]*)themes/(clean/clean|quiet/quiet)\.css">#\1themes/porcelain/porcelain.css">#; 0,/<html( |>)/s//<html data-kit-style="porcelain"\1/' "$f"
   done
 elif [ -n "${KIT_THEME:-}" ] && [ "$KIT_THEME" != "clean" ]; then
   [ -f "$here/kit/themes/$KIT_THEME/$KIT_THEME.css" ] || { echo "no theme kit/themes/$KIT_THEME" >&2; exit 1; }

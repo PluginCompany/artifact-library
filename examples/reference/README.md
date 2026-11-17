@@ -71,17 +71,17 @@ Agents read everything with `artifact feedback <slug>` and reply in a thread wit
 
 New slugs are published, existing ones updated. This folder is the source of truth:
 an update replaces the live content. Pages open in the Clean style (every page links
-`kit/themes/clean/clean.css` last); `KIT_THEME=bold ./publish.sh <slug>` publishes one
-that opens in Bold.
+`kit/themes/clean/clean.css` last); `KIT_THEME=bold ./publish.sh <slug>` or
+`KIT_THEME=porcelain ./publish.sh <slug>` publishes one that opens in Bold or Porcelain.
 
 ## Conventions
 
 - **Tokens, not hex.** Colours come from `kit.css` tokens (`--accent`, `--thread`, `--good`…).
   Dark mode is a separate set of tokens, toggled with `[data-theme-toggle]`.
-- **Two styles:** Clean (the default) and Bold, switched by readers. Route the Bold
+- **Three styles:** Clean (the default), Porcelain and Bold, chosen by readers. Route the Bold
   signature details (heavy display weight, dashed rules, mono uppercase labels, status
   strips) through the theme tokens (`--w-heavy`, `--rule`, `--label`, `--strip`) so
-  both styles work.
+  every style works.
 - **Images and code:** screenshots below the first screen use `img[data-src]` with
   `width`/`height`; sets of them a `[data-gallery]`; code changes a `[data-diff]`;
   code blocks `pre[data-lang]`.

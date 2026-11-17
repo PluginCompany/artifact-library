@@ -20,6 +20,8 @@
      - Add artifact-specific CSS in the artifact's own file, not here.
    ========================================================================== */
 @import url("./fonts/fonts.css");
+/* Inter and Geist, so the style menu can show every style's name in its own type (files load only when shown) */
+@import url("./themes/clean/fonts/fonts.css");
 
 /* 1. Tokens ---------------------------------------------------------------- */
 :root{
@@ -228,12 +230,28 @@ li+li{margin-top:.25em}
 .icon-btn{display:inline-grid;grid-auto-flow:column;place-items:center;gap:6px;min-width:38px;height:38px;padding:0 9px;border:1px solid var(--line);background:var(--panel);border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);text-decoration:none}
 .icon-btn:hover{border-color:var(--muted)}
 .icon-btn[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
-/* Style switch (Bold / Clean), added by kit.js next to the light/dark toggle */
-.kit-style-toggle{grid-auto-flow:column;gap:6px;padding:0 10px}
+/* Style button and menu (Clean / Porcelain / Bold), added by kit.js next to the light/dark toggle */
+.kit-style-toggle{grid-auto-flow:column;gap:6px;padding:0 8px 0 10px}
 .kit-style-toggle b{font:800 13px/1 var(--display);letter-spacing:-.02em}
 [data-kit-style="clean"] .kit-style-toggle b{font-weight:400}
 .kit-style-toggle span{font-size:12.5px;font-weight:600}
+.kit-style-toggle .kit-style-caret{width:12px;height:12px;margin-left:-2px;opacity:.6;transition:transform .15s}
+.kit-style-toggle[aria-expanded="true"] .kit-style-caret{transform:rotate(180deg)}
 @media (max-width:600px){.kit-style-toggle span{display:none}}
+.kit-style-menu{position:fixed;z-index:45;width:min(256px,calc(100vw - 20px));padding:6px;display:grid;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);animation:kit-sheet .16s var(--ease) both}
+.kit-style-menu[hidden]{display:none}
+.kit-style-menu button{display:grid;grid-template-columns:36px minmax(0,1fr) 16px;gap:10px;align-items:center;width:100%;padding:7px 8px;border:0;border-radius:calc(var(--radius) - 2px);background:none;color:var(--ink);text-align:left;cursor:pointer}
+.kit-style-menu button:hover,.kit-style-menu button:focus-visible{background:var(--soft);outline:none}
+.kit-style-menu button:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.kit-style-menu b{display:grid;place-items:center;height:32px;border-radius:8px;background:var(--soft);border:1px solid var(--line);font-size:16px;line-height:1;letter-spacing:-.02em;font-style:normal}
+.kit-style-menu span{display:grid;line-height:1.3;min-width:0}
+.kit-style-menu strong{font-size:14px;font-weight:600}
+.kit-style-menu small{font-size:12.5px;color:var(--muted)}
+.kit-style-menu .kit-sm-tick{width:16px;height:16px;color:var(--accent);visibility:hidden}
+.kit-style-menu [aria-checked="true"] .kit-sm-tick{visibility:visible}
+.kit-sm-clean b,.kit-sm-clean strong{font-family:"Inter",system-ui,sans-serif;font-weight:500}
+.kit-sm-porcelain b,.kit-sm-porcelain strong{font-family:"Geist",system-ui,sans-serif;font-weight:620}
+.kit-sm-bold b,.kit-sm-bold strong{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800}
 
 /* Segmented control & filter chips */
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}

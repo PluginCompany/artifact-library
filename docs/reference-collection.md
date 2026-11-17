@@ -75,14 +75,15 @@ Higher-level blocks so a page shows its structure instead of describing it. Each
 
 The style guide (`kit.html` on the reference collection) shows every component with copyable HTML.
 
-## Themes: Clean and Bold
+## Themes: Clean, Porcelain and Bold
 
-Every kit page comes in two styles that share the same markup, scripts and saved data; light and dark mode work in both.
+Every kit page comes in three styles that share the same markup, scripts and saved data; light and dark mode work in all of them.
 
 - **Clean** (`kit/themes/clean/clean.css`, the default): a calm, professional documentation look: a flat white page, hairline borders, small radii, no gradients and no decorative shadows, Inter for text and semibold headings, Geist Mono for code, one blue accent for links and primary actions. Its fonts (SIL OFL) are bundled.
+- **Porcelain** (`kit/themes/porcelain/porcelain.css`): an operations-dashboard look, built on Clean: a cool grey page with white cards (18 px corners, a hairline ring, a soft shadow), Geist for text, headings and code, one cobalt accent, ink-black primary buttons, and the top-bar chapter menu as one segmented pill whose current chapter sits on a raised thumb. It reuses Clean's bundled Geist fonts.
 - **Bold** (`kit/kit.css` alone): heavy display type, dashed "stitch" rules, small mono uppercase labels, an indigo accent with a burnt-orange thread and coloured status strips.
 
-**Readers choose.** `kit.js` puts a *Bold / Clean* button next to the light/dark toggle of every kit page and remembers the choice for every kit page on the server; a reader's choice wins over the page's default. Fully custom pages that don't load the kit get no button. Put `data-style-toggle` on a button of your own to place it yourself; `Kit.style.get()`, `Kit.style.set("bold")` and the `kit:style` event are there for scripts. After a switch the page also gets `kit:theme` and a `resize`, so charts and measured layouts redraw.
+**Readers choose.** `kit.js` puts an *Aa* button next to the light/dark toggle of every kit page; it opens a menu of the three styles (each name in its own type, arrow keys and Escape work) and remembers the choice for every kit page on the server; a reader's choice wins over the page's default. The choice is saved in `kit-style-v2`; `kit-style` keeps the nearest style an older kit copy knows (Clean for Porcelain), so artifacts published before 0.14 show Clean, not Bold, to a reader who picked Porcelain. Fully custom pages that don't load the kit get no button. Put `data-style-toggle` on a button of your own to place it yourself; `Kit.style.get()`, `Kit.style.set("porcelain")`, `Kit.style.list`, `Kit.style.toggle()` (next style) and the `kit:style` event are there for scripts. After a switch the page also gets `kit:theme` and a `resize`, so charts and measured layouts redraw.
 
 **Pages open in Clean.** Link Clean after every other stylesheet so it is there on the first paint (without the link, `kit.js` adds it, and the page may show Bold for a moment):
 
@@ -92,7 +93,7 @@ Every kit page comes in two styles that share the same markup, scripts and saved
 <link rel="stylesheet" href="kit/themes/clean/clean.css">
 ```
 
-Every reference does this. To open a page in Bold, leave the Clean link out and mark the page: `<html data-kit-style="bold">`. `KIT_THEME=bold ./publish.sh <dir>` (from `examples/reference/`) does both in every HTML page of the staged copy; `KIT_THEME=<name>` links another theme from `kit/themes/` last. Artifacts already published keep the kit they were published with, so the new default does not change them. `kit/themes/quiet/quiet.css` is an alias of Clean (its earlier name), so older pages keep working.
+Every reference does this. To open a page in Bold, leave the Clean link out and mark the page: `<html data-kit-style="bold">`. To open it in Porcelain, link `kit/themes/porcelain/porcelain.css` in place of Clean and write `<html data-kit-style="porcelain">`. `KIT_THEME=bold` or `KIT_THEME=porcelain ./publish.sh <dir>` (from `examples/reference/`) does this in every HTML page of the staged copy; `KIT_THEME=<name>` links another theme from `kit/themes/` last. Artifacts already published keep the kit they were published with, so the new default does not change them. `kit/themes/quiet/quiet.css` is an alias of Clean (its earlier name), so older pages keep working.
 
 Besides the colour, font and radius tokens, a theme sets these, which pages use for the kit's signature details:
 

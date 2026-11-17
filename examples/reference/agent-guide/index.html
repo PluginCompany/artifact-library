@@ -318,12 +318,12 @@ sequenceDiagram
         <li>Progress saves as <code>state.checklist</code>, archived runs as <code>state.checklist.&lt;runId&gt;</code>; give a second list on one page its own <code>key</code>. <code>side</code> puts the ticks in a side menu, <code>history</code> lists earlier runs.</li>
         <li>Answer a reader's note on the step itself: <code>artifact data append &lt;slug&gt; comments.s-&lt;id&gt; --item '{"text":"…"}' --author "Claude Code"</code>, or the step's <code>updates</code> when you republish.</li>
       </ul>
-      <h3 class="h3 sub-h">Clean or Bold</h3>
-      <p class="sub">Every kit page comes in two styles. <b>Clean</b> (<code>kit/themes/clean/</code>) is the default: a calm, professional documentation look with a flat white page, hairline borders, small radii, semibold Inter headings and one blue accent. <b>Bold</b> (<code>kit.css</code> alone) is the expressive look with heavy display type and dashed rules. Readers switch with the <i>Bold / Clean</i> button the kit adds next to the light/dark toggle, and their choice wins. Every reference links Clean after every other stylesheet, so it is there on the first paint; keep that line:</p>
+      <h3 class="h3 sub-h">Clean, Porcelain or Bold</h3>
+      <p class="sub">Every kit page comes in three styles. <b>Clean</b> (<code>kit/themes/clean/</code>) is the default: a calm, professional documentation look with a flat white page, hairline borders, small radii, semibold Inter headings and one blue accent. <b>Porcelain</b> (<code>kit/themes/porcelain/</code>) is an operations-dashboard look: a grey page with white cards, Geist, a cobalt accent and the chapter menu as one segmented pill; it suits reports and numbers. <b>Bold</b> (<code>kit.css</code> alone) is the expressive look with heavy display type and dashed rules. Readers pick one from the <i>Aa</i> menu the kit adds next to the light/dark toggle, and their choice wins. Every reference links Clean after every other stylesheet, so it is there on the first paint; keep that line:</p>
       <pre data-copy>&lt;link rel="stylesheet" href="kit/kit.css"&gt;
 &lt;link rel="stylesheet" href="style.css"&gt;
 &lt;link rel="stylesheet" href="kit/themes/clean/clean.css"&gt;</pre>
-      <p class="sub">To open a page in Bold, leave that link out and write <code>&lt;html data-kit-style="bold"&gt;</code>.</p>
+      <p class="sub">To open a page in Bold, leave that link out and write <code>&lt;html data-kit-style="bold"&gt;</code>. To open it in Porcelain, link <code>kit/themes/porcelain/porcelain.css</code> in its place and write <code>&lt;html data-kit-style="porcelain"&gt;</code>.</p>
     </section>
 
     <!-- 08 -->

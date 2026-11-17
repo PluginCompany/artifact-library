@@ -79,7 +79,7 @@ For common jobs there is a polished reference on the server that agents copy and
 
 ```bash
 docker run -d --name artifacts -p 3000:3000 -v artifact-data:/data \
-  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.13.1
+  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.14.0
 ```
 
 **2. Install the CLI** — standalone binaries, no Node.js needed
@@ -170,22 +170,24 @@ Every server ships **22 polished reference artifacts**, one per common job. Agen
 - **Seeded on every server** and updated with new releases, without overwriting your own edits or moving the references to the top of your library.
 - Every reference is built on one design system, below. [See the collection →](docs/reference-collection.md)
 
-### One design system, two styles
+### One design system, three styles
 
 All references share one kit (`kit/`) with its own style guide on the collection hub: light and dark mode, phones, print, self-hosted fonts, a chapter menu that follows your reading (a top bar, or a side menu you can resize), and charts (line, column, bar, donut and sparkline) with a table view.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/media/style-clean.webp" alt="A report in the Clean style: plain headings, hairline borders, one blue accent"></td>
-<td width="50%"><img src="docs/media/style-bold.webp" alt="The same report in the Bold style: heavy display type, coloured accents and dashed rules"></td>
+<td width="33%"><img src="docs/media/style-clean.webp" alt="A report in the Clean style: plain headings, hairline borders, one blue accent"></td>
+<td width="33%"><img src="docs/media/style-porcelain.webp" alt="The same report in the Porcelain style: grey page, white cards with soft corners, the chapter menu as one segmented pill"></td>
+<td width="33%"><img src="docs/media/style-bold.webp" alt="The same report in the Bold style: heavy display type, coloured accents and dashed rules"></td>
 </tr>
 <tr>
 <td><b>Clean</b>, the default. A plain documentation look: hairline borders, semibold Inter, one blue accent.</td>
+<td><b>Porcelain.</b> An operations-dashboard look: grey page, white cards, Geist, a cobalt accent and a segmented chapter menu.</td>
 <td><b>Bold.</b> Heavy display type, mono uppercase labels, dashed rules, indigo and orange accents.</td>
 </tr>
 </table>
 
-Readers switch with the <i>Aa</i> button on every kit page, and their choice holds for every page on the server. Authors open a page in Bold with `<html data-kit-style="bold">`; theme tokens let you make a style of your own ([how](docs/reference-collection.md)).
+Readers pick a style from the <i>Aa</i> menu on every kit page, and their choice holds for every page on the server. Authors open a page in another style with `<html data-kit-style="porcelain">` or `"bold"`; theme tokens let you make a style of your own ([how](docs/reference-collection.md)).
 
 ### Built-in blocks for pages
 

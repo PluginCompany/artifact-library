@@ -4,7 +4,7 @@
 
    Auto-wired on DOMContentLoaded (just add the attribute):
      [data-theme-toggle]   button that cycles system → light → dark
-                           (kit.js puts a Bold / Clean style button next to it)
+                           (kit.js puts a style button next to it: a menu of Clean, Porcelain and Bold)
      [data-style-toggle]   place the style button yourself instead
      [data-side-toggle]    button that opens the .side nav on small screens
                            (on wide screens the .side menu is resizable: drag its edge, arrows, double-click resets)
@@ -115,55 +115,84 @@
     cycle() { const order = [null, "light", "dark"]; const i = order.indexOf(this.get()); this.set(order[(i + 1) % 3]); },
   };
 
-  /* ---------- Style: Clean (themes/clean/clean.css, the default) or Bold (kit.css alone) ----------
-     Pages default to Clean. A page that should open in Bold says so on its root element:
-     <html data-kit-style="bold">. Readers switch with the style button; their choice is remembered
-     for every kit page on the server. Link Clean after the page's other stylesheets so it is there on
-     the first paint (kit.js adds it otherwise, which can flash Bold for a moment); while Bold is
-     shown it stays loaded but inactive (media "not all"), so switching is instant. After a switch the
-     page gets kit:style and kit:theme events and a resize, so charts and layouts redraw. */
-  const STYLE_KEY = "kit-style";
-  const CLEAN_CSS = /themes\/(clean\/clean|quiet\/quiet)\.css(\?|#|$)/;
+  /* ---------- Style: Clean (themes/clean/clean.css, the default), Porcelain (themes/porcelain/porcelain.css)
+     or Bold (kit.css alone) ----------
+     Pages default to Clean. A page that should open in another style says so on its root element:
+     <html data-kit-style="bold"> or <html data-kit-style="porcelain">. Readers switch with the style
+     button, which opens a menu of the three; their choice is remembered for every kit page on the server. Link
+     the page's style after its other stylesheets so it is there on the first paint (kit.js adds it
+     otherwise, which can flash Bold for a moment); the other styles stay loaded but inactive (media
+     "not all"), so switching is instant. After a switch the page gets kit:style and kit:theme events and
+     a resize, so charts and layouts redraw.
+     The choice is stored under kit-style-v2; kit-style keeps the nearest style older kits know (Clean for
+     Porcelain), so pages with an older kit/ copy show Clean instead of Bold. */
+  const STYLE_KEY = "kit-style", STYLE_KEY_V2 = "kit-style-v2";
+  const STYLES = ["clean", "porcelain", "bold"];
+  const STYLE_NAMES = { clean: "Clean", porcelain: "Porcelain", bold: "Bold" };
+  const STYLE_NOTES = { clean: "Plain documentation look", porcelain: "Grey page, white cards", bold: "Heavy type, dashed rules" };
+  const STYLE_CSS = {
+    clean: { re: /themes\/(clean\/clean|quiet\/quiet)\.css(\?|#|$)/, href: "themes/clean/clean.css" },
+    porcelain: { re: /themes\/porcelain\/porcelain\.css(\?|#|$)/, href: "themes/porcelain/porcelain.css" },
+  };
   const kitBase = (() => {
     const s = document.currentScript || $$("script[src]").find((x) => /kit\.js(\?|$)/.test(x.src));
     return s ? s.src.replace(/kit\.js(\?.*)?$/, "") : "kit/";
   })();
-  const authored = $$('link[rel~="stylesheet"]').find((l) => CLEAN_CSS.test(l.getAttribute("href") || ""));
-  const defaultStyle = document.documentElement.getAttribute("data-kit-style") === "bold" ? "bold" : "clean";
-  let cleanLink = authored;
-  if (!cleanLink) {
-    cleanLink = document.createElement("link");
-    cleanLink.rel = "stylesheet"; cleanLink.href = kitBase + "themes/clean/clean.css"; cleanLink.media = defaultStyle === "clean" ? "all" : "not all";
-    document.head.appendChild(cleanLink);
-  }
-  const styleName = (s) => (s === "clean" ? "Clean" : "Bold");
+  const knownStyle = (s) => (STYLES.includes(s) ? s : null);
+  const authored = {};
+  Object.keys(STYLE_CSS).forEach((k) => { authored[k] = $$('link[rel~="stylesheet"]').find((l) => STYLE_CSS[k].re.test(l.getAttribute("href") || "")); });
+  const defaultStyle = knownStyle(document.documentElement.getAttribute("data-kit-style")) || (authored.porcelain && !authored.clean ? "porcelain" : "clean");
+  const styleLinks = {};
+  Object.keys(STYLE_CSS).forEach((k) => {
+    let l = authored[k];
+    if (!l) {
+      l = document.createElement("link");
+      l.rel = "stylesheet"; l.href = kitBase + STYLE_CSS[k].href; l.media = k === defaultStyle ? "all" : "not all";
+      document.head.appendChild(l);
+    }
+    styleLinks[k] = l;
+  });
+  const nextStyle = (s) => STYLES[(STYLES.indexOf(s) + 1) % STYLES.length];
   function applyStyle(s, announce) {
-    s = s === "clean" ? "clean" : "bold";
+    s = knownStyle(s) || "clean";
     const root = document.documentElement, before = root.getAttribute("data-kit-style");
     root.setAttribute("data-kit-style", s);
-    cleanLink.media = s === "clean" ? "all" : "not all";
+    Object.keys(styleLinks).forEach((k) => { styleLinks[k].media = k === s ? "all" : "not all"; });
     $$("[data-style-toggle]").forEach((b) => {
-      const other = s === "clean" ? "bold" : "clean";
-      b.innerHTML = '<b aria-hidden="true">Aa</b><span>' + styleName(s) + "</span>";
-      b.setAttribute("aria-label", "Style: " + styleName(s) + " (click for " + styleName(other) + ")");
-      b.title = "Style: " + styleName(s) + " · switch to " + styleName(other);
+      b.innerHTML = '<b aria-hidden="true">Aa</b><span>' + STYLE_NAMES[s] + '</span><svg class="kit-style-caret" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      b.setAttribute("aria-label", "Style: " + STYLE_NAMES[s] + " (choose a style)");
+      b.title = "Style: " + STYLE_NAMES[s];
     });
+    $$(".kit-style-menu [data-style]").forEach((it) => it.setAttribute("aria-checked", String(it.dataset.style === s)));
     if (!announce || before === s) return;
     const done = () => {
       document.dispatchEvent(new CustomEvent("kit:style", { detail: { style: s } }));
       document.dispatchEvent(new CustomEvent("kit:theme"));
       window.dispatchEvent(new Event("resize"));
     };
-    if (s === "clean" && !cleanLink.sheet) cleanLink.addEventListener("load", done, { once: true });
+    const link = styleLinks[s];
+    if (link && !link.sheet) link.addEventListener("load", done, { once: true });
     else requestAnimationFrame(() => requestAnimationFrame(done));
   }
   Kit.style = {
     default: defaultStyle,
-    get: () => document.documentElement.getAttribute("data-kit-style") || defaultStyle,
-    set(s) { store.set(STYLE_KEY, s); applyStyle(s, true); },
-    toggle() { this.set(this.get() === "clean" ? "bold" : "clean"); },
+    list: STYLES.slice(),
+    get: () => knownStyle(document.documentElement.getAttribute("data-kit-style")) || defaultStyle,
+    set(s) {
+      s = knownStyle(s) || "clean";
+      store.set(STYLE_KEY_V2, s);
+      store.set(STYLE_KEY, s === "bold" ? "bold" : "clean");
+      applyStyle(s, true);
+    },
+    // Cycles to the next style (the button opens a menu instead; kept for scripts and shortcuts)
+    toggle() { this.set(nextStyle(this.get())); },
   };
-  applyStyle(store.get(STYLE_KEY) || defaultStyle, false);
+  // A switch made on a page with an older kit only wrote kit-style; when the two disagree that one is newer.
+  const savedStyle = (() => {
+    const v1 = knownStyle(store.get(STYLE_KEY)), v2 = knownStyle(store.get(STYLE_KEY_V2));
+    return v2 && (!v1 || (v1 === "bold") === (v2 === "bold")) ? v2 : v1;
+  })();
+  applyStyle(savedStyle || defaultStyle, false);
   function wireStyleToggle() {
     $$("[data-theme-toggle]").forEach((t) => {
       if (t.previousElementSibling && t.previousElementSibling.matches("[data-style-toggle]")) return;
@@ -175,10 +204,52 @@
     $$("[data-style-toggle]").forEach((b) => {
       if (b.dataset.kitWired) return;
       b.dataset.kitWired = "1"; b.classList.add("kit-style-toggle");
-      b.addEventListener("click", () => Kit.style.toggle());
+      b.setAttribute("aria-haspopup", "menu"); b.setAttribute("aria-expanded", "false");
+      b.addEventListener("click", () => (styleMenu.open === b ? styleMenu.close(true) : styleMenu.show(b)));
     });
     applyStyle(Kit.style.get(), false);
   }
+  /* The style menu: one list for every style button on the page, each style's name set in its own
+     typeface, the current one ticked. Arrow keys, Home/End, Enter and Escape; a click outside closes it. */
+  const styleMenu = {
+    open: null, el: null,
+    build() {
+      const m = document.createElement("div");
+      m.className = "kit-style-menu"; m.id = "kit-style-menu"; m.setAttribute("role", "menu"); m.setAttribute("aria-label", "Style");
+      m.setAttribute("data-kit-made", ""); m.hidden = true;
+      m.innerHTML = STYLES.map((k) => `<button type="button" role="menuitemradio" tabindex="-1" data-style="${k}" class="kit-sm-${k}"><b aria-hidden="true">Aa</b><span><strong>${STYLE_NAMES[k]}</strong><small>${STYLE_NOTES[k]}</small></span><svg class="kit-sm-tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`).join("");
+      m.addEventListener("click", (e) => { const it = e.target.closest("[data-style]"); if (!it) return; Kit.style.set(it.dataset.style); this.close(true); });
+      m.addEventListener("keydown", (e) => {
+        const items = $$("[data-style]", m), i = items.indexOf(document.activeElement);
+        const go = (n) => { e.preventDefault(); items[(n + items.length) % items.length].focus(); };
+        if (e.key === "ArrowDown") go(i + 1); else if (e.key === "ArrowUp") go(i - 1);
+        else if (e.key === "Home") go(0); else if (e.key === "End") go(items.length - 1);
+        else if (e.key === "Escape") { e.preventDefault(); this.close(true); }
+        else if (e.key === "Tab") this.close(false);
+      });
+      document.addEventListener("click", (e) => { if (this.open && !m.contains(e.target) && !this.open.contains(e.target)) this.close(false); });
+      addEventListener("resize", () => { if (this.open) this.close(false); });
+      document.body.appendChild(m);
+      return (this.el = m);
+    },
+    show(btn) {
+      const m = this.el || this.build();
+      if (this.open) this.close(false);
+      $$("[data-style]", m).forEach((it) => it.setAttribute("aria-checked", String(it.dataset.style === Kit.style.get())));
+      const r = btn.getBoundingClientRect();
+      m.hidden = false;
+      m.style.top = Math.round(r.bottom + 6) + "px";
+      m.style.left = Math.round(Math.max(10, Math.min(r.right - m.offsetWidth, innerWidth - m.offsetWidth - 10))) + "px";
+      this.open = btn; btn.setAttribute("aria-expanded", "true"); btn.setAttribute("aria-controls", m.id);
+      ($('[aria-checked="true"]', m) || $("[data-style]", m)).focus({ preventScroll: true });
+    },
+    close(refocus) {
+      if (!this.el || !this.open) return;
+      const btn = this.open;
+      this.el.hidden = true; this.open = null; btn.setAttribute("aria-expanded", "false");
+      if (refocus) btn.focus({ preventScroll: true });
+    },
+  };
   applyTheme(store.get(THEME_KEY)); // run early to avoid a flash
 
   /* ---------- Small helpers ---------- */

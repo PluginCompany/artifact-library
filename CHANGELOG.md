@@ -4,6 +4,16 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-17
+
+### Added
+- **Porcelain, a third kit style** (`kit/themes/porcelain/porcelain.css`): an operations-dashboard look built on Clean. A cool grey page with white cards (18 px corners, a hairline ring, a soft shadow), Geist for text, headings and code, one cobalt accent, ink-black primary buttons, cobalt sparklines and chart series, and the top-bar chapter menu as one segmented pill whose current chapter sits on a raised thumb. Light and dark. Small text keeps at least 4.5:1 contrast. Open a page in it with `<html data-kit-style="porcelain">` and the Porcelain link in place of Clean's; `KIT_THEME=porcelain ./publish.sh <dir>` (from `examples/reference/`) does both.
+
+### Changed
+- **The style button opens a menu.** *Aa* lists Clean, Porcelain and Bold, each name in its own type, with the current one ticked; arrow keys, Home/End, Enter and Escape work, and a click outside closes it. `Kit.style.toggle()` still moves to the next style, and `Kit.style.list` names them. `kit.css` now declares the Inter and Geist faces so the menu can show them in every style (the files load only when shown).
+- The reader's style is saved in `kit-style-v2`. `kit-style` keeps the nearest style an older kit copy knows (Clean for Porcelain), so artifacts published with an earlier kit show Clean, not Bold, to a reader who picked Porcelain; a Bold picked later on such a page still wins.
+- README, the collection docs, the agent guide, the style guide and the skill describe the three styles; the README style screenshots were retaken.
+
 ## [0.13.1] - 2026-11-07
 
 ### Changed
@@ -208,7 +218,8 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 - Server-generated previews, catalogue metadata and revisions, idempotent uploads with retry, manifest diffs.
 - Standalone Linux CLI and an agent skill.
 
-[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.13.1...HEAD
+[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.0
 [0.13.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.13.1
 [0.13.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.13.0
 [0.12.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.12.1
