@@ -4,6 +4,11 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-11-20
+
+### Changed
+- **The floating version toolbar follows dark mode.** It turns dark with the page: the kit's light/dark button (`data-theme` on `<html>`), otherwise the page's `color-scheme` when it names one mode, otherwise the system setting, and it switches live when any of these change. The update notice, the menu, the version list and Send to agent are dark too. The toolbar is served by the server, so every artifact gets it with the upgrade, without republishing.
+
 ## [0.14.1] - 2026-11-17
 
 ### Fixed
@@ -223,7 +228,8 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 - Server-generated previews, catalogue metadata and revisions, idempotent uploads with retry, manifest diffs.
 - Standalone Linux CLI and an agent skill.
 
-[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.14.1...HEAD
+[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.14.2...HEAD
+[0.14.2]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.2
 [0.14.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.1
 [0.14.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.0
 [0.13.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.13.1
