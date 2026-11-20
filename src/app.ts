@@ -62,7 +62,7 @@ export async function buildApp(options: AppOptions) {
   const storage = new Storage(path.resolve(options.dataDir), publicUrl.origin, limits);
   await storage.initialize();
   const previews = new Previews(storage, options.previews ?? false);
-  const linter = new Linter(storage, previews);
+  const linter = new Linter(storage, previews, options.seedDir);
   const data = new ArtifactData(storage);
   if (options.seedDir) {
     for (const result of await seedArtifacts(storage, options.seedDir)) {

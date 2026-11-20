@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright';
@@ -97,4 +97,26 @@ test('lint validates its options', { skip: !browserAvailable && 'Chromium is not
   assert.equal((await lint(app, 'page', { widths: [100] })).json().error.code, 'INVALID_LINT_OPTIONS');
   assert.equal((await lint(app, 'page', { version: 9 })).statusCode, 404);
   assert.equal((await lint(app, 'nothing')).statusCode, 404);
+});
+
+test('lint warns when a page carries a kit other than the one the server ships', { skip: !browserAvailable && 'Chromium is not installed' }, async t => {
+  // The server's kit is the one in its seeded references (seed/<slug>/files/kit/kit.js).
+  const root = await mkdtemp(path.join(os.tmpdir(), 'artifact-lint-kit-'));
+  const seedDir = path.join(root, 'seed'), kit = 'window.Kit = { build: "current" };';
+  await mkdir(path.join(seedDir, 'ref-plan', 'files', 'kit'), { recursive: true });
+  await writeFile(path.join(seedDir, 'ref-plan', 'artifact.json'), JSON.stringify({ slug: 'ref-plan', title: 'Plan', description: 'A reference.' }));
+  await writeFile(path.join(seedDir, 'ref-plan', 'files', 'index.html'), clean.replace('</head>', '<script src="kit/kit.js"></script></head>'));
+  await writeFile(path.join(seedDir, 'ref-plan', 'files', 'kit', 'kit.js'), kit);
+  const app = await buildApp({ dataDir: path.join(root, 'data'), publicUrl: 'http://127.0.0.1', previews: true, seedDir });
+  t.after(async () => { await app.close(); await rm(root, { recursive: true, force: true }); });
+  await app.listen({ port: 0, host: '127.0.0.1' });
+  const page = clean.replace('</head>', '<script src="kit/kit.js"></script></head>');
+  await publish(app, 'fresh', page, [{ name: 'kit/kit.js', content: kit }]);
+  await publish(app, 'copied', page, [{ name: 'kit/kit.js', content: 'window.Kit = { build: "older" };' }]);
+  const checks = async (slug: string) => (await lint(app, slug)).json().findings.map((f: { check: string }) => f.check);
+  assert.ok(!(await checks('fresh')).includes('kit-outdated'));
+  assert.ok(!(await checks('ref-plan')).includes('kit-outdated'));
+  const copied = (await lint(app, 'copied')).json().findings.find((f: { check: string }) => f.check === 'kit-outdated');
+  assert.equal(copied?.severity, 'warning');
+  assert.equal(copied?.where, 'kit/kit.js');
 });

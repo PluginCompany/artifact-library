@@ -10,6 +10,8 @@ Find the closest reference (table in SKILL.md, or `artifact search ref-`), then 
 
 ## The shared kit (`kit/`)
 
+Every artifact keeps the kit it was published with. Take `kit/` from a reference you download now, never from another artifact (even one in the format you want): an older artifact brings an outdated kit, and `artifact lint` warns `kit-outdated`.
+
 - `kit.css` — tokens (`--accent`, `--thread`, `--good`, `--warn`, `--bad`, `--s1…--s5` chart series), dark mode, and components: `.topbar`, `.hero`, `.display`, `.stitch` headings, `.card`, `.stat`, `.callout`, `.tag good|warn|bad`, `.steps`, `.timeline`, `.table`, `details.fold`, `pre[data-copy]`, `.shell/.side/.main` for long documents.
 - `kit.js` — theme toggle (`[data-theme-toggle]`), side-nav scroll spy, copy buttons, sortable tables, reveal-on-scroll, and charts: `Kit.chart.line|column|bar|donut|spark(el, spec)` with tooltips, legends and a table view (`.chart-card` + `button.as-table`). Call `Kit.refresh()` after rendering content late.
 - Blocks for explaining (in `kit.js` and `kit.css`; markup examples in `writing.md` §5):

@@ -66,6 +66,7 @@ Receipts: `{slug, version, revision, unchanged, url, versionUrl}`. Archive paths
 | warning | `eager-images` | More than 12 images load with the page: give them `data-src` (or `loading="lazy"`) and `width`/`height` |
 | warning | `missing-description` | No `<meta name="description">` |
 | warning | `external-request-failed` | Requests to other sites that failed (bundle assets instead) |
+| warning | `kit-outdated` | The page's `kit/kit.js` is not the kit this server ships (its seeded references): copied from an older artifact or edited. Use the `kit/` of a freshly downloaded reference |
 
 Content checks run at the widest width; overflow is checked at every width. `screenshots: true` adds full-page JPEGs (capped at 12,000 px tall) for each width plus dark mode at the narrowest.
 

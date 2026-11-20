@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { Page } from 'playwright';
 import { ArtifactError, encodePath } from './shared.js';
 import type { Previews } from './previews.js';
@@ -161,7 +164,22 @@ function inPage<T>(page: Page, fn: () => T): Promise<T> {
 export class Linter {
   private chain: Promise<unknown> = Promise.resolve();
   private waiting = 0;
-  constructor(private storage: Storage, private previews: Previews) {}
+  private currentKit?: Promise<string | undefined>;
+  /** seedDir: the server's seeded references, whose kit/ is the kit this server ships (kit-outdated compares against it). */
+  constructor(private storage: Storage, private previews: Previews, private seedDir?: string) {}
+
+  /** sha256 of the kit.js the server's references carry; undefined without a seed (SEED=false). */
+  private kitDigest(): Promise<string | undefined> {
+    this.currentKit ??= (async () => {
+      if (!this.seedDir) return undefined;
+      for (const slug of (await readdir(this.seedDir).catch(() => [] as string[])).sort()) {
+        const file = await readFile(path.join(this.seedDir, slug, 'files', 'kit', 'kit.js')).catch(() => undefined);
+        if (file) return createHash('sha256').update(file).digest('hex');
+      }
+      return undefined;
+    })();
+    return this.currentKit;
+  }
 
   get available() { return this.previews.available; }
 
@@ -194,6 +212,7 @@ export class Linter {
     const shots: LintScreenshot[] = [];
     let stats: LintStats | undefined;
     const errors = new Map<string, number>(), missingFiles = new Map<string, number>(), external = new Set<string>();
+    let pageKit: Promise<string | undefined> | undefined; // sha256 of the kit/kit.js this version loads
     const count = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
     const ordered = [...widths].sort((a, b) => b - a); // widest first: content checks run there
     for (const width of ordered) {
@@ -205,6 +224,7 @@ export class Linter {
         page.on('response', response => {
           const url = new URL(response.url());
           if (url.origin === origin && url.pathname.startsWith(base) && response.status() >= 400) count(missingFiles, decodeURIComponent(url.pathname.slice(base.length)));
+          else if (!pageKit && url.origin === origin && url.pathname.startsWith(base) && url.pathname.endsWith('/kit/kit.js')) pageKit = response.body().then(body => createHash('sha256').update(body).digest('hex'), () => undefined);
         });
         page.on('requestfailed', request => {
           const url = new URL(request.url());
@@ -227,6 +247,8 @@ export class Linter {
     }
     for (const [message, n] of errors) findings.push({ severity: 'error', check: 'script-error', message, count: n });
     for (const [file, n] of missingFiles) findings.push({ severity: 'error', check: 'missing-file', message: `The page asks for a file that is not in this version: ${file}`, where: file, count: n });
+    const [loaded, current] = await Promise.all([pageKit, this.kitDigest()]);
+    if (loaded && current && loaded !== current) findings.push({ severity: 'warning', check: 'kit-outdated', message: 'This page\'s kit/ is not the kit this server ships: it was copied from an older artifact or edited, so it misses newer styles and fixes. Download a current reference (artifact download ref-…) and use its kit/; never copy kit/ from another artifact.', where: 'kit/kit.js' });
     if (external.size) findings.push({ severity: 'warning', check: 'external-request-failed', message: `Requests to other sites failed: ${[...external].join(', ')}. Bundle fonts, scripts and images with the artifact so it works offline and inside private networks.`, count: external.size });
     const order: Record<Severity, number> = { error: 0, warning: 1, info: 2 };
     findings.sort((a, b) => order[a.severity] - order[b.severity]);
