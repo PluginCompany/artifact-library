@@ -44,6 +44,7 @@ if (await exists(path.join(release, 'index.html'))) {
     slug: 'artifact-cli',
     title: 'Artifact CLI',
     description: `Install the artifact CLI ${version} on Linux, macOS or Windows, connect it to this server and give your agent the skill. Standalone executables; no Node.js or Bun needed.`,
+    tags: ['reference', 'guide'],
   }, { exclude: name => /^artifact-(linux|darwin|windows)-/.test(name) });
   seeded.push('artifact-cli');
 }

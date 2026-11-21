@@ -30,12 +30,38 @@ export interface Artifact {
   revision: number;
   /** Set while the artifact is archived: hidden from the catalogue, content answers 410. */
   archivedAt?: string;
+  /** Labels readers filter the library by (normalizeTags). */
+  tags?: string[];
+  /** Set while the artifact is shared: /share/<token>/ serves its latest version to anyone with the link. */
+  share?: { token: string; createdAt: string };
 }
+
+export const MAX_TAGS = 12;
+/** Tags: lowercase letters, digits, '-', '_' and '.', starting with a letter or digit, at most 32 characters;
+ *  spaces become '-'. Duplicates collapse; order is kept. Accepts an array or a comma-separated string. */
+export function normalizeTags(value: unknown): string[] {
+  const list = typeof value === 'string' ? value.split(',') : value;
+  if (!Array.isArray(list)) throw new ArtifactError('INVALID_TAGS', 'tags must be a list of text');
+  const tags: string[] = [];
+  for (const item of list) {
+    if (typeof item !== 'string') throw new ArtifactError('INVALID_TAGS', 'tags must be a list of text');
+    const tag = item.trim().toLocaleLowerCase('en').replace(/\s+/g, '-');
+    if (!tag) continue;
+    if (tag.length > 32 || !/^[\p{L}\p{N}][\p{L}\p{N}._-]*$/u.test(tag)) throw new ArtifactError('INVALID_TAGS', `Invalid tag ${JSON.stringify(item)}: use letters, digits, '-', '_' or '.', at most 32 characters`);
+    if (!tags.includes(tag)) tags.push(tag);
+  }
+  if (tags.length > MAX_TAGS) throw new ArtifactError('INVALID_TAGS', `At most ${MAX_TAGS} tags`);
+  return tags;
+}
+export const sameTags = (a: string[] | undefined, b: string[] | undefined) => JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+
+/** Share tokens: 16 random bytes, base64url (22 characters). */
+export const SHARE_TOKEN = /^[A-Za-z0-9_-]{22}$/;
 
 /** Saved-data keys that send everything a reader saved to waiting agents: the toolbar's "Send to agent" and a page's "I'm done". */
 export const SEND_KEYS = ['state.sent', 'state.submitted'];
 
-export const APP_VERSION = '0.14.2';
+export const APP_VERSION = '0.15.0';
 export const API_VERSION = 1;
 
 export function metadataText(value: unknown, field: string, required = false): string {

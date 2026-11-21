@@ -3,13 +3,13 @@ import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { Readable } from 'node:stream';
 import path from 'node:path';
 import { Storage } from './storage.js';
-import { ArtifactError, DEFAULT_LIMITS, compareFiles, validateSlug, type Limits } from './shared.js';
+import { ArtifactError, DEFAULT_LIMITS, compareFiles, normalizeTags, validateSlug, type Limits } from './shared.js';
 import { packArchive } from './archive.js';
 import { serveFile } from './serving.js';
 import { noticeScript } from './notice.js';
 import { libraryHtml, libraryCss, libraryScript } from './library.js';
 import { libraryListLayoutCss } from './library-list-layout.js';
-import { queryCatalog, type CatalogQuery } from './catalog.js';
+import { catalogTags, queryCatalog, type CatalogQuery } from './catalog.js';
 import { Previews } from './previews.js';
 import { Linter, type LintOptions } from './lint.js';
 import { APP_VERSION, API_VERSION } from './shared.js';
@@ -29,6 +29,9 @@ export interface AppOptions {
   limits?: Limits;
   /** Shared browser libraries served at /_artifact/libs/ (libs/dist, built by scripts/build-libs.mjs). */
   libsDir?: string;
+  /** Origin of share links (SHARE_BASE_URL), e.g. a public hostname whose /share/ path skips the login in front of
+   *  the rest of the server. Defaults to publicUrl. */
+  shareBaseUrl?: string;
 }
 declare module 'fastify' { interface FastifyContextConfig { auth?: boolean } }
 function header(request: FastifyRequest, key: string) {
@@ -47,6 +50,9 @@ function missingPage(slug: string, version: string) {
 function archivedPage(slug: string) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Artifact archived</title><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/_artifact/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/_artifact/library.css"></head><body><main class="missing"><a href="/" aria-label="Artifact Library home"><img src="/_artifact/logo.svg" alt="Artifact Library" width="224" height="44"></a><h1>This artifact was archived</h1><p><b>${slug}</b> is no longer published. Its owner can restore it with <code>artifact restore ${slug}</code>.</p><p class="missing-links"><a href="/">Back to the library</a></p></main></body></html>`;
 }
+function shareGonePage() {
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Link not available</title><style>body{font:16px/1.5 system-ui,sans-serif;color:#173149;background:#f6f8fc;margin:0;display:grid;place-items:center;min-height:100vh;padding:24px}main{max-width:420px;text-align:center}h1{font-size:22px;margin:0 0 8px}p{margin:0;color:#4e6175}</style></head><body><main><h1>This link is not available</h1><p>It may have been stopped by the person who shared it. Ask them for a new link.</p></main></body></html>';
+}
 function versionNumber(value: string): number {
   if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) throw new ArtifactError('INVALID_VERSION', 'Version must be a positive integer');
   return Number(value);
@@ -57,6 +63,11 @@ export async function buildApp(options: AppOptions) {
   if (!['http:', 'https:'].includes(publicUrl.protocol) || publicUrl.pathname !== '/' || publicUrl.search || publicUrl.hash) {
     throw new Error('PUBLIC_BASE_URL must be an HTTP(S) origin without a path');
   }
+  const shareBase = new URL(options.shareBaseUrl ?? options.publicUrl);
+  if (!['http:', 'https:'].includes(shareBase.protocol) || shareBase.pathname !== '/' || shareBase.search || shareBase.hash) {
+    throw new Error('SHARE_BASE_URL must be an HTTP(S) origin without a path');
+  }
+  const shareUrl = (token: string) => `${shareBase.origin}/share/${token}/`;
   const app = Fastify({ logger: options.logger ? { level: process.env.LOG_LEVEL ?? 'info' } : false, requestTimeout: 0, bodyLimit: Number.MAX_SAFE_INTEGER });
   const limits = options.limits ?? DEFAULT_LIMITS;
   const storage = new Storage(path.resolve(options.dataDir), publicUrl.origin, limits);
@@ -118,12 +129,13 @@ export async function buildApp(options: AppOptions) {
   app.get('/_artifact/library.js', (_request, reply) => reply.type('application/javascript').header('Cache-Control', 'no-cache').send(libraryScript));
   app.get('/api/v1/server', () => ({
     version: APP_VERSION, apiVersion: API_VERSION,
-    capabilities: ['catalog', 'metadata', 'version-toolbar', 'previews', 'data', 'data-wait', 'archive', ...(options.previews ? ['lint'] : []), ...(tokenDigest ? ['auth'] : [])],
+    capabilities: ['catalog', 'metadata', 'version-toolbar', 'previews', 'data', 'data-wait', 'archive', 'tags', 'share', ...(options.previews ? ['lint'] : []), ...(tokenDigest ? ['auth'] : [])],
     previewsEnabled: options.previews ?? false, auth: tokenDigest ? 'token' : 'none', limits
   }));
   app.get('/api/v1/auth', (request, reply) => reply.header('Cache-Control', 'no-store').send({ required: Boolean(tokenDigest), authenticated: tokenDigest ? authenticated(request) : true }));
-  async function enriched(artifact: Awaited<ReturnType<Storage['get']>>) {
-    return { ...artifact, ...storage.urls(artifact.slug, artifact.latestVersion), preview: await previews.status(artifact.slug, artifact.latestVersion), previewUrl: `/api/v1/artifacts/${artifact.slug}/versions/${artifact.latestVersion}/preview` };
+  async function enriched(stored: Awaited<ReturnType<Storage['get']>>) {
+    const { share, ...artifact } = stored;
+    return { ...artifact, tags: artifact.tags ?? [], ...(share ? { share: { url: shareUrl(share.token), createdAt: share.createdAt } } : {}), ...storage.urls(artifact.slug, artifact.latestVersion), preview: await previews.status(artifact.slug, artifact.latestVersion), previewUrl: `/api/v1/artifacts/${artifact.slug}/versions/${artifact.latestVersion}/preview` };
   }
   app.get<{ Querystring: CatalogQuery }>('/api/v1/artifacts', async (request, reply) => {
     const result = queryCatalog(await storage.list(), request.query);
@@ -133,7 +145,8 @@ export async function buildApp(options: AppOptions) {
     const artifact = await storage.get(request.params.slug);
     return reply.header('Cache-Control', 'no-store').send(await enriched(artifact));
   });
-  app.patch<{ Params: { slug: string }; Body: { title?: string; description?: string; expectedRevision: number } }>('/api/v1/artifacts/:slug', write, async (request, reply) => {
+  app.get('/api/v1/tags', async (_request, reply) => reply.header('Cache-Control', 'no-store').send({ tags: catalogTags(await storage.list()) }));
+  app.patch<{ Params: { slug: string }; Body: { title?: string; description?: string; tags?: string[]; expectedRevision: number } }>('/api/v1/artifacts/:slug', write, async (request, reply) => {
     if (!request.body || typeof request.body !== 'object' || Array.isArray(request.body)) throw new ArtifactError('INVALID_METADATA', 'Send a metadata JSON object');
     const result = await storage.metadata(request.params.slug, request.body, request.body.expectedRevision, header(request, 'idempotency-key') ?? randomUUID());
     return reply.header('Cache-Control', 'no-store').send(await enriched(result));
@@ -141,6 +154,7 @@ export async function buildApp(options: AppOptions) {
   async function publish(request: FastifyRequest, update: boolean, slug?: string) {
     const rawRevision = header(request, 'x-expected-revision');
     const notice = header(request, 'x-artifact-notice');
+    const tagsHeader = decodedHeader(request, 'x-artifact-tags');
     if (notice !== undefined && notice !== 'true' && notice !== 'false') throw new ArtifactError('INVALID_HEADER', 'X-Artifact-Notice must be true or false');
     if (rawRevision !== undefined && !/^[1-9]\d*$/.test(rawRevision)) throw new ArtifactError('INVALID_HEADER', 'X-Expected-Revision must be a positive integer');
     if (!(request.body && typeof (request.body as Readable).pipe === 'function')) throw new ArtifactError('INVALID_ARCHIVE', 'Send a tar.gz body with Content-Type: application/gzip');
@@ -149,6 +163,8 @@ export async function buildApp(options: AppOptions) {
       title: decodedHeader(request, 'x-artifact-title'), entry: decodedHeader(request, 'x-artifact-entry'),
       description: decodedHeader(request, 'x-artifact-description'),
       message: decodedHeader(request, 'x-artifact-message'), notice: notice !== 'false',
+      // X-Artifact-Tags: comma-separated and URL-encoded; present but empty clears the tags, absent keeps them.
+      tags: tagsHeader === undefined ? undefined : normalizeTags(tagsHeader),
       expectedRevision: rawRevision === undefined ? undefined : Number(rawRevision),
       operationKey: header(request, 'idempotency-key') ?? randomUUID()
     });
@@ -166,6 +182,16 @@ export async function buildApp(options: AppOptions) {
     reply.header('Cache-Control', 'no-store').send(await enriched(await storage.setArchived(request.params.slug, true, request.body?.expectedRevision))));
   app.post<{ Params: { slug: string }; Body: { expectedRevision?: number } | undefined }>('/api/v1/artifacts/:slug/restore', write, async (request, reply) =>
     reply.header('Cache-Control', 'no-store').send(await enriched(await storage.setArchived(request.params.slug, false, request.body?.expectedRevision))));
+  // Share links: /share/<token>/ shows the latest version to anyone with the link (no toolbar, no saved data).
+  const shareInfo = (share: { token: string; createdAt: string } | undefined) => share ? { shared: true, url: shareUrl(share.token), createdAt: share.createdAt } : { shared: false };
+  app.get<{ Params: { slug: string } }>('/api/v1/artifacts/:slug/share', async (request, reply) =>
+    reply.header('Cache-Control', 'no-store').send({ slug: request.params.slug, ...shareInfo((await storage.get(request.params.slug)).share) }));
+  app.post<{ Params: { slug: string } }>('/api/v1/artifacts/:slug/share', write, async (request, reply) => {
+    const { share, created } = await storage.share(validateSlug(request.params.slug));
+    return reply.code(created ? 201 : 200).header('Cache-Control', 'no-store').send({ slug: request.params.slug, ...shareInfo(share), created });
+  });
+  app.delete<{ Params: { slug: string } }>('/api/v1/artifacts/:slug/share', write, async (request, reply) =>
+    reply.header('Cache-Control', 'no-store').send({ slug: request.params.slug, ...(await storage.unshare(validateSlug(request.params.slug))), shared: false }));
   app.delete<{ Params: { slug: string }; Querystring: { confirm?: string } }>('/api/v1/artifacts/:slug', write, async (request, reply) => {
     const { slug } = request.params;
     validateSlug(slug);
@@ -276,8 +302,21 @@ export async function buildApp(options: AppOptions) {
     const before = await storage.version(request.params.slug, from), after = await storage.version(request.params.slug, to);
     return { from, to, changes: compareFiles(before.files, after.files), entryChanged: before.entry !== after.entry, noticeChanged: before.notice !== after.notice };
   });
-  registerLibs(app, options.libsDir ? path.resolve(options.libsDir) : undefined);
+  registerLibs(app, options.libsDir ? path.resolve(options.libsDir) : undefined, '/_artifact/libs/');
+  registerLibs(app, options.libsDir ? path.resolve(options.libsDir) : undefined, '/share/_artifact/libs/'); // for shared pages: only /share/ is public
   app.get('/_artifact/notice.js', (_request, reply) => reply.type('application/javascript; charset=utf-8').header('Cache-Control', 'no-cache').send(noticeScript));
+  // Share links. Unknown, stopped and archived links all answer the same 404, so a link reveals nothing once it is cut off.
+  app.route<{ Params: { token: string } }>({ method: ['GET', 'HEAD'], url: '/share/:token', handler: async (request, reply) => {
+    if (!storage.shared(request.params.token)) return reply.code(404).header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex').type('text/html; charset=utf-8').send(shareGonePage());
+    return reply.header('Cache-Control', 'no-store').redirect(`/share/${request.params.token}/${new URL(request.url, 'http://local').search}`);
+  } });
+  app.route<{ Params: { token: string; '*': string } }>({ method: ['GET', 'HEAD'], url: '/share/:token/*', handler: async (request, reply) => {
+    const artifact = storage.shared(request.params.token);
+    const gone = () => reply.code(404).header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex').type('text/html; charset=utf-8').send(shareGonePage());
+    if (!artifact) return gone();
+    try { return await serveFile(storage, artifact.slug, artifact.latestVersion, request.params['*'], request, reply, false, `/share/${request.params.token}/`); }
+    catch (error) { if (error instanceof ArtifactError && (error.code === 'FILE_NOT_FOUND' || error.code === 'INVALID_ARCHIVE_PATH')) return gone(); throw error; }
+  } });
   app.route<{ Params: { slug: string; '*': string } }>({ method: ['GET', 'HEAD'], url: '/artifacts/:slug/*', handler: async (request, reply) => {
     const { slug, '*': relative } = request.params;
     validateSlug(slug);

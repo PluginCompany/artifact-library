@@ -268,14 +268,17 @@
      Mermaid + ELK (diagram), Shiki (highlight) and d3 ship once with the server instead of inside every
      kit/ copy, and load only on pages that use them. Opened from disk or another host they are missing:
      diagrams then show their source and code keeps the built-in colouring. <html data-kit-libs="off">
-     turns them off for a page. Kit.libs.load(name) resolves to the module (d3: the d3 namespace). */
+     turns them off for a page. Kit.libs.load(name) resolves to the module (d3: the d3 namespace).
+     A page opened through a share link (/share/<token>/) loads them from /share/_artifact/libs/: only /share/ is
+     reachable for people outside. */
   const libCache = {};
+  const libBase = location.pathname.startsWith("/share/") ? "/share/_artifact/libs/" : "/_artifact/libs/";
   let colorProbe = null, colorCtx = null;
   Kit.libs = {
     get available() { return /^https?:$/.test(location.protocol) && document.documentElement.getAttribute("data-kit-libs") !== "off"; },
     load(name) {
       if (!libCache[name]) {
-        libCache[name] = Kit.libs.available ? import(location.origin + "/_artifact/libs/" + encodeURIComponent(name) + ".js")
+        libCache[name] = Kit.libs.available ? import(location.origin + libBase + encodeURIComponent(name) + ".js")
           : Promise.reject(new Error("shared libraries load only from the artifact server"));
         libCache[name].catch(() => {});
       }

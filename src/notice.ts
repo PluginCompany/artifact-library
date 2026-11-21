@@ -55,7 +55,16 @@ export const noticeScript = String.raw`(() => {
   setInterval(()=>{if(holding()&&!document.hidden)refreshUnsent();},15000);
   async function clipboard(value){try{if(navigator.clipboard&&isSecureContext)await navigator.clipboard.writeText(value);else{const input=node('textarea');input.value=value;input.style.cssText='position:fixed;left:-9999px';document.body.append(input);input.select();const ok=document.execCommand('copy');input.remove();if(!ok)throw new Error();}status.textContent='Link copied.';}catch{status.textContent=value;}menu.open=false;}
   copy.onclick=copySnapshot.onclick=()=>clipboard(location.href);copyLatest.onclick=()=>clipboard(new URL(openLatest.href,location.href).href);
-  actions.append(syncToggle,syncHint,copyLatest,copySnapshot,download,collapse);menu.append(summary,actions);row.append(home,title,select,copy,menu);dock.append(update,row,expand,sendBar,status);root.append(style,dock);(document.body||document.documentElement).append(host);
+  // Share link: /share/<token>/ shows the latest version to anyone with the link. The menu reads its state when it opens.
+  const shareMake=node('button','Create share link'),shareCopy=node('button','Copy share link'),shareStop=node('button','Stop sharing');shareCopy.hidden=shareStop.hidden=true;
+  const shareApi='/api/v1/artifacts/'+slug+'/share';let shareUrl='';
+  function paintShare(url){shareUrl=url||'';shareMake.hidden=Boolean(shareUrl);shareCopy.hidden=shareStop.hidden=!shareUrl;}
+  async function shareRequest(method){const response=await fetch(shareApi,{method,cache:'no-store'});if(response.status===401||response.status===403)throw new Error('Sharing needs the write token on this server: run artifact share '+slug);if(!response.ok)throw new Error('Could not change sharing. Try again.');return response.json();}
+  menu.addEventListener('toggle',async()=>{if(!menu.open)return;try{const state=await shareRequest('GET');paintShare(state.shared?state.url:'');}catch{}});
+  shareMake.onclick=async()=>{menu.open=false;try{const state=await shareRequest('POST');paintShare(state.url);await clipboard(state.url);status.textContent='Share link copied. Anyone with it can view the latest version: '+state.url;}catch(error){status.textContent=error.message;}};
+  shareCopy.onclick=async()=>{menu.open=false;await clipboard(shareUrl);status.textContent='Share link copied: '+shareUrl;};
+  shareStop.onclick=async()=>{menu.open=false;if(!confirm('Stop sharing? The share link stops working for everyone who has it.'))return;try{await shareRequest('DELETE');paintShare('');status.textContent='Stopped sharing. The old link no longer works.';}catch(error){status.textContent=error.message;}};
+  actions.append(syncToggle,syncHint,copyLatest,copySnapshot,shareMake,shareCopy,shareStop,download,collapse);menu.append(summary,actions);row.append(home,title,select,copy,menu);dock.append(update,row,expand,sendBar,status);root.append(style,dock);(document.body||document.documentElement).append(host);
   // Dark when the page is dark: the kit's data-theme on <html> (the reader's light/dark button), else the page's
   // color-scheme when it names just one, else the system setting.
   const systemDark=matchMedia('(prefers-color-scheme: dark)');

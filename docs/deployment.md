@@ -6,8 +6,8 @@ Artifact Library is one container with a data volume. It needs no database and r
 
 | Image | Size | Notes |
 |---|---|---|
-| `ghcr.io/plugincompany/artifact-library:0.14.2` (`:0.14`, `:latest`) | ~1.3 GB | Includes Chromium for server-side preview images |
-| `ghcr.io/plugincompany/artifact-library:0.14.2-slim` (`:slim`) | ~290 MB | No Chromium; previews off, the library shows placeholders |
+| `ghcr.io/plugincompany/artifact-library:0.15.0` (`:0.15`, `:latest`) | ~1.3 GB | Includes Chromium for server-side preview images |
+| `ghcr.io/plugincompany/artifact-library:0.15.0-slim` (`:slim`) | ~290 MB | No Chromium; previews off, the library shows placeholders |
 
 Both are built for `linux/amd64` and `linux/arm64`.
 
@@ -15,7 +15,7 @@ Both are built for `linux/amd64` and `linux/arm64`.
 
 ```bash
 docker run -d --name artifacts -p 3000:3000 -v artifact-data:/data \
-  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.14.2
+  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.15.0
 ```
 
 Open <http://localhost:3000>. A new server seeds the agent guide, the reference collection and the CLI download page on first start.
@@ -37,6 +37,7 @@ Compose binds to `127.0.0.1` by default. Set `BIND_ADDRESS=0.0.0.0` to listen on
 | Variable | Default | Meaning |
 |---|---|---|
 | `PUBLIC_BASE_URL` | `http://localhost:<port>` | Origin (no path) used in URLs the API returns. Browser redirects stay on whatever address the visitor used |
+| `SHARE_BASE_URL` | `PUBLIC_BASE_URL` | Origin (no path) of share links (`/share/<token>/`). Set it to a public hostname when the server is behind a login (Cloudflare Access, a VPN) and exclude only `/share/` from that login: shared pages and the libraries they load (`/share/_artifact/libs/`) all live under it |
 | `ARTIFACT_TOKEN` | unset | When set, publishing, updates, metadata, preview refresh, archive, restore and purge require `Authorization: Bearer <token>`. Reading and reader feedback stay open. Generate with `openssl rand -hex 32` |
 | `MAX_UPLOAD_BYTES` | `524288000` (500 MB) | Per upload; `0` = unlimited |
 | `MAX_FILES` | `10000` | Per upload; `0` = unlimited |

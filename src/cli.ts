@@ -8,7 +8,7 @@ import { Client, configuration, maskToken, readTracking, resolveToken, retryOper
 import { localManifest } from './archive.js';
 import { APP_VERSION, API_VERSION, ArtifactError, compareFiles, resolveFile, type Artifact, type Publication, type Version } from './shared.js';
 import { AGENTS, agentSkillPath, installSkill, openBrowser, serverInit, type Agent } from './cli-tools.js';
-import { dataPath, duration, feedback, feedbackText, json, purgeArtifact, searchArtifacts, setArchived, since, trackingOf, updateDirectory, waitForFeedback, type DataDoc } from './operations.js';
+import { dataPath, duration, feedback, feedbackText, json, purgeArtifact, searchArtifacts, setArchived, shareArtifact, shareStatus, since, tagList, trackingOf, unshareArtifact, updateDirectory, waitForFeedback, type DataDoc } from './operations.js';
 import type { LintResult } from './lint.js';
 import { addProfile, listProfiles, useProfile, removeProfile, resolveServer } from './profiles.js';
 
@@ -35,6 +35,7 @@ function publication(result: Publication, command: Command) {
 function uploadOptions(command: Command) {
   return command.option('--entry <path>', 'HTML entry point (default: index.html; tracked entry for update)')
     .option('--title <title>', 'Artifact title').option('--description <text>', 'Short catalog description').option('--message <message>', 'Publication message')
+    .option('--tag <tags>', 'Tag the artifact (repeatable or comma-separated; replaces its tags; --tag "" removes them)', (v: string, a: string[] = []) => [...a, v])
     .option('--no-toolbar', 'Disable the injected version toolbar')
     .option('--no-update-notice', 'Disable update notification injection')
     .option('--exclude <pattern>', 'Additional gitignore-style pattern (repeatable)', (v: string, a: string[]) => [...a, v], []);
@@ -81,7 +82,7 @@ profiles.command('remove').argument('<name>').action(async (name, _options, comm
 uploadOptions(program.command('publish').argument('<directory>').option('--slug <slug>', 'Create using a specific slug'))
   .action(async (directory, options, command) => {
     const api = await client(command);
-    publication(await api.publish(directory, { ...options, entry: options.entry ?? 'index.html', notice: options.updateNotice && options.toolbar, excludes: options.exclude }), command);
+    publication(await api.publish(directory, { ...options, tags: tagList(options.tag), entry: options.entry ?? 'index.html', notice: options.updateNotice && options.toolbar, excludes: options.exclude }), command);
   });
 
 uploadOptions(program.command('update').argument('<slug>').argument('<directory>').option('--expected-revision <revision>', 'Expected revision (defaults to tracked revision, otherwise current remote revision)')
@@ -91,7 +92,7 @@ uploadOptions(program.command('update').argument('<slug>').argument('<directory>
     const api = await client(command, tracked?.server);
     const noticeExplicit = command.getOptionValueSource('updateNotice') === 'cli' || command.getOptionValueSource('toolbar') === 'cli';
     publication(await updateDirectory(api, slug, directory, {
-      title: options.title, description: options.description, message: options.message, entry: options.entry,
+      title: options.title, description: options.description, message: options.message, entry: options.entry, tags: tagList(options.tag),
       expectedRevision: options.expectedRevision !== undefined ? Number(options.expectedRevision) : undefined,
       notice: noticeExplicit ? options.updateNotice && options.toolbar : undefined,
       excludes: options.exclude, allowServerChange: options.allowServerChange
@@ -100,6 +101,15 @@ uploadOptions(program.command('update').argument('<slug>').argument('<directory>
 
 program.command('retry').argument('<operation-key>').description('Retry an exact saved upload after a lost response')
   .action(async (key, _options, command) => publication(await retryOperation(key), command));
+program.command('share').argument('<slug>').description('Make a share link: anyone with it can view the latest version, without the toolbar or saved answers')
+  .option('--status', 'Only show whether the artifact is shared and its link')
+  .action(async (slug, options, command) => {
+    const api = await client(command);
+    const result = options.status ? await shareStatus(api, slug) : await shareArtifact(api, slug);
+    output(result, command, !result.shared ? `${slug} is not shared. Share it with: artifact share ${slug}` : `${result.created ? 'Shared' : 'Already shared'}: ${slug}\n${result.url}\nAnyone with this link can view the latest version. Stop with: artifact unshare ${slug}`);
+  });
+program.command('unshare').argument('<slug>').description('Stop sharing: the share link stops working (sharing again makes a new link)')
+  .action(async (slug, _options, command) => { const result = await unshareArtifact(await client(command), slug); output(result, command, result.unshared ? `Stopped sharing ${slug}; its link no longer works.` : `${slug} was not shared.`); });
 program.command('archive').argument('<slug>').description('Hide an artifact from the library and stop serving it (restorable)')
   .action(async (slug, _options, command) => { const result = await setArchived(await client(command), slug, true); output(result, command, `Archived ${slug}. Restore with: artifact restore ${slug}`); });
 program.command('restore').argument('<slug>').description('Publish an archived artifact again')
@@ -112,12 +122,13 @@ program.command('purge').argument('<slug>').option('--yes', 'Confirm: delete eve
 function discovery(command: Command, defaultLimit: string) {
   return command.option('--search <query>', 'Search title, description, and slug').option('--sort <sort>', 'updated, created, or title', 'updated')
     .option('--since <date>', 'Updated since ISO date or relative duration such as 7d').option('--limit <count>', 'Results per page (1–100)', defaultLimit)
-    .option('--cursor <cursor>', 'Continue a previous query').option('--all', 'Fetch all matching pages');
+    .option('--cursor <cursor>', 'Continue a previous query').option('--all', 'Fetch all matching pages')
+    .option('--tag <tags>', 'Only artifacts with every one of these tags (repeatable or comma-separated)', (v: string, a: string[] = []) => [...a, v]);
 }
 async function discover(command: Command, search?: string) {
   const options = command.optsWithGlobals(), api = await client(command);
-  const result = await searchArtifacts(api, { query: search ?? options.search, sort: options.sort, since: options.since, limit: options.limit, cursor: options.cursor, all: options.all, archived: options.archived ? 'only' : undefined });
-  output(result, command, result.artifacts.map((a: Artifact) => `${a.slug}\tv${a.latestVersion}\t${a.title}${a.archivedAt ? '\t(archived)' : ''}\n  ${a.description || 'No description'}\n  Updated ${a.updatedAt}`).join('\n\n') || 'No matching artifacts');
+  const result = await searchArtifacts(api, { query: search ?? options.search, sort: options.sort, since: options.since, limit: options.limit, cursor: options.cursor, all: options.all, archived: options.archived ? 'only' : undefined, tags: tagList(options.tag) });
+  output(result, command, result.artifacts.map((a: Artifact) => `${a.slug}\tv${a.latestVersion}\t${a.title}${a.archivedAt ? '\t(archived)' : ''}\n  ${a.description || 'No description'}${a.tags?.length ? '\n  Tags: ' + a.tags.join(', ') : ''}\n  Updated ${a.updatedAt}`).join('\n\n') || 'No matching artifacts');
 }
 discovery(program.command('list').description('List and filter artifacts').option('--archived', 'List archived artifacts instead'), '20').action(async (_options, command) => discover(command));
 discovery(program.command('search').argument('<query>').description('Search titles, descriptions, and slugs'), '20').action(async (query, _options, command) => discover(command, query));
@@ -143,9 +154,10 @@ program.command('doctor').description('Check endpoint, server version, API compa
 });
 const metadata = program.command('metadata').description('Edit catalog metadata without creating a snapshot');
 metadata.command('set').argument('<slug>').option('--title <title>').option('--description <text>').option('--expected-revision <revision>')
+  .option('--tag <tags>', 'Replace the tags (repeatable or comma-separated; --tag "" removes them)', (v: string, a: string[] = []) => [...a, v])
   .action(async (slug, options, command) => {
     const api=await client(command),expectedRevision=options.expectedRevision===undefined?(await api.info(slug)).revision:Number(options.expectedRevision);
-    output(await api.request(`/api/v1/artifacts/${slug}`,{method:'PATCH',headers:{'Content-Type':'application/json','Idempotency-Key':randomUUID()},body:JSON.stringify({title:options.title,description:options.description,expectedRevision})}),command);
+    output(await api.request(`/api/v1/artifacts/${slug}`,{method:'PATCH',headers:{'Content-Type':'application/json','Idempotency-Key':randomUUID()},body:JSON.stringify({title:options.title,description:options.description,tags:tagList(options.tag),expectedRevision})}),command);
   });
 program.command('preview').description('Server-side preview tools').command('refresh').argument('<slug>')
   .action(async (slug,_options,command)=>{const api=await client(command);await api.info(slug);output(await api.request(`/api/v1/artifacts/${slug}/preview`,{method:'POST'}),command);});

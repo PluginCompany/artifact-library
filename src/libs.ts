@@ -10,8 +10,8 @@ import { missing } from './fs.js';
    loads them only on pages that use them. Entry files (diagram.js, highlight.js, d3.js) keep stable names
    and are revalidated so a server upgrade reaches old pages; chunks are content-hashed and immutable.
    Without a libs directory the route answers 404 and the kit falls back to its built-in renderers. */
-export function registerLibs(app: FastifyInstance, libsDir: string | undefined) {
-  app.route<{ Params: { '*': string } }>({ method: ['GET', 'HEAD'], url: '/_artifact/libs/*', handler: async (request, reply) => {
+export function registerLibs(app: FastifyInstance, libsDir: string | undefined, prefix: string) {
+  app.route<{ Params: { '*': string } }>({ method: ['GET', 'HEAD'], url: prefix + '*', handler: async (request, reply) => {
     if (!libsDir) throw new ArtifactError('FILE_NOT_FOUND', 'Shared libraries are not installed on this server', 404);
     const name = request.params['*'];
     let file: string, size: number, mtime: Date;

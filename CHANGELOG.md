@@ -4,6 +4,13 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-21
+
+### Added
+- **Tags.** `artifact publish|update --tag a,b` (repeatable), `artifact metadata set --tag`, MCP `publish`/`update` `tags`, or `X-Artifact-Tags` / `PATCH {tags}` in the API. Tags are lowercase letters, digits, `-`, `_` and `.`, at most 12 per artifact; a tag change alone is a metadata edit, not a new version. The library homepage shows every tag with its count and filters by one (`?tag=` in the URL), cards show their tags, and search matches tags. `artifact list|search|recent --tag`, MCP `search` `tags` and `GET /api/v1/artifacts?tag=a,b` filter by them; `GET /api/v1/tags` lists them with counts. The built-in references carry `reference` (the agent guide and CLI page also `guide`).
+- **Share links.** `artifact share <slug>` (or *Create share link* in the toolbar's ⋯ menu, or MCP `share`) makes a `/share/<token>/` link with a 22-character random token. It shows the latest version to anyone who has it: no toolbar, no reading or saving the artifact's answers and comments (kit pages save in the visitor's browser), `noindex`, no referrer, every file revalidated. Shared pages load the diagram and highlighting libraries from `/share/_artifact/libs/`, so a login in front of everything except `/share/` is enough. `artifact unshare` (or *Stop sharing*) cuts the link off at once; sharing again makes a new one. Archived artifacts' links answer 404 until restored. The library marks shared artifacts and copies their link. New setting `SHARE_BASE_URL`: the origin of share links, e.g. a public hostname; default `PUBLIC_BASE_URL`.
+- **`artifact lint` warns `kit-outdated`** when the `kit/kit.js` a page loads is not the kit the server ships in its references, e.g. copied from an older artifact. The skill says to take `kit/` only from a freshly downloaded reference, never from another artifact.
+
 ## [0.14.2] - 2026-11-20
 
 ### Changed
@@ -228,7 +235,8 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 - Server-generated previews, catalogue metadata and revisions, idempotent uploads with retry, manifest diffs.
 - Standalone Linux CLI and an agent skill.
 
-[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.14.2...HEAD
+[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.15.0
 [0.14.2]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.2
 [0.14.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.1
 [0.14.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.0

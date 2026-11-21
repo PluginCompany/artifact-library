@@ -10,7 +10,7 @@ export function since(value: string): string {
   return new Date(millis).toISOString();
 }
 
-export interface SearchOptions { query?: string; sort?: string; since?: string; limit?: number | string; cursor?: string; all?: boolean; archived?: 'exclude' | 'include' | 'only' }
+export interface SearchOptions { query?: string; sort?: string; since?: string; limit?: number | string; cursor?: string; all?: boolean; archived?: 'exclude' | 'include' | 'only'; tags?: string[] }
 export async function searchArtifacts(api: Client, options: SearchOptions) {
   const sort = ({ updated: 'updated-desc', created: 'created-desc', title: 'title' } as Record<string, string>)[options.sort ?? 'updated'];
   if (!sort) throw new ArtifactError('INVALID_SORT', 'Sort must be updated, created, or title');
@@ -18,6 +18,7 @@ export async function searchArtifacts(api: Client, options: SearchOptions) {
   if (options.query) query.set('q', options.query);
   if (options.since) query.set('updatedSince', since(options.since));
   if (options.cursor) query.set('cursor', options.cursor);
+  if (options.tags?.length) query.set('tag', options.tags.join(','));
   if (options.archived && options.archived !== 'exclude') query.set('archived', options.archived);
   const artifacts: (Artifact & { url?: string })[] = []; let total = 0, nextCursor: string | null;
   do {
@@ -34,6 +35,8 @@ export async function trackingOf(directory: string): Promise<Tracking | undefine
 
 export interface UpdateOptions {
   title?: string; description?: string; message?: string; entry?: string; expectedRevision?: number;
+  /** Replaces the tags; undefined keeps them. */
+  tags?: string[];
   /** undefined keeps the tracked choice (default true). */
   notice?: boolean; excludes?: string[]; allowServerChange?: boolean;
 }
@@ -46,7 +49,7 @@ export async function updateDirectory(api: Client, slug: string, directory: stri
   const associated = tracked?.slug === slug && tracked?.server === api.server ? tracked : undefined;
   const expectedRevision = options.expectedRevision ?? associated?.revision ?? (await api.info(slug)).revision;
   return api.publish(directory, {
-    slug, update: true, expectedRevision, title: options.title, description: options.description, message: options.message,
+    slug, update: true, expectedRevision, title: options.title, description: options.description, message: options.message, tags: options.tags,
     entry: options.entry ?? associated?.entry ?? 'index.html',
     notice: options.notice ?? associated?.notice ?? true,
     excludes: options.excludes?.length ? options.excludes : associated?.excludes ?? []
@@ -191,3 +194,12 @@ export async function setArchived(api: Client, slug: string, archived: boolean) 
 export async function purgeArtifact(api: Client, slug: string) {
   return api.request<{ slug: string; purged: boolean; versions: number }>(`/api/v1/artifacts/${encodeURIComponent(slug)}?confirm=${encodeURIComponent(slug)}`, { method: 'DELETE' });
 }
+
+/* Share links: /share/<token>/ shows the latest version to anyone with the link. */
+export interface ShareState { slug: string; shared: boolean; url?: string; createdAt?: string; created?: boolean; unshared?: boolean }
+export const shareStatus = (api: Client, slug: string) => api.request<ShareState>(`/api/v1/artifacts/${encodeURIComponent(slug)}/share`);
+export const shareArtifact = (api: Client, slug: string) => api.request<ShareState>(`/api/v1/artifacts/${encodeURIComponent(slug)}/share`, { method: 'POST' });
+export const unshareArtifact = (api: Client, slug: string) => api.request<ShareState>(`/api/v1/artifacts/${encodeURIComponent(slug)}/share`, { method: 'DELETE' });
+
+/** --tag values: repeatable, each may hold a comma-separated list. */
+export const tagList = (values: string[] | undefined) => values === undefined ? undefined : values.flatMap(v => v.split(',')).map(v => v.trim()).filter(Boolean);

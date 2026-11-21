@@ -44,7 +44,7 @@ Profiles select independent servers; each has its own library, versions and save
 
 ```bash
 artifact publish ./report --slug q3-report \
-  --title "Q3 report" --description "Throughput, quality and staffing." --json
+  --title "Q3 report" --description "Throughput, quality and staffing." --tag reports,q3 --json
 artifact update q3-report ./report --message "Added October" --json
 artifact check ./report --json          # exit 10 when someone published a newer version
 artifact diff q3-report --local ./report
@@ -54,6 +54,7 @@ artifact retry <operation-key>          # resend a saved upload after a lost res
 - A folder is published as one snapshot: every file, with `index.html` as entry (`--entry` for another). Use relative links; `/assets/…` points at the server root.
 - `.git/` and `.artifactignore` are excluded; add patterns to `.artifactignore` or pass `--exclude` (repeatable). Symlinks are refused; copy files instead.
 - Titles and descriptions fall back to the page's `<title>` and `<meta name="description">`.
+- `--tag` (repeatable or comma-separated) sets the artifact's tags; the library homepage filters by them. On `update` it replaces the tags, `--tag ""` removes them, and without it they stay.
 - `--no-toolbar` disables the injected version toolbar for that artifact.
 - Identical content does not create a new version. A folder remembers the revision it was published or downloaded at; from an untracked folder pass `--expected-revision`. On `REVISION_CONFLICT` (exit 2) inspect the newer version before retrying.
 - The CLI saves each upload before sending it. If the response is lost, `artifact retry <key>` resends exactly that upload instead of publishing twice.
@@ -68,6 +69,7 @@ artifact search "migration plan"
 artifact recent --limit 10 --since 7d
 artifact list --sort title --all
 artifact list --archived
+artifact list --tag reports              # every artifact tagged reports (repeat --tag: all must match)
 artifact info q3-report
 artifact revisions q3-report
 artifact open q3-report [--version 2] [--print]
@@ -75,17 +77,21 @@ artifact download q3-report --out ./q3            # latest; --version N for a sn
 artifact diff q3-report --from 1 --to 3 --text
 ```
 
-Search requires every word somewhere in the title, description or slug (case-insensitive). Sorts: `updated`, `created`, `title`. `--since` takes an ISO date or `30m`, `24h`, `7d`. `--all` follows pagination; `--cursor` continues a query. Downloads verify the manifest and contain the original bytes (no toolbar); a non-empty destination needs `--overwrite`. `--text` adds patches for UTF-8 files up to 1 MiB.
+Search requires every word somewhere in the title, description, slug or tags (case-insensitive). Sorts: `updated`, `created`, `title`. `--since` takes an ISO date or `30m`, `24h`, `7d`. `--all` follows pagination; `--cursor` continues a query. Downloads verify the manifest and contain the original bytes (no toolbar); a non-empty destination needs `--overwrite`. `--text` adds patches for UTF-8 files up to 1 MiB.
 
 ## Metadata, previews, archive
 
 ```bash
-artifact metadata set q3-report --title "Q3 report" --description "…" [--expected-revision 4]
+artifact metadata set q3-report --title "Q3 report" --description "…" [--tag reports,q3] [--expected-revision 4]
 artifact preview refresh q3-report
 artifact archive q3-report     # hidden from the library; links answer 410; reversible
 artifact restore q3-report
 artifact purge q3-report --yes # deletes every version, preview and saved comment, for good
+artifact share q3-report       # a /share/<token>/ link anyone can open; --status only shows it
+artifact unshare q3-report     # the link stops working; sharing again makes a new one
 ```
+
+A share link shows the latest version, without the toolbar; visitors cannot read or save answers and comments. It uses the server's `SHARE_BASE_URL` (see [deployment](deployment.md)), so put the login in front of everything except `/share/`. Readers can also share from the toolbar's ⋯ menu.
 
 Archived artifacts refuse new versions and reader writes until restored. Seeding never recreates an archived or purged default artifact.
 

@@ -10,12 +10,15 @@ import type { Storage } from './storage.js';
 
 function escapeAttribute(value: string) { return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-export async function serveFile(storage: Storage, slug: string, number: number, relative: string, request: FastifyRequest, reply: FastifyReply, original = false) {
+/** original: the file as published (API downloads). share: the base path of a share link (/share/<token>/): served to
+ *  outsiders without the toolbar, kept out of search engines and revalidated, because the link follows the latest
+ *  version and the same path can get new content. */
+export async function serveFile(storage: Storage, slug: string, number: number, relative: string, request: FastifyRequest, reply: FastifyReply, original = false, share?: string) {
   const version = await storage.version(slug, number);
   let name = relative;
   if (!name) {
     if (original) throw new ArtifactError('FILE_NOT_FOUND', 'File path required', 404);
-    if (version.entry !== 'index.html') return reply.redirect(`/artifacts/${slug}/_versions/${number}/${encodePath(version.entry)}${new URL(request.url, 'http://local').search}`);
+    if (version.entry !== 'index.html') return reply.redirect(`${share ?? `/artifacts/${slug}/_versions/${number}/`}${encodePath(version.entry)}${new URL(request.url, 'http://local').search}`);
     name = 'index.html';
   } else if (name.endsWith('/')) name += 'index.html';
   const root = storage.filesDir(slug, number);
@@ -39,7 +42,8 @@ export async function serveFile(storage: Storage, slug: string, number: number, 
   let etag = '"' + record.sha256 + '"';
   const preview = request.headers['x-artifact-render-mode'] === 'preview';
   if (!original && mime === 'text/html') reply.header('Vary', 'X-Artifact-Render-Mode');
-  if (!original && !preview && mime === 'text/html' && version.notice) {
+  if (share) reply.header('X-Robots-Tag', 'noindex, nofollow').header('Referrer-Policy', 'no-referrer');
+  if (!original && !preview && !share && mime === 'text/html' && version.notice) {
     const tag = `<script src="/_artifact/notice.js" data-slug="${escapeAttribute(slug)}" data-version="${number}" data-path="${escapeAttribute(encodePath(relative))}"></script>`;
     const tagBytes = Buffer.from(tag);
     injectionLength = tagBytes.length;
@@ -62,7 +66,7 @@ export async function serveFile(storage: Storage, slug: string, number: number, 
     });
   }
   // HTML is revalidated so notification-script upgrades are picked up. Other snapshot assets are immutable.
-  reply.header('Cache-Control', mime === 'text/html' && !original ? 'no-cache' : 'public, max-age=31536000, immutable');
+  reply.header('Cache-Control', share || (mime === 'text/html' && !original) ? 'no-cache' : 'public, max-age=31536000, immutable');
   reply.header('ETag', etag);
   reply.header('Accept-Ranges', injected ? 'none' : 'bytes');
   const size = record.size + injectionLength;

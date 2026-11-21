@@ -4,7 +4,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
 import { extractArchive } from './archive.js';
 import { atomicJson, missing, readJson, syncDirectory } from './fs.js';
-import { ArtifactError, DEFAULT_LIMITS, digest, hash, metadataText, resolveFile, validatePath, validateSlug, type Artifact, type Limits, type Publication, type Version } from './shared.js';
+import { ArtifactError, DEFAULT_LIMITS, SHARE_TOKEN, digest, hash, metadataText, normalizeTags, resolveFile, sameTags, validatePath, validateSlug, type Artifact, type Limits, type Publication, type Version } from './shared.js';
 import { htmlMetadata } from './html-metadata.js';
 
 export interface PublishOptions {
@@ -14,6 +14,8 @@ export interface PublishOptions {
   description?: string;
   entry?: string;
   message?: string;
+  /** Replaces the artifact's tags; undefined keeps them. */
+  tags?: string[];
   notice?: boolean;
   expectedRevision?: number;
   /** Keep the artifact's updatedAt (seeding: new reference content shipped with the server is not an update by
@@ -27,6 +29,8 @@ interface Transaction { artifact: Artifact; stage?: string; version?: number; op
 export class Storage {
   private locks = new Map<string, Promise<unknown>>();
   private catalog = new Map<string, Artifact>();
+  /** Share token → slug, for /share/<token>/. */
+  private shares = new Map<string, string>();
   constructor(public root: string, public publicUrl: string, public limits: Limits = DEFAULT_LIMITS) {}
   artifactDir(slug: string) { return path.join(this.root, 'artifacts', validateSlug(slug)); }
   versionDir(slug: string, version: number) { return path.join(this.artifactDir(slug), 'versions', String(version)); }
@@ -52,6 +56,7 @@ export class Storage {
           await atomicJson(path.join(this.artifactDir(slug), 'artifact.json'), metadata);
         }
         this.catalog.set(slug, metadata);
+        if (metadata.share) this.shares.set(metadata.share.token, slug);
         await stat(this.filesDir(slug, metadata.latestVersion));
       } catch (error) {
         if (!(error instanceof ArtifactError && error.code === 'ARTIFACT_NOT_FOUND')) throw error;
@@ -134,6 +139,7 @@ export class Storage {
   async publish(input: Readable, options: PublishOptions): Promise<Publication> {
     if (options.title !== undefined) options.title = metadataText(options.title, 'title', true);
     if (options.description !== undefined) options.description = metadataText(options.description, 'description');
+    if (options.tags !== undefined) options.tags = normalizeTags(options.tags);
     if (options.slug) validateSlug(options.slug);
     if (options.update && !Number.isSafeInteger(options.expectedRevision)) {
       throw new ArtifactError('EXPECTED_REVISION_REQUIRED', 'Updates require X-Expected-Revision');
@@ -182,8 +188,8 @@ export class Storage {
           if (current?.archivedAt) throw new ArtifactError('ARTIFACT_ARCHIVED', `Artifact is archived: ${slug}. Restore it before publishing a new version.`, 409);
           if (options.update && current!.revision !== options.expectedRevision) throw new ArtifactError('REVISION_CONFLICT', `Expected revision ${options.expectedRevision}, current revision is ${current!.revision}`, 409);
           if (current && (await this.version(slug!, current.latestVersion)).digest === contentDigest) {
-            const changed = (options.title !== undefined && options.title !== current.title) || (options.description !== undefined && options.description !== current.description);
-            const artifact = changed ? { ...current, title: options.title ?? current.title, description: options.description ?? current.description, revision: current.revision + 1, updatedAt: options.keepUpdatedAt ? current.updatedAt : new Date().toISOString() } : current;
+            const changed = (options.title !== undefined && options.title !== current.title) || (options.description !== undefined && options.description !== current.description) || (options.tags !== undefined && !sameTags(options.tags, current.tags));
+            const artifact = changed ? { ...current, title: options.title ?? current.title, description: options.description ?? current.description, tags: options.tags ?? current.tags ?? [], revision: current.revision + 1, updatedAt: options.keepUpdatedAt ? current.updatedAt : new Date().toISOString() } : current;
             const result = { slug: slug!, version: current.latestVersion, revision: artifact.revision, unchanged: true, ...this.urls(slug!, current.latestVersion) };
             if (changed) {
               const transaction = { artifact, operationId, operation: { fingerprint, result } };
@@ -201,7 +207,7 @@ export class Storage {
           const version: Version = { version: number, createdAt: now, entry, notice, message: options.message, digest: contentDigest, files, title, description, publicationRevision };
           await atomicJson(path.join(stage, 'version.json'), version);
           await syncDirectory(path.join(this.root, 'staging'));
-          const artifact: Artifact = { slug: slug!, title, description, createdAt: current?.createdAt ?? now, updatedAt: options.keepUpdatedAt && current ? current.updatedAt : now, latestVersion: number, revision: publicationRevision };
+          const artifact: Artifact = { slug: slug!, title, description, tags: options.tags ?? current?.tags ?? [], ...(current?.share ? { share: current.share } : {}), createdAt: current?.createdAt ?? now, updatedAt: options.keepUpdatedAt && current ? current.updatedAt : now, latestVersion: number, revision: publicationRevision };
           const result: Publication = { slug: slug!, version: number, revision: artifact.revision, unchanged: false, ...this.urls(slug!, number) };
           const transaction: Transaction = { artifact, version: number, stage: stageId, operationId, operation: { fingerprint, result } };
           await atomicJson(path.join(this.artifactDir(slug!), 'pending.json'), transaction);
@@ -216,12 +222,13 @@ export class Storage {
     }
   }
 
-  async metadata(slug: string, changes: { title?: string; description?: string }, expectedRevision: number, operationKey: string) {
+  async metadata(slug: string, changes: { title?: string; description?: string; tags?: unknown }, expectedRevision: number, operationKey: string) {
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) throw new ArtifactError('EXPECTED_REVISION_REQUIRED', 'Metadata edits require a positive expectedRevision');
-    const normalized: { title?: string; description?: string } = {};
+    const normalized: { title?: string; description?: string; tags?: string[] } = {};
     if (changes.title !== undefined) normalized.title = metadataText(changes.title, 'title', true);
     if (changes.description !== undefined) normalized.description = metadataText(changes.description, 'description');
-    if (!Object.keys(normalized).length) throw new ArtifactError('INVALID_METADATA', 'Provide title or description');
+    if (changes.tags !== undefined) normalized.tags = normalizeTags(changes.tags);
+    if (!Object.keys(normalized).length) throw new ArtifactError('INVALID_METADATA', 'Provide title, description or tags');
     const id = hash(operationKey), fingerprint = hash(JSON.stringify({ action: 'metadata', slug, changes: normalized, expectedRevision }));
     return this.locked('operation:' + id, async () => {
       const previous = await this.operation(id);
@@ -240,7 +247,7 @@ export class Storage {
         }
         const current = await this.get(slug);
         if (current.revision !== expectedRevision) throw new ArtifactError('REVISION_CONFLICT', `Expected revision ${expectedRevision}, current revision is ${current.revision}`, 409);
-        const changed = Object.entries(normalized).some(([key, value]) => current[key as keyof Artifact] !== value);
+        const changed = Object.entries(normalized).some(([key, value]) => key === 'tags' ? !sameTags(value as string[], current.tags) : current[key as keyof Artifact] !== value);
         const artifact = changed ? { ...current, ...normalized, revision: current.revision + 1, updatedAt: new Date().toISOString() } : current;
         const transaction = { artifact, operationId: id, operation: { fingerprint, result: artifact } };
         await atomicJson(path.join(this.artifactDir(slug), 'pending.json'), transaction);
@@ -267,6 +274,54 @@ export class Storage {
     });
   }
 
+  /** Share an artifact: /share/<token>/ serves its latest version to anyone with the link. Idempotent: an artifact that
+   *  is already shared keeps its link. Not a content or metadata change, so the revision stays (agents updating the
+   *  artifact keep their expected revision). */
+  async share(slug: string): Promise<{ share: NonNullable<Artifact['share']>; created: boolean }> {
+    return this.locked('artifact:' + slug, async () => {
+      const current = await this.current(slug);
+      if (current.archivedAt) throw new ArtifactError('ARTIFACT_ARCHIVED', `Artifact is archived: ${slug}. Restore it before sharing it.`, 409);
+      if (current.share) return { share: current.share, created: false };
+      const share = { token: randomBytes(16).toString('base64url'), createdAt: new Date().toISOString() };
+      await this.write({ ...current, share });
+      this.shares.set(share.token, slug);
+      return { share, created: true };
+    });
+  }
+
+  /** Stop sharing: the link stops working at once. Sharing again makes a new link. */
+  async unshare(slug: string): Promise<{ unshared: boolean }> {
+    return this.locked('artifact:' + slug, async () => {
+      const current = await this.current(slug);
+      if (!current.share) return { unshared: false };
+      const { share, ...rest } = current;
+      await this.write(rest);
+      this.shares.delete(share.token);
+      return { unshared: true };
+    });
+  }
+
+  /** The artifact a share token opens; undefined for unknown or malformed tokens and archived artifacts. */
+  shared(token: string): Artifact | undefined {
+    if (!SHARE_TOKEN.test(token)) return undefined;
+    const slug = this.shares.get(token);
+    const artifact = slug ? this.catalog.get(slug) : undefined;
+    return artifact && !artifact.archivedAt && artifact.share?.token === token ? artifact : undefined;
+  }
+
+  /** The artifact after finishing any interrupted commit. Call inside the artifact lock. */
+  private async current(slug: string): Promise<Artifact> {
+    let pending: Transaction | undefined;
+    try { pending = await readJson(path.join(this.artifactDir(slug), 'pending.json')); } catch (error) { if (!missing(error)) throw error; }
+    if (pending) await this.complete(pending);
+    return this.get(slug);
+  }
+
+  private async write(artifact: Artifact) {
+    await atomicJson(path.join(this.artifactDir(artifact.slug), 'artifact.json'), artifact);
+    this.catalog.set(artifact.slug, artifact);
+  }
+
   /** Permanently delete an artifact: every version, saved data and its publication receipts. Previews are removed by the caller. */
   async purge(slug: string) {
     validateSlug(slug);
@@ -276,6 +331,7 @@ export class Storage {
       const trash = path.join(this.root, 'staging', `purge-${slug}-${randomUUID()}`);
       await rename(this.artifactDir(slug), trash);
       this.catalog.delete(slug);
+      if (current.share) this.shares.delete(current.share.token);
       await syncDirectory(path.join(this.root, 'artifacts'));
       let receipts = 0;
       for (const name of await readdir(path.join(this.root, 'operations'))) {

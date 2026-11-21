@@ -101,6 +101,12 @@ Fix and `artifact update`. On servers without a browser (slim image) `lint` repo
 
 Servers may limit uploads (default 500 MB and 10,000 files; `doctor` shows `limits`). The CLI checks before uploading and fails with `UPLOAD_TOO_LARGE` or `TOO_MANY_FILES`; compress images (WebP) or split the artifact.
 
+## Tags and share links
+
+Tag what you publish so people can filter the library: `--tag sales,plan` on `publish` or `update` (replaces the tags; `--tag ""` removes them), `artifact metadata set <slug> --tag …` without a new version, `artifact list --tag plan` to find them. Use a few short, stable tags (project, kind of page), not one per artifact.
+
+Only when the user asks to show an artifact to someone outside: `artifact share <slug>` prints a `/share/<token>/` link that anyone can open. It shows the latest version without the toolbar, and visitors cannot read or save answers and comments. `artifact share <slug> --status` shows the link; `artifact unshare <slug>` cuts it off (sharing again makes a new link). Never share on your own initiative: the link is public.
+
 ## Update at the same link
 
 ```bash

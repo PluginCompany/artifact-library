@@ -8,7 +8,7 @@ import type { Storage } from './storage.js';
 
 /* Default artifacts shipped with the server image (the reference collection,
    the agent guide and the CLI download page). Layout of the seed directory:
-     <seed>/<slug>/artifact.json   { "slug", "title", "description" }
+     <seed>/<slug>/artifact.json   { "slug", "title", "description", "tags" }
      <seed>/<slug>/files/...       the published files, index.html first
    Rules, so a server never loses an owner's edits:
      - a missing slug is created;
@@ -18,7 +18,7 @@ import type { Storage } from './storage.js';
    Updating a seed adds a version but keeps the artifact's updatedAt: a server upgrade is not an update by
    anyone, so it must not move every reference to the top of the library. */
 
-interface SeedMeta { slug: string; title: string; description: string; entry?: string }
+interface SeedMeta { slug: string; title: string; description: string; entry?: string; tags?: string[] }
 interface SeedState { [slug: string]: { version: number; digest: string; release: string } | { purged: true; at: string } }
 export interface SeedResult { slug: string; action: 'created' | 'updated' | 'unchanged' | 'skipped' | 'failed'; version?: number; reason?: string }
 
@@ -43,7 +43,7 @@ export async function seedArtifacts(storage: Storage, seedDir: string): Promise<
       let current: Awaited<ReturnType<Storage['get']>> | undefined;
       try { current = await storage.get(slug); }
       catch (error) { if (!(error instanceof ArtifactError && error.status === 404)) throw error; }
-      const options = { slug, title: meta.title, description: meta.description, entry: meta.entry ?? 'index.html', message: `Seeded by Artifact Library ${APP_VERSION}`, notice: true };
+      const options = { slug, title: meta.title, description: meta.description, tags: meta.tags ?? [], entry: meta.entry ?? 'index.html', message: `Seeded by Artifact Library ${APP_VERSION}`, notice: true };
       if (!current) {
         const result = await storage.publish(packArchive(path.join(dir, 'files'), files), { ...options, operationKey: key + ':create' });
         state[slug] = { version: result.version, digest: (await storage.version(slug, result.version)).digest, release: APP_VERSION };

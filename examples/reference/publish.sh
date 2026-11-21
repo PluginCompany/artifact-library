@@ -19,6 +19,7 @@ meta="$src/artifact.json"
 [ -f "$meta" ] || { echo "missing $meta" >&2; exit 1; }
 read_meta() { python3 -c "import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])" "$meta" "$1"; }
 slug="$(read_meta slug)"; title="$(read_meta title)"; desc="$(read_meta description)"
+tags="$(python3 -c "import json,sys; print(','.join(json.load(open(sys.argv[1])).get('tags', [])))" "$meta")"
 
 stage="$(mktemp -d)"; trap 'rm -rf "$stage"' EXIT
 cp -R "$src/." "$stage/"
@@ -45,8 +46,8 @@ fi
 
 if info="$(artifact info "$slug" --json 2>/dev/null)"; then
   rev="$(python3 -c "import json,sys; print(json.load(sys.stdin)['revision'])" <<<"$info")"
-  artifact update "$slug" "$stage" --title "$title" --description "$desc" \
+  artifact update "$slug" "$stage" --title "$title" --description "$desc" --tag "$tags" \
     --message "$msg" --expected-revision "$rev" --json
 else
-  artifact publish "$stage" --slug "$slug" --title "$title" --description "$desc" --json
+  artifact publish "$stage" --slug "$slug" --title "$title" --description "$desc" --tag "$tags" --json
 fi

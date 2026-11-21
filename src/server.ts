@@ -16,6 +16,8 @@ const app = await buildApp({
   libsDir,
   // ARTIFACT_TOKEN protects publishing, metadata, archive and purge. Reading and saved answers/comments stay open.
   token: process.env.ARTIFACT_TOKEN || undefined,
+  // Origin of share links (/share/<token>/), e.g. a public hostname; defaults to PUBLIC_BASE_URL.
+  shareBaseUrl: process.env.SHARE_BASE_URL || undefined,
   limits: limitsFromEnv()
 });
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

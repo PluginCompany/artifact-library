@@ -98,7 +98,7 @@ export class Client {
     if (!response.ok) await this.error(response);
     return Buffer.from(await response.arrayBuffer());
   }
-  async publish(directory: string, options: { slug?: string; update?: boolean; expectedRevision?: number; title?: string; description?: string; entry: string; notice: boolean; message?: string; excludes: string[] }): Promise<Publication> {
+  async publish(directory: string, options: { slug?: string; update?: boolean; expectedRevision?: number; title?: string; description?: string; tags?: string[]; entry: string; notice: boolean; message?: string; excludes: string[] }): Promise<Publication> {
     const root = path.resolve(directory);
     const files = await listFiles(root, options.excludes);
     if (!files.includes(options.entry)) throw new ArtifactError('ENTRY_NOT_FOUND', `Entry point not found: ${options.entry}`);
@@ -110,6 +110,7 @@ export class Client {
     if (options.title !== undefined) headers['X-Artifact-Title'] = encodeURIComponent(options.title);
     if (options.description !== undefined) headers['X-Artifact-Description'] = encodeURIComponent(options.description);
     if (options.message !== undefined) headers['X-Artifact-Message'] = encodeURIComponent(options.message);
+    if (options.tags !== undefined) headers['X-Artifact-Tags'] = encodeURIComponent(options.tags.join(','));
     if (options.slug && !options.update) headers['X-Artifact-Slug'] = validateSlug(options.slug);
     if (options.expectedRevision !== undefined) headers['X-Expected-Revision'] = String(options.expectedRevision);
     const endpoint = options.update ? `/api/v1/artifacts/${validateSlug(options.slug!)}/versions` : '/api/v1/artifacts';

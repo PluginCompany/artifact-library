@@ -79,7 +79,7 @@ For common jobs there is a polished reference on the server that agents copy and
 
 ```bash
 docker run -d --name artifacts -p 3000:3000 -v artifact-data:/data \
-  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.14.2
+  -e PUBLIC_BASE_URL=http://localhost:3000 ghcr.io/plugincompany/artifact-library:0.15.0
 ```
 
 **2. Install the CLI** — standalone binaries, no Node.js needed
@@ -107,7 +107,9 @@ Then ask your agent for a plan, a review or a report "as an artifact". Open <htt
 
 - **One command to publish any static site**: a folder of HTML, CSS, JavaScript, images, fonts, video or WebAssembly, served exactly as uploaded: `artifact publish ./review --title "Login review"`. Bring your own build or start from a reference. Without `--title` or `--description`, the page's own `<title>` and meta description are used.
 - **Stable links and immutable versions.** `/artifacts/<slug>/` always shows the latest; every version stays at its own URL. Updates never change a published snapshot.
-- **Server-side previews**, search over titles, descriptions and slugs, sorting, time filters and grid or list views. The search and filters are in the URL, so a filtered view can be shared.
+- **Server-side previews**, search over titles, descriptions, slugs and tags, sorting, time filters and grid or list views. The search and filters are in the URL, so a filtered view can be shared.
+- **Tags.** Publish with `--tag sales,plan` (or set them later with `artifact metadata set`); the library shows every tag with its count and filters by it, and `artifact list --tag sales` does the same in the terminal. The built-in references carry `reference`, so they are one click away or out of the way.
+- **Share links for people outside.** `artifact share <slug>`, or *Create share link* in the toolbar menu, makes a `/share/<random token>/` link to the latest version: no toolbar, no access to your team's answers and comments, kept out of search engines. Put your login in front of everything except `/share/` (and set `SHARE_BASE_URL` to the public hostname); `artifact unshare` cuts the link off.
 - **Version toolbar** on every page: a link back to the library, versions with their dates and messages, stable and snapshot links, download, and a quiet "new version available" notice instead of surprise reloads. Readers can collapse it; pages can ask how much space it takes or hide it for full-screen views ([API](docs/api.md)).
 
 ### Feedback on the page, read by the agent
@@ -290,6 +292,7 @@ More in [docs/agents.md](docs/agents.md).
 |---|---|---|
 | `PUBLIC_BASE_URL` | `http://localhost:3000` | Origin used in links the API returns |
 | `ARTIFACT_TOKEN` | unset | Require a bearer token for writes |
+| `SHARE_BASE_URL` | `PUBLIC_BASE_URL` | Origin of share links, e.g. a public hostname whose login skips `/share/` |
 | `MAX_UPLOAD_BYTES` / `MAX_FILES` | 500 MB / 10,000 | Per-upload limits (`0` = unlimited) |
 | `PREVIEWS` | on (full) / off (slim) | Server-side preview images |
 | `SEED` | on | Seed the reference collection and agent guide (`false` turns it off) |

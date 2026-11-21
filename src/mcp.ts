@@ -7,7 +7,7 @@ import { APP_VERSION, ArtifactError } from './shared.js';
 import type { Client } from './client.js';
 import type { LintResult } from './lint.js';
 import { bundledSkill } from './bundled-skill.js';
-import { dataPath, feedback, feedbackText, json, searchArtifacts, setArchived, updateDirectory, waitForFeedback, type DataDoc } from './operations.js';
+import { dataPath, feedback, feedbackText, json, searchArtifacts, setArchived, shareArtifact, shareStatus, unshareArtifact, updateDirectory, waitForFeedback, type DataDoc } from './operations.js';
 
 /* `artifact mcp`: the CLI's core operations as MCP tools on stdio, bound to the server and token the CLI selected. */
 
@@ -34,9 +34,10 @@ export function createMcpServer(api: Client) {
     server.registerTool(name, { description, inputSchema: shape, annotations: { readOnlyHint: readOnly, openWorldHint: false } },
       ((args: z.infer<z.ZodObject<S>>) => guarded(async () => text(await run(args)))) as never);
 
-  tool('search', 'Search the artifact library by words in titles, descriptions and slugs (every word must match). Use it before creating a new artifact, and to find references (search "ref-").',
-    { query: z.string().optional().describe('Words to match; omit to list everything'), limit: z.number().int().min(1).max(100).optional().describe('Results (default 20)'), since: z.string().optional().describe('Only updated since: ISO date or duration such as 7d, 12h'), sort: z.enum(['updated', 'created', 'title']).optional() },
-    async a => searchArtifacts(api, { query: a.query, limit: a.limit, since: a.since, sort: a.sort }), true);
+  const tags = z.array(z.string()).optional().describe('Tags readers filter the library by, e.g. ["sales", "plan"]; replaces the current tags, [] removes them');
+  tool('search', 'Search the artifact library by words in titles, descriptions, slugs and tags (every word must match). Use it before creating a new artifact, and to find references (search "ref-").',
+    { query: z.string().optional().describe('Words to match; omit to list everything'), limit: z.number().int().min(1).max(100).optional().describe('Results (default 20)'), since: z.string().optional().describe('Only updated since: ISO date or duration such as 7d, 12h'), sort: z.enum(['updated', 'created', 'title']).optional(), tags: z.array(z.string()).optional().describe('Only artifacts carrying every one of these tags') },
+    async a => searchArtifacts(api, { query: a.query, limit: a.limit, since: a.since, sort: a.sort, tags: a.tags }), true);
   tool('recent', 'The most recently updated artifacts.', { limit: z.number().int().min(1).max(100).optional().describe('Results (default 10)') },
     async a => searchArtifacts(api, { limit: a.limit ?? 10 }), true);
   tool('info', 'Metadata of one artifact: title, description, stable url, latest version, revision, archive state, preview state.', { slug },
@@ -71,11 +72,11 @@ export function createMcpServer(api: Client) {
     { slug, key, id: z.string().describe('Item id from feedback or data_get') },
     async a => api.request(dataPath(a.slug, a.key) + '/items/' + encodeURIComponent(a.id) + '?role=agent', { method: 'DELETE' }));
   tool('publish', 'Publish a local directory (with index.html) as a new artifact. Always give a title that says what it is and a description that says what the reader gets. Returns the stable url to share. Fails if the slug exists — use update for new versions.',
-    { directory: z.string().describe('Absolute path of the folder to publish'), slug: z.string().optional().describe('Readable slug; generated if omitted'), title: z.string().optional(), description: z.string().optional(), message: z.string().optional().describe('Publication message'), entry: z.string().optional().describe('Entry page (default index.html)') },
-    async a => api.publish(a.directory, { slug: a.slug, title: a.title, description: a.description, message: a.message, entry: a.entry ?? 'index.html', notice: true, excludes: [] }));
+    { directory: z.string().describe('Absolute path of the folder to publish'), slug: z.string().optional().describe('Readable slug; generated if omitted'), title: z.string().optional(), description: z.string().optional(), message: z.string().optional().describe('Publication message'), entry: z.string().optional().describe('Entry page (default index.html)'), tags },
+    async a => api.publish(a.directory, { slug: a.slug, title: a.title, description: a.description, tags: a.tags, message: a.message, entry: a.entry ?? 'index.html', notice: true, excludes: [] }));
   tool('update', 'Publish a directory as a new version of an existing artifact; the link stays the same and history is kept. Uses the revision the directory was downloaded or published at; on REVISION_CONFLICT read the newer version first.',
-    { slug, directory: z.string().describe('Absolute path of the folder'), message: z.string().optional().describe('What changed'), title: z.string().optional(), description: z.string().optional(), expected_revision: z.number().int().min(1).optional() },
-    async a => updateDirectory(api, a.slug, a.directory, { message: a.message, title: a.title, description: a.description, expectedRevision: a.expected_revision }));
+    { slug, directory: z.string().describe('Absolute path of the folder'), message: z.string().optional().describe('What changed'), title: z.string().optional(), description: z.string().optional(), tags, expected_revision: z.number().int().min(1).optional() },
+    async a => updateDirectory(api, a.slug, a.directory, { message: a.message, title: a.title, description: a.description, tags: a.tags, expectedRevision: a.expected_revision }));
   tool('download', 'Download the original files of an artifact version into a directory (tracked, so update works from there).',
     { slug, directory: z.string().describe('Absolute destination folder (empty or new)'), version: z.number().int().min(1).optional().describe('Default: latest'), overwrite: z.boolean().optional() },
     async a => api.download(a.slug, a.directory, a.version, a.overwrite ?? false));
@@ -101,6 +102,9 @@ export function createMcpServer(api: Client) {
       return { ...text(error instanceof ArtifactError ? `${error.code}: ${error.message}` : `ERROR: ${(error as Error).message}`), isError: true };
     }
   }) as never);
+  tool('share', 'Make a share link for an artifact (or with status: true, only report it): anyone with the link can view the latest version, without the toolbar and without reading or saving answers and comments. Only when the user asks to share something outside; stop: true removes the link. Requires the write token if the server has one.',
+    { slug, status: z.boolean().optional(), stop: z.boolean().optional() },
+    async a => a.stop ? unshareArtifact(api, a.slug) : a.status ? shareStatus(api, a.slug) : shareArtifact(api, a.slug));
   tool('archive', 'Hide an artifact from the library and stop serving it (reversible). Set restore to true to publish it again. Requires the write token if the server has one.',
     { slug, restore: z.boolean().optional() },
     async a => setArchived(api, a.slug, !a.restore));

@@ -14,10 +14,11 @@ Version 1, under `/api/v1`. JSON in and out unless stated; errors are `{"error":
 
 | Method | Path | | Purpose |
 |---|---|---|---|
-| GET | `/api/v1/artifacts` | | Catalogue: `q`, `sort` (`updated-desc`, `created-desc`, `title`), `updatedSince`, `limit` (1–100), `cursor`, `archived` (`exclude` default, `include`, `only`). Returns `{artifacts, total, nextCursor}` |
+| GET | `/api/v1/artifacts` | | Catalogue: `q`, `sort` (`updated-desc`, `created-desc`, `title`), `updatedSince`, `limit` (1–100), `cursor`, `archived` (`exclude` default, `include`, `only`), `tag` (comma-separated: artifacts with every one). Returns `{artifacts, total, nextCursor}`; each artifact has `tags` and, when shared, `share: {url, createdAt}` |
+| GET | `/api/v1/tags` | | Every tag on artifacts that are not archived, with counts: `{tags: [{tag, count}]}`, most used first |
 | POST | `/api/v1/artifacts` | W | Create from a `tar.gz` body (see below) |
 | GET | `/api/v1/artifacts/:slug` | | Metadata, URLs, preview state, `archivedAt` |
-| PATCH | `/api/v1/artifacts/:slug` | W | Edit `{title?, description?, expectedRevision}` without a new version |
+| PATCH | `/api/v1/artifacts/:slug` | W | Edit `{title?, description?, tags?, expectedRevision}` without a new version |
 | POST | `/api/v1/artifacts/:slug/versions` | W | Publish a complete new snapshot (`X-Expected-Revision` required) |
 | GET | `/api/v1/artifacts/:slug/versions` | | Version history |
 | GET | `/api/v1/artifacts/:slug/versions/:n` | | One version: manifest, entry, message, publication metadata |
@@ -29,11 +30,14 @@ Version 1, under `/api/v1`. JSON in and out unless stated; errors are `{"error":
 | POST | `/api/v1/artifacts/:slug/archive` | W | Archive (`{expectedRevision?}`); idempotent |
 | POST | `/api/v1/artifacts/:slug/restore` | W | Restore an archived artifact |
 | DELETE | `/api/v1/artifacts/:slug?confirm=<slug>` | W | Purge: delete every version, preview and saved document |
+| GET | `/api/v1/artifacts/:slug/share` | | Share state: `{slug, shared, url?, createdAt?}` |
+| POST | `/api/v1/artifacts/:slug/share` | W | Share: makes the link, or returns the existing one (`created` false, 200) |
+| DELETE | `/api/v1/artifacts/:slug/share` | W | Stop sharing: the link answers 404 from then on; sharing again makes a new link |
 | POST | `/api/v1/artifacts/:slug/lint` | | Render a version and report problems (see below) |
 
 ### Publishing
 
-Send `Content-Type: application/gzip` with a tar.gz of the folder. Headers: `X-Artifact-Slug` (create only), percent-encoded `X-Artifact-Title`, `X-Artifact-Description`, `X-Artifact-Entry`, `X-Artifact-Message`, `X-Artifact-Notice: true|false` (toolbar), `X-Expected-Revision` (updates), and a unique `Idempotency-Key`. A retry with the same key and identical content returns the original receipt; a different publication under a used key answers `IDEMPOTENCY_CONFLICT`.
+Send `Content-Type: application/gzip` with a tar.gz of the folder. Headers: `X-Artifact-Slug` (create only), percent-encoded `X-Artifact-Title`, `X-Artifact-Description`, `X-Artifact-Entry`, `X-Artifact-Message`, `X-Artifact-Tags` (comma-separated; replaces the tags, empty removes them, absent keeps them), `X-Artifact-Notice: true|false` (toolbar), `X-Expected-Revision` (updates), and a unique `Idempotency-Key`. A retry with the same key and identical content returns the original receipt; a different publication under a used key answers `IDEMPOTENCY_CONFLICT`.
 
 Receipts: `{slug, version, revision, unchanged, url, versionUrl}`. Archive paths must be relative regular files or directories; traversal, absolute paths, duplicates, links and devices are refused. Uploads over the server's limits answer 413 `UPLOAD_TOO_LARGE` or `TOO_MANY_FILES`. Archived artifacts refuse new versions with 409 `ARTIFACT_ARCHIVED`.
 
@@ -69,6 +73,14 @@ Receipts: `{slug, version, revision, unchanged, url, versionUrl}`. Archive paths
 | warning | `kit-outdated` | The page's `kit/kit.js` is not the kit this server ships (its seeded references): copied from an older artifact or edited. Use the `kit/` of a freshly downloaded reference |
 
 Content checks run at the widest width; overflow is checked at every width. `screenshots: true` adds full-page JPEGs (capped at 12,000 px tall) for each width plus dark mode at the narrowest.
+
+### Tags
+
+Tags are lowercase letters, digits, `-`, `_` and `.` (at most 32 characters, 12 per artifact; spaces become `-`). Search (`q`) also matches tags. Tag changes alone do not create a version: they count as a metadata edit and increment the revision.
+
+### Share links
+
+`/share/<token>/` (a 22-character random token) serves the latest version of a shared artifact to anyone with the link: no version toolbar, `X-Robots-Tag: noindex`, `Referrer-Policy: no-referrer`, every file revalidated (the link follows new versions). Kit pages opened there save answers in the visitor's browser only; they cannot read or change the artifact's saved data. The shared libraries are also served at `/share/_artifact/libs/`, so a login in front of everything except `/share/` is enough. Unknown, stopped and archived links all answer the same 404 page. Links use `SHARE_BASE_URL` as origin (default `PUBLIC_BASE_URL`). Sharing is not a metadata change: the revision stays the same.
 
 ## Saved data
 
