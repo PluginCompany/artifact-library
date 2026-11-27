@@ -338,8 +338,18 @@ a.card:hover .thumb img{transform:scale(1.06)}
 @media (max-width:560px){.facts>div{grid-template-columns:1fr;gap:2px}}
 
 /* Tables */
+/* A table is a card of its own (background, hairline border, rounded corners), also when a page wraps it in its own
+   scroll box; inside .table-wrap the wrap draws the card. Separate borders, because collapsed ones cannot be rounded. */
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
-table.table{width:100%;border-collapse:collapse;font-size:14px}
+table.table{--table-radius:var(--radius);width:100%;border-collapse:separate;border-spacing:0;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--table-radius)}
+.table-wrap>table.table{border:0;border-radius:0}
+table.table>:first-child>tr:first-child>:first-child{border-top-left-radius:calc(var(--table-radius) - 1px)}
+table.table>:first-child>tr:first-child>:last-child{border-top-right-radius:calc(var(--table-radius) - 1px)}
+table.table>:last-child>tr:last-child>:first-child{border-bottom-left-radius:calc(var(--table-radius) - 1px)}
+table.table>:last-child>tr:last-child>:last-child{border-bottom-right-radius:calc(var(--table-radius) - 1px)}
+.table-wrap>table.table tr>*{border-radius:0}
+/* Room between a heading and the table under it (bare, in .table-wrap or in a page's own wrapper) */
+:where(h2,h3,h4,h5,h6)+:is(.table-wrap,table.table,div:has(>table.table)){margin-top:12px}
 .table th,.table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
 .table thead th{font:500 calc(11px*var(--label-scale)) var(--label);letter-spacing:calc(.07em*var(--label-k));text-transform:var(--label-case);color:var(--muted);background:var(--soft);white-space:nowrap;position:sticky;top:0}
 .table tbody tr:last-child td{border-bottom:0}

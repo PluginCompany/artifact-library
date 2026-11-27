@@ -4,6 +4,12 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-11-27
+
+### Fixed
+- **Tables look like tables in every style.** `table.table` is now a card of its own (panel background, hairline border, rounded corners), also when a page wraps it in its own scroll box instead of `.table-wrap`. Before, such tables sat straight on the page, which looked unfinished on Bold's and Porcelain's tinted backgrounds. Inside `.table-wrap` the wrap still draws the card.
+- A table (bare, in `.table-wrap` or in a page's own wrapper) that directly follows a heading gets 12 px of room, so the heading no longer touches the header row (most visible in Bold).
+
 ## [0.15.0] - 2026-11-21
 
 ### Added
@@ -235,7 +241,8 @@ All notable changes to Artifact Library. The format follows [Keep a Changelog](h
 - Server-generated previews, catalogue metadata and revisions, idempotent uploads with retry, manifest diffs.
 - Standalone Linux CLI and an agent skill.
 
-[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/plugincompany/artifact-library/compare/v0.15.1...HEAD
+[0.15.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.15.1
 [0.15.0]: https://github.com/plugincompany/artifact-library/releases/tag/v0.15.0
 [0.14.2]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.2
 [0.14.1]: https://github.com/plugincompany/artifact-library/releases/tag/v0.14.1

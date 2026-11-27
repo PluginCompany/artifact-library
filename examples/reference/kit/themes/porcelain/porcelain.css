@@ -148,8 +148,10 @@ kbd{border-radius:5px;border-color:var(--line-strong)}
 .tag{border-radius:6px}
 
 /* Surfaces: white cards with soft corners and a hairline ring */
-.panel,.stat,.chart-card,.table-wrap,.frame,details.fold,.steps>li>div,.card,.kit-diagram,.kit-diff,.kit-q,.kit-st-card,.ba>figure,.delta>.changes,.delta>.stays,.flow-step{border-color:var(--line);box-shadow:var(--shadow-sm)}
+.panel,.stat,.chart-card,.table-wrap,table.table,.frame,details.fold,.steps>li>div,.card,.kit-diagram,.kit-diff,.kit-q,.kit-st-card,.ba>figure,.delta>.changes,.delta>.stays,.flow-step{border-color:var(--line);box-shadow:var(--shadow-sm)}
 .panel,.stat,.chart-card,.table-wrap,.card,.kit-q,.kit-st-card{border-radius:var(--radius-lg)}
+table.table{--table-radius:var(--radius-lg)}
+.table-wrap>table.table{box-shadow:none}
 .stat{padding:16px 16px 14px;gap:2px}
 .stat .label{font-size:13px}
 .stat .value{font-family:var(--body);font-weight:600;font-size:clamp(24px,2.2vw,28px);line-height:1.2}

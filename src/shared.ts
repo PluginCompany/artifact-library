@@ -61,7 +61,7 @@ export const SHARE_TOKEN = /^[A-Za-z0-9_-]{22}$/;
 /** Saved-data keys that send everything a reader saved to waiting agents: the toolbar's "Send to agent" and a page's "I'm done". */
 export const SEND_KEYS = ['state.sent', 'state.submitted'];
 
-export const APP_VERSION = '0.15.0';
+export const APP_VERSION = '0.15.1';
 export const API_VERSION = 1;
 
 export function metadataText(value: unknown, field: string, required = false): string {
